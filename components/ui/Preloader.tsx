@@ -97,10 +97,10 @@ export default function Preloader({
     setProgress(100);
     setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL");
 
-    // Screen glow blooms for 500ms, then smoothly dissolves into the site
+    // Screen glow blooms for 700ms with full visual impact, then smoothly dissolves into the site
     setTimeout(() => {
       finishLoadingRef.current();
-    }, 520);
+    }, 700);
   }, []);
 
   const triggerGlowAndFinishRef = useRef(triggerGlowAndFinish);
@@ -304,51 +304,51 @@ export default function Preloader({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.45 }}
+                transition={{ duration: 0.5 }}
                 className="pointer-events-none fixed inset-0 z-50 overflow-hidden flex items-center justify-center"
               >
                 {/* 01. Blinding White Exposure Screen Flash */}
                 <motion.div
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 0.95, 0.82] }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="absolute inset-0 bg-white mix-blend-screen"
+                  animate={{ opacity: [0, 0.95, 0.65] }}
+                  transition={{ duration: 0.65, ease: "easeOut" }}
+                  className="absolute inset-0 bg-white"
                 />
 
                 {/* 02. Volumetric Violet & Electric Cyan Radial Plasma Aura */}
                 <motion.div
-                  initial={{ scale: 0.4, opacity: 0 }}
-                  animate={{ scale: [0.4, 1.4, 2.4], opacity: [0, 1, 0.85] }}
-                  transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute h-[150vw] w-[150vw] rounded-full blur-[80px]"
+                  initial={{ scale: 0.3, opacity: 0 }}
+                  animate={{ scale: [0.3, 1.3, 2.2], opacity: [0, 1, 0.9] }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute h-[160vw] w-[160vw] rounded-full blur-[70px]"
                   style={{
                     background:
-                      "radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(192,132,252,0.95) 25%, rgba(139,92,246,0.75) 50%, rgba(56,189,248,0.5) 75%, transparent 100%)",
+                      "radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(216,180,254,0.95) 20%, rgba(139,92,246,0.85) 45%, rgba(56,189,248,0.6) 70%, transparent 100%)",
                   }}
                 />
 
                 {/* 03. Anamorphic Horizontal Lens Flare Beam */}
                 <motion.div
                   initial={{ scaleX: 0, opacity: 0 }}
-                  animate={{ scaleX: [0, 1.8, 2.5], opacity: [0, 1, 0.75] }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="absolute h-[260px] w-full blur-[35px]"
+                  animate={{ scaleX: [0, 1.8, 3.0], opacity: [0, 1, 0.8] }}
+                  transition={{ duration: 0.65, ease: "easeOut" }}
+                  className="absolute h-[320px] w-full blur-[30px]"
                   style={{
                     background:
-                      "radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(216,180,254,0.9) 45%, rgba(124,58,237,0.45) 70%, transparent 95%)",
+                      "radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(216,180,254,0.95) 40%, rgba(124,58,237,0.6) 70%, transparent 95%)",
                   }}
                 />
 
                 {/* 04. Shockwave Ring Expanding Across Entire Viewport */}
                 <motion.div
-                  initial={{ scale: 0.1, opacity: 1, borderWidth: "20px" }}
+                  initial={{ scale: 0.1, opacity: 1, borderWidth: "24px" }}
                   animate={{
-                    scale: [0.1, 1.6, 3.2],
-                    opacity: [1, 0.85, 0],
-                    borderWidth: ["20px", "8px", "1px"],
+                    scale: [0.1, 1.6, 3.4],
+                    opacity: [1, 0.9, 0],
+                    borderWidth: ["24px", "10px", "1px"],
                   }}
-                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute h-[80vh] w-[80vh] rounded-full border-white shadow-[0_0_140px_rgba(255,255,255,1)]"
+                  transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute h-[85vh] w-[85vh] rounded-full border-white shadow-[0_0_160px_rgba(255,255,255,1),inset_0_0_80px_rgba(192,132,252,0.8)]"
                 />
               </motion.div>
             )}
