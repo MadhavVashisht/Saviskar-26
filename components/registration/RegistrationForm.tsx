@@ -146,6 +146,7 @@ export default function RegistrationForm() {
    * has a Saviskar participant ID and wants to add another event.
    */
   const [existingParticipantId, setExistingParticipantId] = useState("");
+  const [existingParticipantEmail, setExistingParticipantEmail] = useState("");
   const [participantLookupLoading, setParticipantLookupLoading] = useState(false);
   const [participantLookup, setParticipantLookup] = useState<
     ParticipantLookupResponse["participant"] | null
@@ -286,11 +287,19 @@ export default function RegistrationForm() {
 
   async function findParticipant() {
     const cleanId = existingParticipantId.trim().toUpperCase();
+    const cleanEmail = existingParticipantEmail.trim().toLowerCase();
 
     if (!cleanId) {
       setParticipantLookup(null);
       setParticipantLookupEvents([]);
       setErrorMessage("Enter your Participant ID first.");
+      return;
+    }
+
+    if (!cleanEmail) {
+      setParticipantLookup(null);
+      setParticipantLookupEvents([]);
+      setErrorMessage("Enter your registered email address.");
       return;
     }
 
@@ -301,7 +310,7 @@ export default function RegistrationForm() {
 
     try {
       const response = await fetch(
-        `/api/participants/${encodeURIComponent(cleanId)}`,
+        `/api/participants/${encodeURIComponent(cleanId)}?email=${encodeURIComponent(cleanEmail)}`,
         {
           method: "GET",
           cache: "no-store",
@@ -638,11 +647,16 @@ export default function RegistrationForm() {
       const college = String(
         formData.get("college") ?? ""
       ).trim();
-      const email = String(
+      const rawEmail = String(
         formData.get("email") ?? ""
       )
         .trim()
         .toLowerCase();
+
+      const email =
+        existingParticipantId.trim() && existingParticipantEmail.trim()
+          ? existingParticipantEmail.trim().toLowerCase()
+          : rawEmail;
 
       const phone = String(
         formData.get("phone") ?? ""
@@ -1416,44 +1430,75 @@ export default function RegistrationForm() {
                     registration.
                   </p>
 
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <input
-                      type="text"
-                      value={existingParticipantId}
-                      onChange={(e) => {
-                        setExistingParticipantId(e.target.value.toUpperCase());
-                        setParticipantLookup(null);
-                        setParticipantLookupEvents([]);
-                        setErrorMessage("");
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          void findParticipant();
-                        }
-                      }}
-                      placeholder="Example: SVK26-8D25C998"
-                      className="w-full border-b border-black/15 bg-transparent py-4 font-mono text-sm uppercase outline-none transition placeholder:text-black/20 focus:border-black"
-                    />
+                  <div className="mt-5 flex flex-col gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35 mb-1">
+                          Participant ID
+                        </label>
+                        <input
+                          type="text"
+                          value={existingParticipantId}
+                          onChange={(e) => {
+                            setExistingParticipantId(e.target.value.toUpperCase());
+                            setParticipantLookup(null);
+                            setParticipantLookupEvents([]);
+                            setErrorMessage("");
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void findParticipant();
+                            }
+                          }}
+                          placeholder="Example: SVK26-8D25C998"
+                          className="w-full border-b border-black/15 bg-transparent py-3 font-mono text-sm uppercase outline-none transition placeholder:text-black/20 focus:border-black"
+                        />
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => void findParticipant()}
-                      disabled={participantLookupLoading || !existingParticipantId.trim()}
-                      className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-medium text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {participantLookupLoading ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                          Finding
-                        </>
-                      ) : (
-                        <>
-                          Find Participant
-                          <ArrowRight size={15} />
-                        </>
-                      )}
-                    </button>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35 mb-1">
+                          Registered Email
+                        </label>
+                        <input
+                          type="email"
+                          value={existingParticipantEmail}
+                          onChange={(e) => {
+                            setExistingParticipantEmail(e.target.value);
+                            setParticipantLookup(null);
+                            setParticipantLookupEvents([]);
+                            setErrorMessage("");
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void findParticipant();
+                            }
+                          }}
+                          placeholder="name@example.com"
+                          className="w-full border-b border-black/15 bg-transparent py-3 text-sm outline-none transition placeholder:text-black/20 focus:border-black"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => void findParticipant()}
+                        disabled={participantLookupLoading || !existingParticipantId.trim() || !existingParticipantEmail.trim()}
+                        className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-medium text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {participantLookupLoading ? (
+                          <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            Finding
+                          </>
+                        ) : (
+                          <>
+                            Find Participant
+                            <ArrowRight size={15} />
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {participantLookup && (

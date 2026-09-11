@@ -110,20 +110,27 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
+  const eventId = searchParams.get("eventId")?.trim();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // 1. Fetch paginated participant_events
-  const {
-    data: participantEventsData,
-    count: totalCount,
-    error: peError,
-  } = await supabaseAdmin
+  // 1. Fetch paginated participant_events with optional eventId filter
+  let peQuery = supabaseAdmin
     .from("participant_events")
     .select(
       "id, participant_id, event_id, registration_status, payment_status, payment_amount, payment_id, team_name, checked_in, checked_in_at, is_archived, created_at",
       { count: "exact" }
-    )
+    );
+
+  if (eventId) {
+    peQuery = peQuery.eq("event_id", eventId);
+  }
+
+  const {
+    data: participantEventsData,
+    count: totalCount,
+    error: peError,
+  } = await peQuery
     .order("created_at", { ascending: false })
     .range(from, to);
 

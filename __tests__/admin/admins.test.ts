@@ -121,7 +121,8 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
     } as unknown as Request;
   };
 
-  const mockAsPrimaryMaster = (id = "sm-id", email = "jashan082006@gmail.com") => {
+  const mockAsPrimaryMaster = (id = "sm-id", email = "primarymaster@example.com") => {
+    process.env.PRIMARY_ADMIN_USER_ID = id;
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
       supabase: {} as any,
       user: { id, email } as any,
@@ -175,10 +176,14 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
      1. Primary Master Identity Determination
   ========================================================= */
   describe("Primary Master Identity Determination", () => {
-    it("identifies Primary Master via email fallback with case/whitespace normalization when env var is unset", () => {
-      expect(serverLib.isPrimaryMaster({ id: "any-id", email: "  jAshan082006@Gmail.cOm " })).toBe(true);
+    it("fails closed when PRIMARY_ADMIN_USER_ID is unset (no one is Primary Master)", () => {
+      delete process.env.PRIMARY_ADMIN_USER_ID;
+      delete process.env.PRIMARY_ADMIN_EMAIL;
+      expect(serverLib.isPrimaryMaster({ id: "any-id", email: "jashan082006@gmail.com" })).toBe(false);
       expect(serverLib.isPrimaryMaster({ id: "any-id", email: "other@gmail.com" })).toBe(false);
       expect(serverLib.isPrimaryMaster(null)).toBe(false);
+      expect(serverLib.isPrimaryMaster(undefined)).toBe(false);
+      expect(serverLib.isPrimaryMaster({ email: "jashan082006@gmail.com" })).toBe(false);
     });
 
     it("identifies Primary Master strictly via PRIMARY_ADMIN_USER_ID when configured", () => {
@@ -189,16 +194,22 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
         serverLib.isPrimaryMaster({ id: "immutable-primary-uuid", email: "changed-email@domain.com" })
       ).toBe(true);
 
-      // Wrong user ID even with old email is NOT primary
+      // Wrong user ID even with former primary email is NOT primary
       expect(
         serverLib.isPrimaryMaster({ id: "impostor-uuid", email: "jashan082006@gmail.com" })
+      ).toBe(false);
+
+      // User without ID is NOT primary
+      expect(
+        serverLib.isPrimaryMaster({ email: "changed-email@domain.com" })
       ).toBe(false);
     });
 
     it("requireSuperMasterAdmin succeeds for Primary Master and rejects others", async () => {
+      process.env.PRIMARY_ADMIN_USER_ID = "sm-id";
       // Primary Master
       mockServerClient.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "sm-id", email: "jashan082006@gmail.com" } },
+        data: { user: { id: "sm-id", email: "primary@example.com" } },
         error: null,
       });
       mockBuilder.maybeSingle.mockResolvedValueOnce({ data: { role: "master" }, error: null });
@@ -318,13 +329,14 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
 
     // 10. Other Master DELETE Primary Master -> DENY 403
     it("10. Other Master DELETE Primary Master -> DENY (403)", async () => {
+      process.env.PRIMARY_ADMIN_USER_ID = "primary-master-id";
       mockAsOtherMaster();
       mockBuilder.maybeSingle.mockResolvedValueOnce({
         data: { user_id: "primary-master-id", role: "master" },
         error: null,
       });
       mockGetUserById.mockResolvedValueOnce({
-        data: { user: { id: "primary-master-id", email: "jashan082006@gmail.com" } },
+        data: { user: { id: "primary-master-id", email: "primary@example.com" } },
       });
 
       const res = await DELETE(createMockRequest("DELETE", null, "http://localhost/api/admin/admins?userId=primary-master-id"));

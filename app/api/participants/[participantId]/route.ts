@@ -1,17 +1,13 @@
 /**
  * GET /api/participants/[participantId]
  *
- * Public participant lookup for the registration form.
+ * Public participant lookup for the registration form with ownership challenge.
  *
- * When a returning participant enters their Saviskar ID,
- * this route fetches their profile and registered events
- * so the form can:
- *   - Pre-fill their name/college/email/phone (read-only verified state)
- *   - Show which events they already have (eventId, eventName, paymentStatus)
- *   - Prevent re-registering for the same event
+ * Requires both participantId and the registered email address to prevent
+ * unauthorized profile enumeration and PII harvesting.
  *
  * Rate limited to 10 requests/minute per IP.
- * Response is minimized to only the fields consumed by the frontend.
+ * PII is masked and response is minimized to only the fields consumed by the frontend.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,6 +15,7 @@ import { createClient } from "@supabase/supabase-js";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const PARTICIPANT_ID_PATTERN = /^SVK26-[A-Z0-9]{8}$/i;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function jsonResponse(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -27,6 +24,25 @@ function jsonResponse(body: unknown, status = 200) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+function maskEmail(email: string): string {
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 1) {
+    return `***${email.slice(atIndex)}`;
+  }
+  const local = email.slice(0, atIndex);
+  const domain = email.slice(atIndex);
+  return `${local[0]}***${domain}`;
+}
+
+function maskPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const cleaned = phone.replace(/\s+/g, "");
+  if (cleaned.length >= 6) {
+    return `${cleaned.slice(0, 2)}*****${cleaned.slice(-2)}`;
+  }
+  return "******";
 }
 
 export async function GET(
@@ -63,6 +79,31 @@ export async function GET(
       {
         success: false,
         error: "Invalid participant ID.",
+      },
+      400
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const rawEmail = searchParams.get("email");
+
+  if (!rawEmail || !rawEmail.trim()) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Participant ID and registered email are required.",
+      },
+      400
+    );
+  }
+
+  const normalizedEmail = rawEmail.trim().toLowerCase();
+
+  if (!EMAIL_PATTERN.test(normalizedEmail)) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Invalid email format.",
       },
       400
     );
@@ -124,7 +165,9 @@ export async function GET(
     );
   }
 
-  if (!data) {
+  // Ownership verification: compare normalized email against authoritative participant email
+  // If no record or email mismatch, return non-enumerating 404
+  if (!data || (data.email && data.email.trim().toLowerCase() !== normalizedEmail)) {
     return jsonResponse(
       {
         success: false,
@@ -153,8 +196,8 @@ export async function GET(
       participantId: data.participant_id,
       name: data.name,
       college: data.college,
-      email: data.email,
-      phone: data.phone,
+      email: maskEmail(data.email),
+      phone: maskPhone(data.phone),
     },
     events: rawParticipantEvents.map((event) => ({
       participantEventId: event.id,

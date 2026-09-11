@@ -219,7 +219,7 @@ export default function EventRegistrationsPage() {
         }
 
         const response = await fetch(
-          "/api/admin/registrations",
+          `/api/admin/registrations?eventId=${encodeURIComponent(eventID)}&pageSize=100`,
           {
             cache: "no-store",
           }

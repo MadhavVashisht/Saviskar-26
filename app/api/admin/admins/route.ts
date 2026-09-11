@@ -26,7 +26,7 @@ function getIpFromRequest(request: Request): string {
 }
 
 async function isTargetPrimaryMaster(
-  adminClient: any,
+  _adminClient: any,
   targetUserId: string
 ): Promise<boolean> {
   const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
@@ -34,16 +34,7 @@ async function isTargetPrimaryMaster(
     return targetUserId === configuredUserId;
   }
 
-  try {
-    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(targetUserId);
-    if (userError || !userData?.user) {
-      return false;
-    }
-    const configuredEmail = (process.env.PRIMARY_ADMIN_EMAIL?.trim() || "jashan082006@gmail.com").toLowerCase();
-    return userData.user.email?.toLowerCase().trim() === configuredEmail;
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 async function logAudit(
@@ -166,14 +157,11 @@ export async function GET() {
   }
 
   const primary = isPrimaryMaster(auth.user);
-  const primaryEmail = (process.env.PRIMARY_ADMIN_EMAIL?.trim() || "jashan082006@gmail.com").toLowerCase();
   const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
 
   const result = (admins ?? []).map((admin) => {
     const email = users.get(admin.user_id)?.email ?? null;
-    const isPrimary = configuredUserId
-      ? admin.user_id === configuredUserId
-      : Boolean(email && email.toLowerCase().trim() === primaryEmail);
+    const isPrimary = configuredUserId ? admin.user_id === configuredUserId : false;
 
     return {
       user_id: admin.user_id,
@@ -323,11 +311,11 @@ export async function POST(request: Request) {
   }
 
   // Primary Master protection: cannot re-add or overwrite Primary Master
-  const primaryEmail = (process.env.PRIMARY_ADMIN_EMAIL?.trim() || "jashan082006@gmail.com").toLowerCase();
   const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
   if (
-    (configuredUserId && auth.user?.id === configuredUserId && auth.user?.email?.toLowerCase() === email) ||
-    (!configuredUserId && email === primaryEmail)
+    configuredUserId &&
+    auth.user?.id === configuredUserId &&
+    auth.user?.email?.toLowerCase() === email
   ) {
     return NextResponse.json(
       {

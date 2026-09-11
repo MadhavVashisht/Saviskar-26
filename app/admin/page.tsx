@@ -214,6 +214,8 @@ export default function AdminPage() {
   const [deletingId, setDeletingId] =
     useState<string | null>(null);
 
+  const [serverTotal, setServerTotal] = useState<number | null>(null);
+
   /* =======================================================
      LOAD DATA
   ======================================================= */
@@ -230,7 +232,7 @@ export default function AdminPage() {
 
       try {
         const response = await fetch(
-          "/api/admin/registrations",
+          "/api/admin/registrations?pageSize=100",
           { cache: "no-store" }
         );
 
@@ -247,6 +249,7 @@ export default function AdminPage() {
             registrations?: Registration[];
             events?: EventRecord[];
             role?: AdminRole;
+            total?: number;
             error?: string;
           };
 
@@ -255,6 +258,10 @@ export default function AdminPage() {
             payload.error ??
             "Could not load registrations."
           );
+        }
+
+        if (typeof payload.total === "number") {
+          setServerTotal(payload.total);
         }
 
         setRegistrations(
@@ -478,7 +485,7 @@ export default function AdminPage() {
     );
 
     const total =
-      activeRegistrations.length;
+      serverTotal !== null ? serverTotal : activeRegistrations.length;
 
     const checkedIn =
       activeRegistrations.filter(

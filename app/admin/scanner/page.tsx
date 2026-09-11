@@ -406,54 +406,88 @@ export default function ScannerPage() {
                       Registered events
                     </p>
                     <div className="space-y-4">
-                      {participantEvents.map((event) => (
-                        <div
-                          key={event.participantEventId}
-                          className="rounded-[20px] border border-black/[0.08] p-5 bg-black/[0.01]"
-                        >
-                          <div className="flex items-start justify-between gap-4 mb-4">
-                            <div>
-                              <p className="!text-black text-base font-semibold">{event.eventName}</p>
-                              {event.teamName ? (
-                                <p className="mt-1 !text-black/60 text-sm font-medium">Team: {event.teamName}</p>
+                      {participantEvents.map((event) => {
+                        const isUnpaid = Boolean(
+                          event.paymentStatus &&
+                          event.paymentStatus !== "paid" &&
+                          event.paymentStatus !== "not_required"
+                        );
+
+                        return (
+                          <div
+                            key={event.participantEventId}
+                            className={`rounded-[20px] border p-5 ${
+                              isUnpaid
+                                ? "border-red-200 bg-red-50/40"
+                                : "border-black/[0.08] bg-black/[0.01]"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4 mb-4">
+                              <div>
+                                <p className="!text-black text-base font-semibold">{event.eventName}</p>
+                                {event.teamName ? (
+                                  <p className="mt-1 !text-black/60 text-sm font-medium">Team: {event.teamName}</p>
+                                ) : (
+                                  <p className="mt-1 !text-black/60 text-sm">Individual Registration</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isUnpaid && (
+                                  <span className="rounded-full border border-red-200 bg-red-100 px-2.5 py-1 text-[10px] font-semibold text-red-700 whitespace-nowrap">
+                                    UNPAID ({event.paymentStatus})
+                                  </span>
+                                )}
+                                <span
+                                  className={`rounded-full px-2.5 py-1 text-[10px] font-medium whitespace-nowrap ${
+                                    event.checkedIn
+                                      ? "bg-green-50 text-green-700"
+                                      : "bg-black/[0.05] text-black/50"
+                                  }`}
+                                >
+                                  {event.checkedIn ? "Checked in" : "Not checked in"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {!event.checkedIn ? (
+                                isUnpaid ? (
+                                  <div className="w-full">
+                                    <button
+                                      disabled
+                                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-black/10 py-3 text-sm font-medium text-black/40 cursor-not-allowed"
+                                    >
+                                      <XCircle size={16} />
+                                      Check in Disabled (Payment Required)
+                                    </button>
+                                    <p className="mt-2 text-center text-xs font-medium text-red-600">
+                                      Payment is incomplete ({event.paymentStatus}). Participant cannot be checked in.
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => checkInParticipant(event.participantEventId, event.eventName, event.teamName)}
+                                    disabled={loading}
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-black py-3 text-sm font-medium !text-white transition hover:scale-[1.01] disabled:opacity-50"
+                                  >
+                                    <CheckCircle2 size={16} />
+                                    Check in
+                                  </button>
+                                )
                               ) : (
-                                <p className="mt-1 !text-black/60 text-sm">Individual Registration</p>
+                                <button
+                                  onClick={() => checkOutParticipant(event.participantEventId, event.eventName, event.teamName)}
+                                  disabled={loading}
+                                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                                >
+                                  <LogOut size={16} />
+                                  Check out
+                                </button>
                               )}
                             </div>
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-medium whitespace-nowrap ${
-                                event.checkedIn
-                                  ? "bg-green-50 text-green-700"
-                                  : "bg-black/[0.05] text-black/50"
-                              }`}
-                            >
-                              {event.checkedIn ? "Checked in" : "Not checked in"}
-                            </span>
                           </div>
-
-                          <div className="flex items-center gap-3">
-                            {!event.checkedIn ? (
-                              <button
-                                onClick={() => checkInParticipant(event.participantEventId, event.eventName, event.teamName)}
-                                disabled={loading}
-                                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-black py-3 text-sm font-medium !text-white transition hover:scale-[1.01] disabled:opacity-50"
-                              >
-                                <CheckCircle2 size={16} />
-                                Check in
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => checkOutParticipant(event.participantEventId, event.eventName, event.teamName)}
-                                disabled={loading}
-                                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
-                              >
-                                <LogOut size={16} />
-                                Check out
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
