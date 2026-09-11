@@ -1,0 +1,979 @@
+import { Resend } from "resend";
+import QRCode from "qrcode";
+
+export type TeamMember = {
+  participantId: string;
+  name: string;
+  college?: string;
+  email: string;
+  phone?: string;
+  isTeamLeader?: boolean;
+};
+
+export type RegistrationEmailData = {
+  registrationId?: string;
+  participantId: string;
+  eventName: string;
+  eventCategory?: string | null;
+
+  name: string;
+  college: string;
+  email: string;
+  phone?: string;
+
+  team?: string | null;
+  isTeamEvent?: boolean;
+  isTeamHead?: boolean;
+  members?: TeamMember[];
+  
+  requiresPayment?: boolean;
+  paymentResumeUrl?: string | null;
+  
+  receiptPdf?: {
+    buffer: Buffer;
+    filename: string;
+  } | null;
+};
+
+export type SendResult = {
+  success: boolean;
+  emailsSent: number;
+  recipients: Array<{
+    email: string;
+    emailId: string | null;
+  }>;
+  error?: string;
+};
+
+function escapeHtml(
+  value: string | null | undefined
+) {
+  if (!value) return "";
+
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/**
+ * Sends registration confirmation email(s) with QR code
+ * directly via Resend SDK.
+ *
+ * For team events, every unique team member receives
+ * their own personalized email.
+ *
+ * Returns a result object — never throws.
+ */
+export async function sendRegistrationEmail(
+  data: RegistrationEmailData
+): Promise<SendResult> {
+  console.log("[REGISTER EMAIL] send-registration-email function entered");
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  console.log(`[REGISTER EMAIL] RESEND_API_KEY present: ${!!apiKey}`);
+
+  if (!apiKey) {
+    console.error(
+      "sendRegistrationEmail: RESEND_API_KEY is missing."
+    );
+    return {
+      success: false,
+      emailsSent: 0,
+      recipients: [],
+      error: "Email service is not configured.",
+    };
+  }
+
+  if (!fromEmail) {
+    console.error(
+      "sendRegistrationEmail: RESEND_FROM_EMAIL is missing."
+    );
+    return {
+      success: false,
+      emailsSent: 0,
+      recipients: [],
+      error: "Sender email is not configured.",
+    };
+  }
+
+  const {
+    participantId,
+    eventName,
+    eventCategory,
+    name,
+    college,
+    email,
+    phone,
+    team,
+    isTeamEvent = false,
+    isTeamHead = false,
+    members = [],
+    requiresPayment = false,
+    paymentResumeUrl,
+    receiptPdf,
+  } = data;
+
+  if (
+    !participantId ||
+    !eventName ||
+    !name ||
+    !college ||
+    !email
+  ) {
+    return {
+      success: false,
+      emailsSent: 0,
+      recipients: [],
+      error: "Missing required registration information.",
+    };
+  }
+
+  const resend = new Resend(apiKey);
+
+  /*
+   * Generate QR code as a PNG buffer for Resend CID inline attachment.
+   *
+   * Gmail (and many webmail clients) strip base64 data: URIs from
+   * email HTML, causing broken images. CID inline attachments are
+   * the standard email-compatible way to embed images.
+   *
+   * The QR encodes ONLY the permanent participant_id (e.g. SVK26-ABC12345).
+   * No email, phone, payment ID, event ID, or personal information.
+   */
+  let qrBuffer: Buffer | null = null;
+  try {
+    qrBuffer = await QRCode.toBuffer(participantId, {
+      width: 500,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
+    });
+  } catch (qrError) {
+    console.error(
+      "sendRegistrationEmail: QR buffer generation failed:",
+      qrError
+    );
+  }
+
+  // CID reference for HTML — renders the inline QR attachment
+  // If QR generation failed, the participant ID text below serves as fallback
+  const qrImgSrc = qrBuffer
+    ? "cid:saviskar-entry-qr"
+    : "";
+
+  const safeEventName = escapeHtml(eventName);
+  const safeCollege = escapeHtml(college);
+  const safeTeam = escapeHtml(team);
+  const safeCategory = escapeHtml(eventCategory);
+  const safeParticipantId = escapeHtml(participantId);
+
+  /*
+   * Build the complete team list.
+   * Leader is always Member 1.
+   */
+  const allTeamMembers: TeamMember[] = isTeamEvent
+    ? [
+        {
+          participantId,
+          name,
+          college,
+          email,
+          phone,
+          isTeamLeader:
+            isTeamHead === true,
+        },
+        ...members,
+      ]
+    : [];
+
+  /*
+   * Every team member gets an individual email.
+   * For a non-team event only the participant receives email.
+   */
+  const recipients = isTeamEvent
+    ? [
+        {
+          participantId,
+          name,
+          college,
+          email,
+          phone,
+          isTeamLeader: false,
+          role: "Team Member",
+        },
+        ...members.map((member) => ({
+          participantId: member.participantId,
+          name: member.name,
+          college: member.college,
+          email: member.email,
+          phone: member.phone,
+          isTeamLeader: member.isTeamLeader,
+          role: member.isTeamLeader
+            ? "Team Head"
+            : "Team Member",
+        })),
+      ]
+    : [
+        {
+          participantId,
+          name,
+          college,
+          email,
+          phone,
+          isTeamLeader: false,
+          role: "Participant",
+        },
+      ];
+
+  /*
+   * Remove accidental duplicate email addresses.
+   */
+  const uniqueRecipients = recipients.filter(
+    (recipient, index, array) =>
+      array.findIndex(
+        (item) =>
+          item.email.trim().toLowerCase() ===
+          recipient.email.trim().toLowerCase()
+      ) === index
+  );
+
+  const results: Array<{
+    email: string;
+    emailId: string | null;
+  }> = [];
+
+  console.log(`[REGISTER EMAIL] uniqueRecipients count: ${uniqueRecipients.length}`);
+
+  for (const recipient of uniqueRecipients) {
+    console.log(`[REGISTER EMAIL] processing recipient: ${recipient.email}`);
+    const safeRecipientName = escapeHtml(recipient.name);
+    const safeRecipientEmail = escapeHtml(recipient.email);
+    const safeRecipientPhone = escapeHtml(recipient.phone);
+    const safeRecipientParticipantId =
+      escapeHtml(recipient.participantId);
+
+    /*
+     * Team member list shown inside EVERY team member's email.
+     */
+    const teamMembersHtml =
+      isTeamEvent && allTeamMembers.length > 0
+        ? `
+            <div
+              style="
+                margin-top: 32px;
+                border-top: 1px solid #eaeaea;
+                padding-top: 28px;
+              "
+            >
+              <div
+                style="
+                  font-size: 10px;
+                  letter-spacing: 2px;
+                  text-transform: uppercase;
+                  color: #999999;
+                  margin-bottom: 16px;
+                "
+              >
+                Team Members
+              </div>
+
+              ${allTeamMembers
+                .map((member, index) => {
+                  const isCurrentRecipient =
+                    member.email.trim().toLowerCase() ===
+                    recipient.email.trim().toLowerCase();
+
+                  return `
+                      <div
+                        style="
+                          border: 1px solid ${
+                            isCurrentRecipient ? "#111111" : "#eeeeee"
+                          };
+                          border-radius: 14px;
+                          padding: 15px 17px;
+                          margin-bottom: 10px;
+                          background: ${
+                            isCurrentRecipient ? "#fafafa" : "#ffffff"
+                          };
+                        "
+                      >
+
+                        <div
+                          style="
+                            font-size: 9px;
+                            letter-spacing: 1.5px;
+                            text-transform: uppercase;
+                            color: #aaaaaa;
+                            margin-bottom: 5px;
+                          "
+                        >
+                          ${
+                            member.isTeamLeader
+                              ? `Member ${index + 1} · Team Head`
+                              : `Member ${index + 1}`
+                          }
+
+                          ${
+                            isCurrentRecipient
+                              ? " · YOU"
+                              : ""
+                          }
+                        </div>
+
+                        <div
+                          style="
+                            font-size: 15px;
+                            font-weight: 600;
+                            color: #111111;
+                          "
+                        >
+                          ${escapeHtml(member.name)}
+                        </div>
+
+                        <div
+                          style="
+                            font-size: 12px;
+                            color: #777777;
+                            margin-top: 4px;
+                          "
+                        >
+                          ${escapeHtml(member.email)}
+                        </div>
+
+                        ${
+                          member.phone
+                            ? `
+                              <div
+                                style="
+                                  font-size: 12px;
+                                  color: #777777;
+                                  margin-top: 3px;
+                                "
+                              >
+                                ${escapeHtml(member.phone)}
+                              </div>
+                            `
+                            : ""
+                        }
+
+                        <div
+                          style="
+                            margin-top: 8px;
+                            font-family: monospace;
+                            font-size: 11px;
+                            color: #111111;
+                            font-weight: 600;
+                          "
+                        >
+                          ${escapeHtml(member.participantId)}
+                        </div>
+
+                      </div>
+                    `;
+                })
+                .join("")}
+            </div>
+          `
+        : "";
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+
+      <head>
+        <meta charset="UTF-8" />
+
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0"
+        />
+      </head>
+
+      <body
+        style="
+          margin: 0;
+          padding: 0;
+          background: #f3f3f3;
+          font-family: Arial, Helvetica, sans-serif;
+          color: #111111;
+        "
+      >
+
+        <div
+          style="
+            width: 100%;
+            background: #f3f3f3;
+            padding: 40px 15px;
+            box-sizing: border-box;
+          "
+        >
+
+          <div
+            style="
+              max-width: 620px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 24px;
+              overflow: hidden;
+            "
+          >
+
+            <!-- BLACK HEADER -->
+
+            <div
+              style="
+                background: #050505;
+                color: #ffffff;
+                padding: 42px 38px;
+              "
+            >
+
+              <div
+                style="
+                  font-size: 10px;
+                  letter-spacing: 3px;
+                  text-transform: uppercase;
+                  color: #888888;
+                "
+              >
+                SAVISKAR 2026
+              </div>
+
+              <div
+                style="
+                  margin-top: 32px;
+                  font-size: 11px;
+                  letter-spacing: 2px;
+                  text-transform: uppercase;
+                  color: #777777;
+                "
+              >
+                ${receiptPdf ? "Payment Confirmed" : "Registration Confirmed"}
+              </div>
+
+              <h1
+                style="
+                  margin: 10px 0 0;
+                  font-size: 54px;
+                  line-height: 1;
+                  letter-spacing: -2px;
+                  color: #ffffff;
+                "
+              >
+                ${receiptPdf ? "Payment Successful." : "You're in."}
+              </h1>
+
+              <p
+                style="
+                  margin: 22px 0 0;
+                  max-width: 440px;
+                  font-size: 14px;
+                  line-height: 1.7;
+                  color: #999999;
+                "
+              >
+                ${receiptPdf 
+                  ? `Your payment for ${safeEventName} has been successfully received.`
+                  : `Your Saviskar 2026 registration has been confirmed. Keep this email available and present the QR code at entry.`
+                }
+              </p>
+
+              ${!receiptPdf ? `
+              <div style="margin-top: 20px; font-size: 14px; color: ${requiresPayment ? '#ff9999' : '#99ff99'}; font-weight: 600;">
+                ${requiresPayment ? "Payment: Pending &mdash; Complete your payment to confirm your paid registration." : "Payment: No payment required."}
+              </div>
+
+              ${requiresPayment && paymentResumeUrl ? `
+              <div style="margin-top: 26px; text-align: left;">
+                <a
+                  href="${escapeHtml(paymentResumeUrl)}"
+                  target="_blank"
+                  style="
+                    display: inline-block;
+                    background: #ffffff;
+                    color: #000000;
+                    text-decoration: none;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    padding: 14px 30px;
+                    border-radius: 9999px;
+                  "
+                >
+                  COMPLETE PAYMENT
+                </a>
+                <div style="margin-top: 10px; font-size: 12px; color: #999999;">
+                  Your registration is saved, but payment is still pending.
+                </div>
+              </div>
+              ` : ""}
+              ` : ""}
+
+            </div>
+
+            <!-- DETAILS -->
+
+            <div style="padding: 38px;">
+
+              <div
+                style="
+                  font-size: 10px;
+                  letter-spacing: 2px;
+                  text-transform: uppercase;
+                  color: #999999;
+                "
+              >
+                Event
+              </div>
+
+              <div
+                style="
+                  margin-top: 8px;
+                  font-size: 28px;
+                  font-weight: 700;
+                "
+              >
+                ${safeEventName}
+              </div>
+
+              ${
+                safeCategory
+                  ? `
+                    <div
+                      style="
+                        margin-top: 7px;
+                        font-size: 13px;
+                        color: #888888;
+                        text-transform: capitalize;
+                      "
+                    >
+                      ${safeCategory} Event
+                    </div>
+                  `
+                  : ""
+              }
+
+              <!-- RECIPIENT -->
+
+              <div
+                style="
+                  margin-top: 32px;
+                  border-top: 1px solid #eeeeee;
+                  padding-top: 28px;
+                "
+              >
+
+                <div
+                  style="
+                    font-size: 9px;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    color: #aaaaaa;
+                  "
+                >
+                  ${
+                    isTeamEvent
+                      ? recipient.role
+                      : "Participant"
+                  }
+                </div>
+
+                <div
+                  style="
+                    margin-top: 6px;
+                    font-size: 20px;
+                    font-weight: 600;
+                  "
+                >
+                  ${safeRecipientName}
+                </div>
+
+                <div
+                  style="
+                    margin-top: 5px;
+                    font-size: 13px;
+                    color: #777777;
+                  "
+                >
+                  ${safeRecipientEmail}
+                </div>
+
+                ${
+                  safeRecipientPhone
+                    ? `
+                      <div
+                        style="
+                          margin-top: 5px;
+                          font-size: 13px;
+                          color: #777777;
+                        "
+                      >
+                        ${safeRecipientPhone}
+                      </div>
+                    `
+                    : ""
+                }
+
+                <div
+                  style="
+                    margin-top: 10px;
+                    font-family: monospace;
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #111111;
+                  "
+                >
+                  Participant ID: ${safeRecipientParticipantId}
+                </div>
+
+              </div>
+
+              <!-- TEAM -->
+
+              ${
+                safeTeam
+                  ? `
+                    <div
+                      style="
+                        margin-top: 26px;
+                        padding-top: 24px;
+                        border-top: 1px solid #eeeeee;
+                      "
+                    >
+
+                      <div
+                        style="
+                          font-size: 9px;
+                          letter-spacing: 1.5px;
+                          text-transform: uppercase;
+                          color: #aaaaaa;
+                        "
+                      >
+                        Team
+                      </div>
+
+                      <div
+                        style="
+                          margin-top: 6px;
+                          font-size: 16px;
+                          font-weight: 600;
+                        "
+                      >
+                        ${safeTeam}
+                      </div>
+
+                    </div>
+                  `
+                  : ""
+              }
+
+              <!-- COLLEGE -->
+
+              <div
+                style="
+                  margin-top: 26px;
+                  padding-top: 24px;
+                  border-top: 1px solid #eeeeee;
+                "
+              >
+
+                <div
+                  style="
+                    font-size: 9px;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    color: #aaaaaa;
+                  "
+                >
+                  College / University
+                </div>
+
+                <div
+                  style="
+                    margin-top: 6px;
+                    font-size: 15px;
+                  "
+                >
+                  ${safeCollege}
+                </div>
+
+              </div>
+
+              ${teamMembersHtml}
+
+              ${requiresPayment && paymentResumeUrl && !receiptPdf ? `
+              <div
+                style="
+                  margin-top: 32px;
+                  border: 1px solid #ffcccc;
+                  background: #fff8f8;
+                  border-radius: 18px;
+                  padding: 24px 20px;
+                  text-align: center;
+                "
+              >
+                <div
+                  style="
+                    font-size: 11px;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    color: #d32f2f;
+                    font-weight: 700;
+                    margin-bottom: 8px;
+                  "
+                >
+                  Payment Pending
+                </div>
+                <p
+                  style="
+                    margin: 0 0 18px;
+                    font-size: 13px;
+                    line-height: 1.6;
+                    color: #555555;
+                  "
+                >
+                  Click below to complete your payment with Razorpay and confirm your participation.
+                </p>
+                <a
+                  href="${escapeHtml(paymentResumeUrl)}"
+                  target="_blank"
+                  style="
+                    display: inline-block;
+                    background: #000000;
+                    color: #ffffff;
+                    text-decoration: none;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    padding: 14px 30px;
+                    border-radius: 9999px;
+                  "
+                >
+                  COMPLETE PAYMENT
+                </a>
+              </div>
+              ` : ""}
+
+              <!-- QR -->
+
+              <div
+                style="
+                  margin-top: 34px;
+                  background: #050505;
+                  border-radius: 20px;
+                  padding: 34px 20px;
+                  text-align: center;
+                "
+              >
+
+                <div
+                  style="
+                    font-size: 10px;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    color: #777777;
+                  "
+                >
+                  Entry QR
+                </div>
+
+                <div
+                  style="
+                    margin: 22px auto 0;
+                    background: #ffffff;
+                    border-radius: 18px;
+                    padding: 15px;
+                    width: 230px;
+                    box-sizing: border-box;
+                  "
+                >
+
+                  ${qrImgSrc ? `
+                    <img
+                      src="${qrImgSrc}"
+                      width="200"
+                      height="200"
+                      alt="Saviskar Entry QR"
+                      style="
+                        display: block;
+                        width: 200px;
+                        height: 200px;
+                      "
+                    />
+                  ` : `
+                    <div
+                      style="
+                        width: 200px;
+                        height: 60px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-family: monospace;
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: #111111;
+                      "
+                    >
+                      ${safeParticipantId}
+                    </div>
+                  `}
+
+                </div>
+
+                <div
+                  style="
+                    margin-top: 20px;
+                    font-size: 10px;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    color: #888888;
+                  "
+                >
+                  Present at entry
+                </div>
+
+                <div
+                  style="
+                    margin-top: 18px;
+                    font-family: monospace;
+                    font-size: 10px;
+                    color: #666666;
+                    word-break: break-all;
+                  "
+                >
+                  ${safeParticipantId}
+                </div>
+
+              </div>
+
+              <!-- FOOTER -->
+
+              <div
+                style="
+                  margin-top: 30px;
+                  text-align: center;
+                  font-size: 11px;
+                  line-height: 1.6;
+                  color: #999999;
+                "
+              >
+
+                ${
+                  isTeamEvent
+                    ? "One QR represents the complete registered team."
+                    : "This QR is unique to your registration."
+                }
+
+                <br />
+
+                Keep this email available on your phone
+                for verification at the venue.
+                
+                ${
+                  receiptPdf
+                    ? `<br /><br />Your payment receipt is attached to this email.`
+                    : ""
+                }
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div
+            style="
+              max-width: 620px;
+              margin: 20px auto 0;
+              text-align: center;
+              font-size: 10px;
+              color: #aaaaaa;
+            "
+          >
+            SAVISKAR 2026 · OFFICIAL REGISTRATION
+          </div>
+
+        </div>
+
+      </body>
+      </html>
+    `;
+
+    try {
+      console.log(`[REGISTER EMAIL] about to call Resend.emails.send() for: ${recipient.email}`);
+      const subjectLine = receiptPdf 
+        ? `Payment Confirmed — Saviskar 2026 | Receipt ${recipient.participantId}`
+        : `You're Registered — Saviskar 2026 | ${recipient.participantId}`;
+
+      const { data: resendData, error: resendError } = await resend.emails.send({
+        from: fromEmail,
+        to: [recipient.email],
+        subject: subjectLine,
+        html: emailHtml,
+        ...((qrBuffer || receiptPdf)
+          ? {
+              attachments: [
+                ...(qrBuffer
+                  ? [
+                      {
+                        filename: "qr.png",
+                        content: qrBuffer,
+                        contentId: "saviskar-entry-qr",
+                        contentType: "image/png",
+                      },
+                    ]
+                  : []),
+                ...(receiptPdf
+                  ? [
+                      {
+                        filename: receiptPdf.filename,
+                        content: receiptPdf.buffer,
+                        contentType: "application/pdf",
+                      },
+                    ]
+                  : []),
+              ],
+            }
+          : {}),
+      });
+
+      const data = resendData;
+      const error = resendError;
+
+      if (error) {
+        console.error(
+          `[REGISTER EMAIL] RESEND ERROR for ${recipient.email}:`,
+          error
+        );
+
+        /*
+         * Log but continue — don't fail the whole batch
+         * because one recipient had an issue.
+         */
+        continue;
+      } else {
+        console.log(`[REGISTER EMAIL] Resend response received successfully for: ${recipient.email}`);
+        results.push({
+          email: recipient.email,
+          emailId: data?.id || null,
+        });
+      }
+    } catch (err) {
+      console.error(
+        `[REGISTER EMAIL] UNCAUGHT ERROR during email loop for ${recipient.email}:`,
+        err
+      );
+    }
+  }
+
+  console.log(`[REGISTER EMAIL] send completed successfully. Sent: ${results.length}`);
+  return {
+    success: results.length > 0,
+    emailsSent: results.length,
+    recipients: results,
+  };
+}

@@ -1,0 +1,13 @@
+node_modules/
+.env*
+*.local
+!.env.example
+.next/
+
+# OS / Editor junk
+.DS_Store
+*.tsbuildinfo
+
+# Supabase local/temp files
+supabase/.temp/
+
