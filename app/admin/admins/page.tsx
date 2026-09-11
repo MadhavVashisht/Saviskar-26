@@ -299,7 +299,7 @@ export default function AdminManagementPage() {
 
       setMessage(
         payload.message ??
-          "Normal Admin access removed."
+          "Administrator access removed."
       );
 
       /*

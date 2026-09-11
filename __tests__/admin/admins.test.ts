@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST, DELETE, PATCH } from "@/app/api/admin/admins/route";
+import { GET as getEvents } from "@/app/api/admin/events/route";
 import * as serverLib from "@/lib/supabase/server";
 import { resetRateLimitStore } from "@/lib/rate-limit";
 
@@ -676,6 +677,122 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
       expect(data.admins).toHaveLength(2);
       expect(data.admins[0].isPrimary).toBe(true);
       expect(data.admins[1].isPrimary).toBe(false);
+    });
+  });
+
+  /* =========================================================
+     4. Admin Permission Boundaries & Rate Limiting Hardening
+  ========================================================= */
+  describe("Admin Permission Boundaries & Rate Limiting Hardening", () => {
+    // Gap 1: PATCH returns 400 when newRole matches targetAdmin.role
+    it("PATCH returns 400 when newRole matches targetAdmin.role", async () => {
+      mockAsPrimaryMaster("primary-id", "primary@example.com");
+      mockBuilder.maybeSingle.mockResolvedValueOnce({
+        data: { user_id: "target-master-id", role: "master" },
+        error: null,
+      });
+      mockGetUserById.mockResolvedValueOnce({
+        data: { user: { id: "target-master-id", email: "othermaster@example.com" } },
+      });
+
+      const res = await PATCH(
+        createMockRequest("PATCH", { userId: "target-master-id", newRole: "master" })
+      );
+      const data = await res.json();
+      expect(res.status).toBe(400);
+      expect(data.error).toBe("Administrator already has this role.");
+      expect(mockBuilder.update).not.toHaveBeenCalled();
+    });
+
+    // Gap 2: Non-primary Master retains application access (/api/admin/events) but is denied role management (403)
+    it("Non-primary Master retains application access (/api/admin/events) but is denied admin role management (403)", async () => {
+      process.env.PRIMARY_ADMIN_USER_ID = "primary-uuid";
+      mockAsOtherMaster("non-primary-uuid", "othermaster@example.com");
+
+      // 1. Can access /api/admin/events (application capability)
+      mockBuilder.order.mockReturnThis();
+      const eventsRes = await getEvents();
+      expect(eventsRes.status).toBe(200);
+
+      // 2. Cannot create Master Admin via POST /api/admin/admins -> 403
+      const postRes = await POST(
+        createMockRequest("POST", { email: "candidate@example.com", role: "master" })
+      );
+      expect(postRes.status).toBe(403);
+      const postData = await postRes.json();
+      expect(postData.error).toBe("Only the Primary Master Admin can create Master Admins.");
+
+      // 3. Cannot promote/demote via PATCH /api/admin/admins -> 403
+      const patchRes = await PATCH(
+        createMockRequest("PATCH", { userId: "some-user-id", newRole: "master" })
+      );
+      expect(patchRes.status).toBe(403);
+      const patchData = await patchRes.json();
+      expect(patchData.error).toBe("Only the Primary Master Admin can promote or demote administrators.");
+
+      // 4. Cannot remove Master Admin via DELETE /api/admin/admins -> 403
+      mockBuilder.maybeSingle.mockResolvedValueOnce({
+        data: { user_id: "target-master-id", role: "master" },
+        error: null,
+      });
+      mockGetUserById.mockResolvedValueOnce({
+        data: { user: { id: "target-master-id", email: "target@example.com" } },
+      });
+      const deleteRes = await DELETE(
+        createMockRequest("DELETE", null, "http://localhost/api/admin/admins?userId=target-master-id")
+      );
+      expect(deleteRes.status).toBe(403);
+      const deleteData = await deleteRes.json();
+      expect(deleteData.error).toBe("Only the Primary Master Admin can remove Master Admins.");
+    });
+
+    // Gap 3: Rate Limiting on POST, PATCH, and DELETE
+    it("enforces rate limiting of 30 requests/minute on POST /api/admin/admins", async () => {
+      mockAsPrimaryMaster("rate-post-id", "rate-post@example.com");
+
+      // Fire 30 requests (allowed by rate limiter; fail validation with 400)
+      for (let i = 0; i < 30; i++) {
+        const res = await POST(createMockRequest("POST", { email: "" }));
+        expect(res.status).toBe(400);
+      }
+
+      // Request 31 exceeds rate limit -> 429 Too Many Requests
+      const res31 = await POST(createMockRequest("POST", { email: "" }));
+      expect(res31.status).toBe(429);
+      const data = await res31.json();
+      expect(data.error).toBe("Too many admin requests. Please slow down.");
+    });
+
+    it("enforces rate limiting of 30 requests/minute on PATCH /api/admin/admins", async () => {
+      mockAsPrimaryMaster("rate-patch-id", "rate-patch@example.com");
+
+      // Fire 30 requests (allowed by rate limiter; fail validation with 400)
+      for (let i = 0; i < 30; i++) {
+        const res = await PATCH(createMockRequest("PATCH", { userId: "" }));
+        expect(res.status).toBe(400);
+      }
+
+      // Request 31 exceeds rate limit -> 429 Too Many Requests
+      const res31 = await PATCH(createMockRequest("PATCH", { userId: "" }));
+      expect(res31.status).toBe(429);
+      const data = await res31.json();
+      expect(data.error).toBe("Too many admin requests. Please slow down.");
+    });
+
+    it("enforces rate limiting of 30 requests/minute on DELETE /api/admin/admins", async () => {
+      mockAsPrimaryMaster("rate-del-id", "rate-del@example.com");
+
+      // Fire 30 requests (allowed by rate limiter; fail validation with 400)
+      for (let i = 0; i < 30; i++) {
+        const res = await DELETE(createMockRequest("DELETE", null, "http://localhost/api/admin/admins"));
+        expect(res.status).toBe(400);
+      }
+
+      // Request 31 exceeds rate limit -> 429 Too Many Requests
+      const res31 = await DELETE(createMockRequest("DELETE", null, "http://localhost/api/admin/admins"));
+      expect(res31.status).toBe(429);
+      const data = await res31.json();
+      expect(data.error).toBe("Too many admin requests. Please slow down.");
     });
   });
 });
