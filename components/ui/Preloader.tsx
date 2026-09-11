@@ -97,10 +97,10 @@ export default function Preloader({
     setProgress(100);
     setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL");
 
-    // Screen glow blooms for 700ms with full visual impact, then smoothly dissolves into the site
+    // Dark glitch flash detonates for 850ms with dark stroboscopic hues, then smoothly dissolves into the site
     setTimeout(() => {
       finishLoadingRef.current();
-    }, 700);
+    }, 850);
   }, []);
 
   const triggerGlowAndFinishRef = useRef(triggerGlowAndFinish);
@@ -258,28 +258,32 @@ export default function Preloader({
     triggerGlowAndFinishRef.current();
   };
 
-  // Expansion curve calculation:
-  // Starts expanding at 15% and covers 100% full screen by 88%
-  const rawExpansion = Math.max(0, Math.min(1, (progress - 15) / (88 - 15)));
-  const easedExpansion = rawExpansion * rawExpansion * (3 - 2 * rawExpansion);
+  // Progressive expansion curve from a literal single pixel (1px x 1px) to entire screen:
+  // Starts at 1px x 1px at 0%
+  // Smoothly blossoms through viewfinder proportions and reaches 100% full screen by 88%
+  const progressRatio = Math.max(0, Math.min(1, progress / 88));
+  const easedExpansion =
+    progressRatio < 0.2
+      ? Math.pow(progressRatio / 0.2, 2.4) * 0.12
+      : 0.12 + 0.88 * Math.pow((progressRatio - 0.2) / 0.8, 1.5);
 
-  // Exact pixel dimensions during expansion
-  const initialWidth = Math.min(780, windowSize.w * 0.88);
-  const initialHeight = Math.min(560, windowSize.h * 0.60);
+  const isFullscreen = progress >= 88;
+  const currentWidth = isFullscreen
+    ? windowSize.w
+    : Math.max(1, Math.round(1 + (windowSize.w - 1) * easedExpansion));
 
-  const currentWidth =
-    easedExpansion >= 0.999
-      ? windowSize.w
-      : initialWidth + (windowSize.w - initialWidth) * easedExpansion;
+  const currentHeight = isFullscreen
+    ? windowSize.h
+    : Math.max(1, Math.round(1 + (windowSize.h - 1) * easedExpansion));
 
-  const currentHeight =
-    easedExpansion >= 0.999
-      ? windowSize.h
-      : initialHeight + (windowSize.h - initialHeight) * easedExpansion;
+  const currentRadius = isFullscreen
+    ? 0
+    : progress < 5
+    ? 0
+    : Math.max(0, Math.round(22 * (1 - (progress - 20) / 68)));
 
-  const currentRadius = Math.max(0, 22 * (1 - easedExpansion));
-  const currentBorderOpacity = (1 - easedExpansion) * 0.2;
-  const currentShadowSpread = 100 * (1 - easedExpansion);
+  const currentBorderOpacity = isFullscreen ? 0 : Math.min(0.35, (1 - easedExpansion) * 0.35);
+  const currentShadowSpread = isFullscreen ? 0 : Math.round(120 * (1 - easedExpansion));
 
   return (
     <AnimatePresence>
@@ -289,67 +293,159 @@ export default function Preloader({
           initial={{ opacity: 1 }}
           exit={{
             opacity: 0,
-            scale: 1.08,
-            filter: "brightness(2.2) blur(20px)",
-            transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
+            scale: 1.06,
+            filter: "contrast(200%) hue-rotate(60deg) blur(18px)",
+            transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
           }}
           className="fixed inset-0 z-[99999] bg-black text-white select-none overflow-hidden"
           style={{ backgroundColor: "#000000" }}
         >
-          {/* COMPLETE SCREEN GLOW BURST (Triggers at 100% load completion) */}
+          {/* COMPLETE SCREEN DARK GLITCH FLASH (Triggers at 100% load completion) */}
           <AnimatePresence>
             {isGlowing && (
               <motion.div
-                key="screen-glow-burst"
+                key="screen-dark-glitch-flash"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="pointer-events-none fixed inset-0 z-50 overflow-hidden flex items-center justify-center"
+                transition={{ duration: 0.4 }}
+                className="pointer-events-none fixed inset-0 z-[100] overflow-hidden flex items-center justify-center"
               >
-                {/* 01. Blinding White Exposure Screen Flash */}
+                {/* 01. Dark Stroboscopic Midnight & Violet Glitch Base */}
                 <motion.div
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 0.95, 0.65] }}
-                  transition={{ duration: 0.65, ease: "easeOut" }}
-                  className="absolute inset-0 bg-white"
+                  animate={{
+                    opacity: [0, 0.96, 0.25, 0.94, 0.15, 0.9, 0.82],
+                    backgroundColor: [
+                      "#050014",
+                      "#1e0038",
+                      "#4c0519",
+                      "#020617",
+                      "#2e1065",
+                      "#090014",
+                    ],
+                  }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  className="absolute inset-0"
                 />
 
-                {/* 02. Volumetric Violet & Electric Cyan Radial Plasma Aura */}
+                {/* 02. Deep Dark Volumetric Ultraviolet & Crimson Plasma Core */}
                 <motion.div
-                  initial={{ scale: 0.3, opacity: 0 }}
-                  animate={{ scale: [0.3, 1.3, 2.2], opacity: [0, 1, 0.9] }}
-                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute h-[160vw] w-[160vw] rounded-full blur-[70px]"
+                  initial={{ scale: 0.2, opacity: 0, rotate: 0 }}
+                  animate={{
+                    scale: [0.2, 1.4, 2.6],
+                    opacity: [0, 1, 0.85],
+                    rotate: [0, 45, 90],
+                  }}
+                  transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute h-[160vw] w-[160vw] rounded-full blur-[80px]"
                   style={{
                     background:
-                      "radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(216,180,254,0.95) 20%, rgba(139,92,246,0.85) 45%, rgba(56,189,248,0.6) 70%, transparent 100%)",
+                      "radial-gradient(circle, rgba(139,92,246,0.95) 0%, rgba(88,28,135,0.85) 25%, rgba(225,29,72,0.65) 50%, rgba(15,23,42,0.95) 75%, transparent 100%)",
                   }}
                 />
 
-                {/* 03. Anamorphic Horizontal Lens Flare Beam */}
+                {/* 03. Chromatic RGB Glitch Split Layers (Cyan / Magenta Channel Jitter) */}
+                <motion.div
+                  initial={{ x: 0, opacity: 0 }}
+                  animate={{
+                    x: [-24, 28, -18, 20, -8, 0],
+                    opacity: [0, 0.75, 0.2, 0.8, 0.25, 0],
+                  }}
+                  transition={{ duration: 0.75, times: [0, 0.2, 0.4, 0.6, 0.8, 1] }}
+                  className="absolute inset-0 bg-cyan-500/20 mix-blend-screen pointer-events-none"
+                />
+                <motion.div
+                  initial={{ x: 0, opacity: 0 }}
+                  animate={{
+                    x: [24, -26, 18, -18, 8, 0],
+                    opacity: [0, 0.75, 0.2, 0.8, 0.25, 0],
+                  }}
+                  transition={{ duration: 0.75, times: [0, 0.2, 0.4, 0.6, 0.8, 1] }}
+                  className="absolute inset-0 bg-rose-600/25 mix-blend-screen pointer-events-none"
+                />
+
+                {/* 04. Digital Glitch Horizontal Tear Bars & Scanline Displacements */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {[...Array(12)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scaleX: 0, x: 0, opacity: 0 }}
+                      animate={{
+                        scaleX: [0, 1.3, 1],
+                        x: [
+                          i % 2 === 0 ? -70 : 70,
+                          i % 2 === 0 ? 45 : -45,
+                          i % 2 === 0 ? -20 : 20,
+                          0,
+                        ],
+                        opacity: [0, 0.95, 0.2, 0.85, 0],
+                      }}
+                      transition={{
+                        duration: 0.55,
+                        delay: (i * 0.04) % 0.35,
+                        ease: "easeInOut",
+                      }}
+                      className="absolute w-full"
+                      style={{
+                        top: `${(i * 8.5 + (i * 7) % 18)}%`,
+                        height: `${3 + (i % 4) * 4}px`,
+                        background:
+                          i % 2 === 0
+                            ? "linear-gradient(90deg, transparent, rgba(244,63,94,0.9), rgba(168,85,247,0.95), transparent)"
+                            : "linear-gradient(90deg, transparent, rgba(6,182,212,0.9), rgba(192,132,252,0.95), transparent)",
+                        boxShadow: "0 0 16px rgba(168,85,247,0.85)",
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* 05. Anamorphic Dark Ultraviolet Flare Beam */}
                 <motion.div
                   initial={{ scaleX: 0, opacity: 0 }}
-                  animate={{ scaleX: [0, 1.8, 3.0], opacity: [0, 1, 0.8] }}
-                  transition={{ duration: 0.65, ease: "easeOut" }}
-                  className="absolute h-[320px] w-full blur-[30px]"
+                  animate={{ scaleX: [0, 2.2, 3.4], opacity: [0, 1, 0.7] }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="absolute h-[240px] w-full blur-[28px]"
                   style={{
                     background:
-                      "radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(216,180,254,0.95) 40%, rgba(124,58,237,0.6) 70%, transparent 95%)",
+                      "radial-gradient(ellipse at center, rgba(192,132,252,0.95) 0%, rgba(124,58,237,0.8) 40%, rgba(225,29,72,0.5) 70%, transparent 95%)",
                   }}
                 />
 
-                {/* 04. Shockwave Ring Expanding Across Entire Viewport */}
+                {/* 06. Heavy Chromatic Dark Shockwave Expanding to Viewport Bounds */}
                 <motion.div
-                  initial={{ scale: 0.1, opacity: 1, borderWidth: "24px" }}
+                  initial={{ scale: 0.05, opacity: 1, borderWidth: "32px" }}
                   animate={{
-                    scale: [0.1, 1.6, 3.4],
+                    scale: [0.05, 1.8, 3.8],
                     opacity: [1, 0.9, 0],
-                    borderWidth: ["24px", "10px", "1px"],
+                    borderWidth: ["32px", "12px", "1px"],
+                    rotate: [0, -12, 8, 0],
                   }}
-                  transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute h-[85vh] w-[85vh] rounded-full border-white shadow-[0_0_160px_rgba(255,255,255,1),inset_0_0_80px_rgba(192,132,252,0.8)]"
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute h-[90vh] w-[90vh] rounded-full border-purple-400 shadow-[0_0_180px_rgba(168,85,247,1),inset_0_0_90px_rgba(225,29,72,0.85)]"
                 />
+
+                {/* 07. Cyber Glitch HUD Telemetry Stamp */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{
+                    opacity: [0, 1, 0.2, 1, 0.9],
+                    scale: [0.9, 1.06, 0.97, 1.02, 1],
+                    x: [-6, 8, -4, 4, 0],
+                  }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="relative z-50 flex flex-col items-center justify-center font-mono text-center select-none"
+                >
+                  <span className="text-[10px] md:text-xs tracking-[0.5em] text-rose-400 font-bold uppercase drop-shadow-[0_0_12px_rgba(244,63,94,0.9)]">
+                    // CRITICAL FREQUENCY LOCK • 0xAEV_GLITCH_BURST //
+                  </span>
+                  <h2 className="text-2xl md:text-5xl font-black tracking-widest text-white mt-1 drop-shadow-[0_0_35px_rgba(192,132,252,1)]">
+                    SAVISKAR <span className="text-fuchsia-400">2026</span>
+                  </h2>
+                  <span className="text-[11px] tracking-[0.4em] text-violet-300/80 font-medium mt-1">
+                    REVERIE ONLINE • ENTERING MATRIX
+                  </span>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -397,7 +493,7 @@ export default function Preloader({
             </button>
           </div>
 
-          {/* Center Stage: Gradually Expands to Cover Entire Screen */}
+          {/* Center Stage: Expands from Single Pixel (1px x 1px) to Full Screen */}
           <div
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden z-10 bg-neutral-950 flex items-center justify-center will-change-[width,height,border-radius]"
             style={{
@@ -406,25 +502,35 @@ export default function Preloader({
               borderRadius: `${currentRadius}px`,
               borderWidth: `${(1 - easedExpansion) * 1.5}px`,
               borderColor: `rgba(255, 255, 255, ${currentBorderOpacity})`,
-              boxShadow: `0 0 ${currentShadowSpread}px rgba(0,0,0,0.95)`,
+              boxShadow: `0 0 ${currentShadowSpread}px rgba(139,92,246,0.35)`,
               transition: "box-shadow 0.2s ease-out",
             }}
           >
-            {/* Viewfinder Camera Crosshairs (gradually fade away during expansion) */}
-            <div
-              className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300"
-              style={{ opacity: Math.max(0, 1 - easedExpansion * 2.0) }}
-            >
-              <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-white/70" />
-              <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-white/70" />
-              <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-white/70" />
-              <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-white/70" />
-
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-white/80">
-                <Disc3 className="w-3.5 h-3.5 text-red-500 animate-spin" />
-                <span>REC • [MONO CINEMA EXPAND]</span>
+            {/* Singularity Beacon: Single Glowing Pixel at progress < 8 */}
+            {progress < 8 && (
+              <div className="pointer-events-none absolute z-40 flex items-center justify-center">
+                <span className="animate-ping absolute h-5 w-5 rounded-full bg-violet-400 opacity-90" />
+                <span className="relative rounded-full h-2 w-2 bg-white shadow-[0_0_16px_#c084fc]" />
               </div>
-            </div>
+            )}
+
+            {/* Viewfinder Camera Crosshairs (visible when frame is large enough, fades on full screen) */}
+            {currentWidth >= 160 && currentHeight >= 120 && !isFullscreen && (
+              <div
+                className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300"
+                style={{ opacity: Math.max(0, 1 - (progress - 30) / 50) }}
+              >
+                <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-white/70" />
+                <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-white/70" />
+                <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-white/70" />
+                <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-white/70" />
+
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-white/80">
+                  <Disc3 className="w-3.5 h-3.5 text-red-500 animate-spin" />
+                  <span>REC • [MONO CINEMA EXPAND]</span>
+                </div>
+              </div>
+            )}
 
             {/* Monochrome Video Playback with Multi-Format Fallback */}
             <video
