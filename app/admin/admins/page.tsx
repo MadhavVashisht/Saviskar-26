@@ -669,7 +669,7 @@ function AdminRow({
   changingRole?: boolean;
   isSuperMaster?: boolean;
 }) {
-  const isPrimary = admin.email?.toLowerCase().trim() === "jashan082006@gmail.com";
+  const isPrimary = admin.isPrimary ?? false;
 
   return (
     <div className="flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between text-black">
