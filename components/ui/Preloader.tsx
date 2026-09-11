@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { FastForward, Disc3, ShieldCheck } from "lucide-react";
+import { FastForward, Disc3, ShieldCheck, Activity } from "lucide-react";
 
 interface PreloaderProps {
   onComplete?: () => void;
@@ -23,7 +23,7 @@ const STATUS_STEPS = [
   { at: 20, text: "SYNCING 8K STAGE ASSETS & FONTS" },
   { at: 45, text: "TUNING VOLUMETRIC LIGHTING RIGS" },
   { at: 68, text: "EXPANDING CINEMA IMMERSION • FULLSCREEN ACTIVE" },
-  { at: 88, text: "ALL SYSTEMS PRIMED • PREPARING ILLUMINATION" },
+  { at: 88, text: "ALL SYSTEMS PRIMED • AWAKENING FESTIVAL REALM" },
   { at: 99, text: "AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL" },
 ];
 
@@ -42,17 +42,18 @@ export default function Preloader({
     }
     return true;
   });
+
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState(STATUS_STEPS[0].text);
-  const [isGlowing, setIsGlowing] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 9 });
+  const [timecode, setTimecode] = useState("00:00:00:00");
   const [windowSize, setWindowSize] = useState({ w: 1440, h: 900 });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const assetsReadyRef = useRef(false);
   const targetProgressRef = useRef(15);
-  const isGlowingRef = useRef(false);
 
   // Clear any legacy session flag so preloader is never blocked
   useEffect(() => {
@@ -82,31 +83,13 @@ export default function Preloader({
     setTimeout(() => {
       setShowPreloader(false);
       onComplete?.();
-    }, 750);
+    }, 600);
   }, [isExiting, onComplete]);
 
   const finishLoadingRef = useRef(finishLoading);
   useEffect(() => {
     finishLoadingRef.current = finishLoading;
   }, [finishLoading]);
-
-  const triggerGlowAndFinish = useCallback(() => {
-    if (isGlowingRef.current) return;
-    isGlowingRef.current = true;
-    setIsGlowing(true);
-    setProgress(100);
-    setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL");
-
-    // Dark glitch flash detonates for 850ms with dark stroboscopic hues, then smoothly dissolves into the site
-    setTimeout(() => {
-      finishLoadingRef.current();
-    }, 850);
-  }, []);
-
-  const triggerGlowAndFinishRef = useRef(triggerGlowAndFinish);
-  useEffect(() => {
-    triggerGlowAndFinishRef.current = triggerGlowAndFinish;
-  }, [triggerGlowAndFinish]);
 
   // Real asset preloading tracker (Images, Fonts, DOM, Preloader Video)
   useEffect(() => {
@@ -151,11 +134,13 @@ export default function Preloader({
 
     const totalAssets = assetPromises.length;
     let completedCount = 0;
+    setAssetCount({ loaded: 0, total: totalAssets });
 
     assetPromises.forEach((promise) => {
       Promise.resolve(promise).finally(() => {
         if (!isMounted) return;
         completedCount++;
+        setAssetCount({ loaded: completedCount, total: totalAssets });
         const currentRatio = completedCount / totalAssets;
         targetProgressRef.current = Math.max(
           targetProgressRef.current,
@@ -173,7 +158,7 @@ export default function Preloader({
     };
   }, [showPreloader]);
 
-  // Real-time animation pacing loop
+  // Real-time animation pacing & timecode loop
   useEffect(() => {
     if (!showPreloader) return;
 
@@ -189,6 +174,15 @@ export default function Preloader({
       const now = performance.now();
       const elapsed = now - startTime;
       const timeRatio = Math.min(1, elapsed / minDurationMs);
+
+      // Live SMPTE-style timecode calculation
+      const totalFrames = Math.floor((elapsed / 1000) * 24);
+      const s = Math.floor(elapsed / 1000) % 60;
+      const m = Math.floor(elapsed / 60000) % 60;
+      const f = totalFrames % 24;
+      setTimecode(
+        `00:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}:${String(f).padStart(2, "0")}`
+      );
 
       const isAssetsDone = assetsReadyRef.current;
       const isMinTimeElapsed = elapsed >= minDurationMs;
@@ -219,11 +213,14 @@ export default function Preloader({
         }
       }
 
-      // When completion reached -> trigger complete screen glow burst
+      // When completion reached -> smoothly transition into website
       if (currentPct >= 99.5) {
         clearInterval(interval);
         setProgress(100);
-        triggerGlowAndFinishRef.current();
+        setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL");
+        setTimeout(() => {
+          finishLoadingRef.current();
+        }, 160);
       }
     }, 28);
 
@@ -255,35 +252,36 @@ export default function Preloader({
   const handleSkip = () => {
     assetsReadyRef.current = true;
     setAssetsLoaded(true);
-    triggerGlowAndFinishRef.current();
+    setProgress(100);
+    finishLoadingRef.current();
   };
 
-  // Progressive expansion curve from a literal single pixel (1px x 1px) to entire screen:
-  // Starts at 1px x 1px at 0%
-  // Smoothly blossoms through viewfinder proportions and reaches 100% full screen by 88%
-  const progressRatio = Math.max(0, Math.min(1, progress / 88));
-  const easedExpansion =
-    progressRatio < 0.2
-      ? Math.pow(progressRatio / 0.2, 2.4) * 0.12
-      : 0.12 + 0.88 * Math.pow((progressRatio - 0.2) / 0.8, 1.5);
+  // Expansion curve calculation:
+  // Starts expanding at 15% and covers 100% full screen by 88%
+  const rawExpansion = Math.max(0, Math.min(1, (progress - 15) / (88 - 15)));
+  const easedExpansion = rawExpansion * rawExpansion * (3 - 2 * rawExpansion);
 
-  const isFullscreen = progress >= 88;
+  // Exact pixel dimensions during expansion
+  const initialWidth = Math.min(840, windowSize.w * 0.88);
+  const initialHeight = Math.min(560, windowSize.h * 0.62);
+
+  const isFullscreen = easedExpansion >= 0.999;
   const currentWidth = isFullscreen
     ? windowSize.w
-    : Math.max(1, Math.round(1 + (windowSize.w - 1) * easedExpansion));
+    : initialWidth + (windowSize.w - initialWidth) * easedExpansion;
 
   const currentHeight = isFullscreen
     ? windowSize.h
-    : Math.max(1, Math.round(1 + (windowSize.h - 1) * easedExpansion));
+    : initialHeight + (windowSize.h - initialHeight) * easedExpansion;
 
-  const currentRadius = isFullscreen
-    ? 0
-    : progress < 5
-    ? 0
-    : Math.max(0, Math.round(22 * (1 - (progress - 20) / 68)));
+  const currentRadius = isFullscreen ? 0 : Math.max(0, Math.round(20 * (1 - easedExpansion)));
+  const currentBorderOpacity = isFullscreen ? 0 : (1 - easedExpansion) * 0.22;
+  const currentShadowSpread = isFullscreen ? 0 : Math.round(90 * (1 - easedExpansion));
 
-  const currentBorderOpacity = isFullscreen ? 0 : Math.min(0.35, (1 - easedExpansion) * 0.35);
-  const currentShadowSpread = isFullscreen ? 0 : Math.round(120 * (1 - easedExpansion));
+  // Progressive color awakening: monochrome transitions smoothly to rich festival color from 62% to 94%
+  const colorAwakenRatio = Math.max(0, Math.min(1, (progress - 62) / (94 - 62)));
+  const currentGrayscale = Math.max(0, 1 - colorAwakenRatio);
+  const currentSaturate = 1 + colorAwakenRatio * 0.25;
 
   return (
     <AnimatePresence>
@@ -293,164 +291,26 @@ export default function Preloader({
           initial={{ opacity: 1 }}
           exit={{
             opacity: 0,
-            scale: 1.06,
-            filter: "contrast(200%) hue-rotate(60deg) blur(18px)",
-            transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
+            scale: 1.03,
+            filter: "blur(8px)",
+            transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
           }}
           className="fixed inset-0 z-[99999] bg-black text-white select-none overflow-hidden"
           style={{ backgroundColor: "#000000" }}
         >
-          {/* COMPLETE SCREEN DARK GLITCH FLASH (Triggers at 100% load completion) */}
-          <AnimatePresence>
-            {isGlowing && (
-              <motion.div
-                key="screen-dark-glitch-flash"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                className="pointer-events-none fixed inset-0 z-[100] overflow-hidden flex items-center justify-center"
-              >
-                {/* 01. Dark Stroboscopic Midnight & Violet Glitch Base */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0, 0.96, 0.25, 0.94, 0.15, 0.9, 0.82],
-                    backgroundColor: [
-                      "#050014",
-                      "#1e0038",
-                      "#4c0519",
-                      "#020617",
-                      "#2e1065",
-                      "#090014",
-                    ],
-                  }}
-                  transition={{ duration: 0.8, ease: "easeInOut" }}
-                  className="absolute inset-0"
-                />
+          {/* Subtle Ambient Back-Glow behind center stage */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px] transition-opacity duration-500"
+            style={{
+              width: `${Math.min(currentWidth * 1.15, windowSize.w)}px`,
+              height: `${Math.min(currentHeight * 1.15, windowSize.h)}px`,
+              background:
+                "radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 75%)",
+              opacity: 1 - easedExpansion * 0.6,
+            }}
+          />
 
-                {/* 02. Deep Dark Volumetric Ultraviolet & Crimson Plasma Core */}
-                <motion.div
-                  initial={{ scale: 0.2, opacity: 0, rotate: 0 }}
-                  animate={{
-                    scale: [0.2, 1.4, 2.6],
-                    opacity: [0, 1, 0.85],
-                    rotate: [0, 45, 90],
-                  }}
-                  transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute h-[160vw] w-[160vw] rounded-full blur-[80px]"
-                  style={{
-                    background:
-                      "radial-gradient(circle, rgba(139,92,246,0.95) 0%, rgba(88,28,135,0.85) 25%, rgba(225,29,72,0.65) 50%, rgba(15,23,42,0.95) 75%, transparent 100%)",
-                  }}
-                />
-
-                {/* 03. Chromatic RGB Glitch Split Layers (Cyan / Magenta Channel Jitter) */}
-                <motion.div
-                  initial={{ x: 0, opacity: 0 }}
-                  animate={{
-                    x: [-24, 28, -18, 20, -8, 0],
-                    opacity: [0, 0.75, 0.2, 0.8, 0.25, 0],
-                  }}
-                  transition={{ duration: 0.75, times: [0, 0.2, 0.4, 0.6, 0.8, 1] }}
-                  className="absolute inset-0 bg-cyan-500/20 mix-blend-screen pointer-events-none"
-                />
-                <motion.div
-                  initial={{ x: 0, opacity: 0 }}
-                  animate={{
-                    x: [24, -26, 18, -18, 8, 0],
-                    opacity: [0, 0.75, 0.2, 0.8, 0.25, 0],
-                  }}
-                  transition={{ duration: 0.75, times: [0, 0.2, 0.4, 0.6, 0.8, 1] }}
-                  className="absolute inset-0 bg-rose-600/25 mix-blend-screen pointer-events-none"
-                />
-
-                {/* 04. Digital Glitch Horizontal Tear Bars & Scanline Displacements */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  {[...Array(12)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scaleX: 0, x: 0, opacity: 0 }}
-                      animate={{
-                        scaleX: [0, 1.3, 1],
-                        x: [
-                          i % 2 === 0 ? -70 : 70,
-                          i % 2 === 0 ? 45 : -45,
-                          i % 2 === 0 ? -20 : 20,
-                          0,
-                        ],
-                        opacity: [0, 0.95, 0.2, 0.85, 0],
-                      }}
-                      transition={{
-                        duration: 0.55,
-                        delay: (i * 0.04) % 0.35,
-                        ease: "easeInOut",
-                      }}
-                      className="absolute w-full"
-                      style={{
-                        top: `${(i * 8.5 + (i * 7) % 18)}%`,
-                        height: `${3 + (i % 4) * 4}px`,
-                        background:
-                          i % 2 === 0
-                            ? "linear-gradient(90deg, transparent, rgba(244,63,94,0.9), rgba(168,85,247,0.95), transparent)"
-                            : "linear-gradient(90deg, transparent, rgba(6,182,212,0.9), rgba(192,132,252,0.95), transparent)",
-                        boxShadow: "0 0 16px rgba(168,85,247,0.85)",
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* 05. Anamorphic Dark Ultraviolet Flare Beam */}
-                <motion.div
-                  initial={{ scaleX: 0, opacity: 0 }}
-                  animate={{ scaleX: [0, 2.2, 3.4], opacity: [0, 1, 0.7] }}
-                  transition={{ duration: 0.7, ease: "easeOut" }}
-                  className="absolute h-[240px] w-full blur-[28px]"
-                  style={{
-                    background:
-                      "radial-gradient(ellipse at center, rgba(192,132,252,0.95) 0%, rgba(124,58,237,0.8) 40%, rgba(225,29,72,0.5) 70%, transparent 95%)",
-                  }}
-                />
-
-                {/* 06. Heavy Chromatic Dark Shockwave Expanding to Viewport Bounds */}
-                <motion.div
-                  initial={{ scale: 0.05, opacity: 1, borderWidth: "32px" }}
-                  animate={{
-                    scale: [0.05, 1.8, 3.8],
-                    opacity: [1, 0.9, 0],
-                    borderWidth: ["32px", "12px", "1px"],
-                    rotate: [0, -12, 8, 0],
-                  }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute h-[90vh] w-[90vh] rounded-full border-purple-400 shadow-[0_0_180px_rgba(168,85,247,1),inset_0_0_90px_rgba(225,29,72,0.85)]"
-                />
-
-                {/* 07. Cyber Glitch HUD Telemetry Stamp */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{
-                    opacity: [0, 1, 0.2, 1, 0.9],
-                    scale: [0.9, 1.06, 0.97, 1.02, 1],
-                    x: [-6, 8, -4, 4, 0],
-                  }}
-                  transition={{ duration: 0.7, ease: "easeOut" }}
-                  className="relative z-50 flex flex-col items-center justify-center font-mono text-center select-none"
-                >
-                  <span className="text-[10px] md:text-xs tracking-[0.5em] text-rose-400 font-bold uppercase drop-shadow-[0_0_12px_rgba(244,63,94,0.9)]">
-                    // CRITICAL FREQUENCY LOCK • 0xAEV_GLITCH_BURST //
-                  </span>
-                  <h2 className="text-2xl md:text-5xl font-black tracking-widest text-white mt-1 drop-shadow-[0_0_35px_rgba(192,132,252,1)]">
-                    SAVISKAR <span className="text-fuchsia-400">2026</span>
-                  </h2>
-                  <span className="text-[11px] tracking-[0.4em] text-violet-300/80 font-medium mt-1">
-                    REVERIE ONLINE • ENTERING MATRIX
-                  </span>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Subtle Film Grain & Scanlines */}
+          {/* Film Grain & Scanlines */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.035] mix-blend-screen z-30"
             style={{
@@ -460,25 +320,28 @@ export default function Preloader({
             }}
           />
 
-          {/* Vignette Overlay that recedes as screen becomes fully covered */}
+          {/* Cinematic Vignette Overlay */}
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(0,0,0,0.95)_100%)] z-20 transition-opacity duration-300"
-            style={{ opacity: 1 - easedExpansion * 0.45 }}
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.92)_100%)] z-20 transition-opacity duration-300"
+            style={{ opacity: 1 - easedExpansion * 0.5 }}
           />
 
           {/* Top HUD Bar */}
           <div
             className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-5 md:px-12 md:py-8 transition-all duration-300"
             style={{
-              transform: `translateY(${-20 * easedExpansion * (progress > 85 ? (progress - 85) / 15 : 0)}px)`,
+              transform: `translateY(${
+                -20 * easedExpansion * (progress > 85 ? (progress - 85) / 15 : 0)
+              }px)`,
             }}
           >
-            <div className="flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg">
+            {/* Festival Badge */}
+            <div className="flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 shadow-lg">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
               </span>
-              <span className="text-[11px] font-mono tracking-[0.3em] uppercase text-white/80">
+              <span className="text-[10px] md:text-[11px] font-mono tracking-[0.25em] uppercase text-white/90">
                 SAVISKAR 2026 // MONO ARCHIVE
               </span>
             </div>
@@ -493,7 +356,7 @@ export default function Preloader({
             </button>
           </div>
 
-          {/* Center Stage: Expands from Single Pixel (1px x 1px) to Full Screen */}
+          {/* Center Stage: Gradually Expands to Cover Entire Screen */}
           <div
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden z-10 bg-neutral-950 flex items-center justify-center will-change-[width,height,border-radius]"
             style={{
@@ -502,37 +365,66 @@ export default function Preloader({
               borderRadius: `${currentRadius}px`,
               borderWidth: `${(1 - easedExpansion) * 1.5}px`,
               borderColor: `rgba(255, 255, 255, ${currentBorderOpacity})`,
-              boxShadow: `0 0 ${currentShadowSpread}px rgba(139,92,246,0.35)`,
+              boxShadow: `0 0 ${currentShadowSpread}px rgba(0,0,0,0.95)`,
               transition: "box-shadow 0.2s ease-out",
             }}
           >
-            {/* Singularity Beacon: Single Glowing Pixel at progress < 8 */}
-            {progress < 8 && (
-              <div className="pointer-events-none absolute z-40 flex items-center justify-center">
-                <span className="animate-ping absolute h-5 w-5 rounded-full bg-violet-400 opacity-90" />
-                <span className="relative rounded-full h-2 w-2 bg-white shadow-[0_0_16px_#c084fc]" />
-              </div>
-            )}
+            {/* Viewfinder Camera HUD (Active during initial expand, gracefully fades on full screen) */}
+            <div
+              className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-400 p-4 md:p-6 flex flex-col justify-between"
+              style={{ opacity: Math.max(0, 1 - easedExpansion * 1.8) }}
+            >
+              {/* Top Viewfinder Row */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3.5 h-3.5 border-t-2 border-l-2 border-white/80" />
+                  <span className="hidden sm:inline font-mono text-[9px] tracking-[0.2em] text-white/70">
+                    ISO 800 • 24 FPS
+                  </span>
+                </div>
 
-            {/* Viewfinder Camera Crosshairs (visible when frame is large enough, fades on full screen) */}
-            {currentWidth >= 160 && currentHeight >= 120 && !isFullscreen && (
-              <div
-                className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300"
-                style={{ opacity: Math.max(0, 1 - (progress - 30) / 50) }}
-              >
-                <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-white/70" />
-                <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-white/70" />
-                <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-white/70" />
-                <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-white/70" />
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-[9px] md:text-[10px] font-mono tracking-widest text-white/80">
+                  <Disc3 className="w-3 h-3 text-red-500 animate-spin" />
+                  <span>REC • [CINEMA MATRIX]</span>
+                </div>
 
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-white/80">
-                  <Disc3 className="w-3.5 h-3.5 text-red-500 animate-spin" />
-                  <span>REC • [MONO CINEMA EXPAND]</span>
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline font-mono text-[9px] tracking-[0.2em] text-white/70">
+                    TC {timecode}
+                  </span>
+                  <div className="w-3.5 h-3.5 border-t-2 border-r-2 border-white/80" />
                 </div>
               </div>
-            )}
 
-            {/* Monochrome Video Playback with Multi-Format Fallback */}
+              {/* Center Crosshair Target */}
+              <div className="self-center flex items-center justify-center pointer-events-none opacity-40">
+                <div className="w-6 h-[1px] bg-white" />
+                <div className="h-6 w-[1px] bg-white -ml-[1px]" />
+              </div>
+
+              {/* Bottom Viewfinder Row */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3.5 h-3.5 border-b-2 border-l-2 border-white/80" />
+                  <span className="hidden sm:inline font-mono text-[9px] tracking-[0.2em] text-white/70">
+                    AUDIO 48kHz • 24-BIT
+                  </span>
+                </div>
+
+                <span className="font-mono text-[9px] tracking-[0.25em] text-white/50">
+                  FRAME: {String(progress).padStart(3, "0")}/100
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline font-mono text-[9px] tracking-[0.2em] text-white/70">
+                    4K RES
+                  </span>
+                  <div className="w-3.5 h-3.5 border-b-2 border-r-2 border-white/80" />
+                </div>
+              </div>
+            </div>
+
+            {/* Cinema Video Playback: Progressive Monochrome-to-Full-Color Awakening */}
             <video
               ref={videoRef}
               autoPlay
@@ -540,9 +432,10 @@ export default function Preloader({
               playsInline
               loop
               preload="auto"
-              className="w-full h-full object-cover grayscale contrast-125 filter transition-transform duration-700 ease-out"
+              className="w-full h-full object-cover transition-all duration-700 ease-out"
               style={{
-                transform: `scale(${1 + easedExpansion * 0.05})`,
+                transform: `scale(${1 + easedExpansion * 0.04})`,
+                filter: `grayscale(${currentGrayscale * 100}%) contrast(1.18) saturate(${currentSaturate})`,
               }}
             >
               <source src="/PreLoader/preloader.mp4" type="video/mp4" />
@@ -556,7 +449,7 @@ export default function Preloader({
               />
             </video>
 
-            {/* Subtle Inner Ambient Vignette */}
+            {/* Inner Ambient Vignette */}
             <div
               className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/30 z-20 transition-opacity duration-300"
               style={{ opacity: 1 - easedExpansion * 0.5 }}
@@ -565,25 +458,54 @@ export default function Preloader({
 
           {/* Bottom Telemetry & Progress HUD */}
           <div className="absolute bottom-0 left-0 right-0 z-40 flex flex-col items-center px-6 pb-8 md:pb-12 pointer-events-none">
-            <div className="w-full max-w-4xl flex flex-col items-center bg-black/50 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 shadow-2xl transition-all duration-300">
+            <div className="w-full max-w-4xl flex flex-col items-center bg-black/60 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 shadow-2xl transition-all duration-300">
               {/* Progress Counter & Live Step */}
               <div className="w-full flex items-end justify-between text-xs font-mono mb-2.5">
                 <div className="flex flex-col items-start gap-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    {/* Equalizer Micro-Bars */}
+                    <div className="flex items-end gap-[2px] h-3.5 px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                      {[40, 75, 100, 60, 85, 50, 90, 65].map((h, i) => (
+                        <motion.span
+                          key={i}
+                          className="w-[2px] rounded-full bg-violet-400"
+                          animate={{
+                            height: [`${h * 0.3}%`, `${h}%`, `${h * 0.4}%`],
+                          }}
+                          transition={{
+                            duration: 0.6 + (i % 3) * 0.15,
+                            repeat: Infinity,
+                            repeatType: "reverse",
+                            ease: "easeInOut",
+                          }}
+                        />
+                      ))}
+                    </div>
+
                     <span className="text-[10px] uppercase tracking-[0.35em] text-violet-400 font-semibold">
                       SYSTEM TELEMETRY
                     </span>
-                    {assetsLoaded && (
+
+                    {/* Real Asset Status Badge */}
+                    {assetsLoaded ? (
                       <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                         <ShieldCheck className="w-3 h-3" />
-                        <span>ASSETS PRIMED</span>
+                        <span>ALL ASSETS PRIMED</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-mono text-white/60 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                        <Activity className="w-2.5 h-2.5 text-violet-400 animate-pulse" />
+                        <span>{assetCount.loaded}/{assetCount.total} SYNCED</span>
                       </span>
                     )}
                   </div>
+
                   <span className="text-white/90 tracking-wider text-xs md:text-sm font-medium">
                     {statusText}
                   </span>
                 </div>
+
+                {/* Numeric Counter */}
                 <div className="flex items-baseline gap-1 font-mono">
                   <span className="text-3xl md:text-4xl font-black tracking-tighter text-white drop-shadow-[0_0_14px_rgba(255,255,255,0.4)]">
                     {String(progress).padStart(2, "0")}
@@ -606,7 +528,7 @@ export default function Preloader({
                 <span>AEVORIAN REVERIE</span>
                 <span className="hidden sm:inline">
                   {easedExpansion > 0.85
-                    ? "FULLSCREEN IMMERSION COMPLETE"
+                    ? "FULLSCREEN IMMERSION ACTIVE"
                     : "CALIBRATING STADIUM MATRIX"}
                 </span>
                 <span>CGC UNIVERSITY</span>
