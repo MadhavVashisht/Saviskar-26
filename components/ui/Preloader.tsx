@@ -6,7 +6,7 @@ import { FastForward, Disc3, ShieldCheck } from "lucide-react";
 
 interface PreloaderProps {
   onComplete?: () => void;
-  durationSeconds?: number;
+  minDurationSeconds?: number;
 }
 
 const CRITICAL_IMAGES = [
@@ -20,16 +20,16 @@ const CRITICAL_IMAGES = [
 
 const STATUS_STEPS = [
   { at: 0, text: "INITIALIZING AEVORIAN FREQUENCIES" },
-  { at: 15, text: "PRELOADING 8K STAGE ASSETS & FONTS" },
-  { at: 35, text: "TUNING VOLUMETRIC LIGHTING RIGS" },
-  { at: 55, text: "SYNCHRONIZING FESTIVAL SOUNDSCAPES" },
-  { at: 72, text: "EXPANDING CINEMA IMMERSION • FULLSCREEN ACTIVE" },
-  { at: 92, text: "ALL SYSTEMS PRIMED • ENTERING AEVORIAN REVERIE" },
+  { at: 20, text: "SYNCING 8K STAGE ASSETS & FONTS" },
+  { at: 45, text: "TUNING VOLUMETRIC LIGHTING RIGS" },
+  { at: 68, text: "EXPANDING CINEMA IMMERSION • FULLSCREEN ACTIVE" },
+  { at: 88, text: "ALL SYSTEMS PRIMED • PREPARING ILLUMINATION" },
+  { at: 99, text: "AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL" },
 ];
 
 export default function Preloader({
   onComplete,
-  durationSeconds = 8.5,
+  minDurationSeconds = 1.8,
 }: PreloaderProps) {
   const [showPreloader, setShowPreloader] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -44,12 +44,15 @@ export default function Preloader({
   });
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState(STATUS_STEPS[0].text);
+  const [isGlowing, setIsGlowing] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [windowSize, setWindowSize] = useState({ w: 1440, h: 900 });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const assetsReadyRef = useRef(false);
+  const targetProgressRef = useRef(15);
+  const isGlowingRef = useRef(false);
 
   // Clear any legacy session flag so preloader is never blocked
   useEffect(() => {
@@ -79,7 +82,7 @@ export default function Preloader({
     setTimeout(() => {
       setShowPreloader(false);
       onComplete?.();
-    }, 850);
+    }, 750);
   }, [isExiting, onComplete]);
 
   const finishLoadingRef = useRef(finishLoading);
@@ -87,7 +90,25 @@ export default function Preloader({
     finishLoadingRef.current = finishLoading;
   }, [finishLoading]);
 
-  // Real asset preloading (images, fonts, DOM)
+  const triggerGlowAndFinish = useCallback(() => {
+    if (isGlowingRef.current) return;
+    isGlowingRef.current = true;
+    setIsGlowing(true);
+    setProgress(100);
+    setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL");
+
+    // Screen glow blooms for 500ms, then smoothly dissolves into the site
+    setTimeout(() => {
+      finishLoadingRef.current();
+    }, 520);
+  }, []);
+
+  const triggerGlowAndFinishRef = useRef(triggerGlowAndFinish);
+  useEffect(() => {
+    triggerGlowAndFinishRef.current = triggerGlowAndFinish;
+  }, [triggerGlowAndFinish]);
+
+  // Real asset preloading tracker (Images, Fonts, DOM, Preloader Video)
   useEffect(() => {
     if (!showPreloader) return;
 
@@ -102,23 +123,49 @@ export default function Preloader({
 
     const fontPromise =
       typeof document !== "undefined" && document.fonts
-        ? document.fonts.ready
+        ? document.fonts.ready.catch(() => {})
         : Promise.resolve();
 
     const docPromise =
       typeof document !== "undefined" && document.readyState === "complete"
         ? Promise.resolve()
         : new Promise<void>((resolve) => {
-          window.addEventListener("load", () => resolve(), { once: true });
-        });
+            window.addEventListener("load", () => resolve(), { once: true });
+          });
 
-    const imagePromises = CRITICAL_IMAGES.map(preloadImage);
+    const videoPromise = new Promise<void>((resolve) => {
+      if (typeof window === "undefined") return resolve();
+      const vid = document.createElement("video");
+      vid.src = "/PreLoader/preloader.mp4";
+      vid.preload = "auto";
+      vid.onloadeddata = () => resolve();
+      vid.onerror = () => resolve();
+    });
 
-    Promise.allSettled([...imagePromises, fontPromise, docPromise]).then(() => {
-      if (isMounted) {
-        assetsReadyRef.current = true;
-        setAssetsLoaded(true);
-      }
+    const assetPromises = [
+      ...CRITICAL_IMAGES.map(preloadImage),
+      fontPromise,
+      docPromise,
+      videoPromise,
+    ];
+
+    const totalAssets = assetPromises.length;
+    let completedCount = 0;
+
+    assetPromises.forEach((promise) => {
+      Promise.resolve(promise).finally(() => {
+        if (!isMounted) return;
+        completedCount++;
+        const currentRatio = completedCount / totalAssets;
+        targetProgressRef.current = Math.max(
+          targetProgressRef.current,
+          Math.floor(currentRatio * 100)
+        );
+        if (completedCount >= totalAssets) {
+          assetsReadyRef.current = true;
+          setAssetsLoaded(true);
+        }
+      });
     });
 
     return () => {
@@ -126,51 +173,72 @@ export default function Preloader({
     };
   }, [showPreloader]);
 
-  // Progress pacing & reliable timer loop across durationSeconds
+  // Real-time animation pacing loop
   useEffect(() => {
     if (!showPreloader) return;
 
-    // Lock page scroll during preloading
+    // Lock page scroll during preloader
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const totalMs = durationSeconds * 1000;
-    const start = performance.now();
+    const startTime = performance.now();
+    const minDurationMs = minDurationSeconds * 1000;
+    let currentPct = 0;
 
     const interval = setInterval(() => {
       const now = performance.now();
-      const elapsed = now - start;
-      const naturalPct = (elapsed / totalMs) * 100;
+      const elapsed = now - startTime;
+      const timeRatio = Math.min(1, elapsed / minDurationMs);
 
-      let nextPct = Math.floor(naturalPct);
-      // Wait for assets if still downloading near end
-      if (!assetsReadyRef.current && naturalPct >= 84) {
-        nextPct = 84;
+      const isAssetsDone = assetsReadyRef.current;
+      const isMinTimeElapsed = elapsed >= minDurationMs;
+
+      if (isAssetsDone && isMinTimeElapsed) {
+        // Real assets loaded + smooth minimum transition elapsed -> accelerate to 100%
+        currentPct += Math.max(3.5, (100 - currentPct) * 0.38);
       } else {
-        nextPct = Math.min(100, Math.max(0, nextPct));
+        // Progress toward real asset ratio, capped at 88% until all assets are primed
+        const maxAllowed = isAssetsDone ? 96 : 88;
+        const target = Math.min(
+          maxAllowed,
+          Math.max(targetProgressRef.current, timeRatio * 85)
+        );
+        if (currentPct < target) {
+          currentPct += Math.max(1, (target - currentPct) * 0.18);
+        }
       }
 
-      setProgress(nextPct);
+      const displayPct = Math.min(100, Math.floor(currentPct));
+      setProgress(displayPct);
 
       // Update telemetry status text
       for (let i = STATUS_STEPS.length - 1; i >= 0; i--) {
-        if (nextPct >= STATUS_STEPS[i].at) {
+        if (displayPct >= STATUS_STEPS[i].at) {
           setStatusText(STATUS_STEPS[i].text);
           break;
         }
       }
 
-      if (nextPct >= 100) {
+      // When completion reached -> trigger complete screen glow burst
+      if (currentPct >= 99.5) {
         clearInterval(interval);
-        finishLoadingRef.current();
+        setProgress(100);
+        triggerGlowAndFinishRef.current();
       }
-    }, 40);
+    }, 28);
+
+    // Fallback safety timeout so slow networks never hang
+    const safetyTimer = setTimeout(() => {
+      assetsReadyRef.current = true;
+      setAssetsLoaded(true);
+    }, 5500);
 
     return () => {
       document.body.style.overflow = originalOverflow;
       clearInterval(interval);
+      clearTimeout(safetyTimer);
     };
-  }, [showPreloader, durationSeconds]);
+  }, [showPreloader, minDurationSeconds]);
 
   // Attempt video autoPlay gracefully
   useEffect(() => {
@@ -184,10 +252,15 @@ export default function Preloader({
 
   if (!showPreloader) return null;
 
+  const handleSkip = () => {
+    assetsReadyRef.current = true;
+    setAssetsLoaded(true);
+    triggerGlowAndFinishRef.current();
+  };
+
   // Expansion curve calculation:
   // Starts expanding at 15% and covers 100% full screen by 88%
   const rawExpansion = Math.max(0, Math.min(1, (progress - 15) / (88 - 15)));
-  // Smoothstep easing for cinematic expansion
   const easedExpansion = rawExpansion * rawExpansion * (3 - 2 * rawExpansion);
 
   // Exact pixel dimensions during expansion
@@ -216,13 +289,71 @@ export default function Preloader({
           initial={{ opacity: 1 }}
           exit={{
             opacity: 0,
-            scale: 1.06,
-            filter: "brightness(1.4) blur(14px)",
-            transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] },
+            scale: 1.08,
+            filter: "brightness(2.2) blur(20px)",
+            transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
           }}
           className="fixed inset-0 z-[99999] bg-black text-white select-none overflow-hidden"
           style={{ backgroundColor: "#000000" }}
         >
+          {/* COMPLETE SCREEN GLOW BURST (Triggers at 100% load completion) */}
+          <AnimatePresence>
+            {isGlowing && (
+              <motion.div
+                key="screen-glow-burst"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.45 }}
+                className="pointer-events-none fixed inset-0 z-50 overflow-hidden flex items-center justify-center"
+              >
+                {/* 01. Blinding White Exposure Screen Flash */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0.95, 0.82] }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="absolute inset-0 bg-white mix-blend-screen"
+                />
+
+                {/* 02. Volumetric Violet & Electric Cyan Radial Plasma Aura */}
+                <motion.div
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: [0.4, 1.4, 2.4], opacity: [0, 1, 0.85] }}
+                  transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute h-[150vw] w-[150vw] rounded-full blur-[80px]"
+                  style={{
+                    background:
+                      "radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(192,132,252,0.95) 25%, rgba(139,92,246,0.75) 50%, rgba(56,189,248,0.5) 75%, transparent 100%)",
+                  }}
+                />
+
+                {/* 03. Anamorphic Horizontal Lens Flare Beam */}
+                <motion.div
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: [0, 1.8, 2.5], opacity: [0, 1, 0.75] }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="absolute h-[260px] w-full blur-[35px]"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(216,180,254,0.9) 45%, rgba(124,58,237,0.45) 70%, transparent 95%)",
+                  }}
+                />
+
+                {/* 04. Shockwave Ring Expanding Across Entire Viewport */}
+                <motion.div
+                  initial={{ scale: 0.1, opacity: 1, borderWidth: "20px" }}
+                  animate={{
+                    scale: [0.1, 1.6, 3.2],
+                    opacity: [1, 0.85, 0],
+                    borderWidth: ["20px", "8px", "1px"],
+                  }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute h-[80vh] w-[80vh] rounded-full border-white shadow-[0_0_140px_rgba(255,255,255,1)]"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Subtle Film Grain & Scanlines */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.035] mix-blend-screen z-30"
@@ -258,7 +389,7 @@ export default function Preloader({
 
             {/* Skip Button */}
             <button
-              onClick={finishLoading}
+              onClick={handleSkip}
               className="group flex items-center gap-2 rounded-full border border-white/20 bg-black/60 px-4 py-1.5 text-xs font-mono tracking-[0.2em] text-white/90 backdrop-blur-md transition-all hover:border-white/50 hover:bg-white/20 hover:text-white active:scale-95 shadow-lg pointer-events-auto"
             >
               <span>SKIP</span>
