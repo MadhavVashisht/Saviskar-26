@@ -1147,8 +1147,12 @@ export default function RegistrationForm() {
     return (
       <section className="px-6 pb-32 md:px-10 md:pb-44">
         <div className="mx-auto max-w-[1200px]">
-          <div className="liquid-glass flex min-h-[580px] flex-col items-center justify-center rounded-[36px] border border-white/15 bg-black/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_60px_rgba(168,85,247,0.15)]">
-            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-violet-500/30 bg-violet-950/40 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+          <div className="liquid-glass-card relative overflow-hidden flex min-h-[580px] flex-col items-center justify-center rounded-[36px] border border-white/15 bg-gradient-to-b from-[#0c0916]/80 via-[#07050f]/75 to-[#040208]/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_70px_rgba(168,85,247,0.18)]">
+            {/* Ambient glows */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-violet-600/25 blur-[120px]" />
+            <div className="pointer-events-none absolute -left-24 -bottom-24 h-80 w-80 rounded-full bg-cyan-600/20 blur-[120px]" />
+
+            <div className="relative z-10 mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-violet-500/30 bg-violet-950/40 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{
@@ -1160,16 +1164,16 @@ export default function RegistrationForm() {
               />
             </div>
 
-            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300">
+            <div className="liquid-glass relative z-10 mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300">
               <Sparkles size={11} className="animate-spin" />
               <span>SECURE PAYMENT INITIALIZATION</span>
             </div>
 
-            <h2 className="max-w-[700px] text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-tight tracking-tight text-white">
+            <h2 className="relative z-10 max-w-[700px] text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-tight tracking-tight text-white">
               Almost <span className="font-editorial text-violet-300 font-normal italic">there.</span>
             </h2>
 
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
+            <p className="relative z-10 mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
               Please complete your registration in the checkout window.
               Keep this browser tab open while processing completes.
             </p>
@@ -1189,20 +1193,24 @@ export default function RegistrationForm() {
     return (
       <section className="px-6 pb-32 md:px-10 md:pb-44">
         <div className="mx-auto max-w-[1200px]">
-          <div className="liquid-glass flex min-h-[580px] flex-col items-center justify-center rounded-[36px] border border-amber-500/30 bg-black/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_60px_rgba(245,158,11,0.15)]">
-            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/30 bg-amber-950/40 text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+          <div className="liquid-glass-card relative overflow-hidden flex min-h-[580px] flex-col items-center justify-center rounded-[36px] border border-amber-500/35 bg-gradient-to-b from-[#140e06]/80 via-[#090605]/75 to-[#040208]/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_70px_rgba(245,158,11,0.18)]">
+            {/* Ambient glows */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-amber-600/20 blur-[120px]" />
+            <div className="pointer-events-none absolute -left-24 -bottom-24 h-80 w-80 rounded-full bg-violet-600/20 blur-[120px]" />
+
+            <div className="relative z-10 mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/30 bg-amber-950/40 text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.25)]">
               <AlertCircle size={26} />
             </div>
 
-            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-amber-300">
+            <div className="liquid-glass relative z-10 mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-amber-300">
               <span>ACTION REQUIRED</span>
             </div>
 
-            <h2 className="max-w-[700px] text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-tight tracking-tight text-white">
+            <h2 className="relative z-10 max-w-[700px] text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-tight tracking-tight text-white">
               Payment <span className="font-editorial text-amber-300 font-normal italic">pending.</span>
             </h2>
 
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
+            <p className="relative z-10 mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
               Your registration slot was saved, but the fee of{" "}
               <span className="font-mono font-bold text-white">
                 ₹{pendingPaymentAmount.toLocaleString("en-IN")}
@@ -1211,14 +1219,14 @@ export default function RegistrationForm() {
             </p>
 
             {errorMessage && (
-              <div className="mt-6 flex items-center gap-2.5 rounded-xl border border-red-500/30 bg-red-950/30 px-5 py-3 text-sm text-red-300">
+              <div className="relative z-10 mt-6 flex items-center gap-2.5 rounded-xl border border-red-500/30 bg-red-950/30 px-5 py-3 text-sm text-red-300">
                 <AlertCircle size={15} />
                 <span>{errorMessage}</span>
               </div>
             )}
 
             {participantId && (
-              <div className="mt-6 rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-4 backdrop-blur-md">
+              <div className="relative z-10 mt-6 rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-4 backdrop-blur-md">
                 <p className="mb-1 text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">
                   Your Participant ID
                 </p>
@@ -1228,7 +1236,7 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <div className="relative z-10 mt-8 flex flex-wrap items-center justify-center gap-4">
               <button
                 type="button"
                 disabled={paymentProcessing}
@@ -1275,26 +1283,30 @@ export default function RegistrationForm() {
     return (
       <section className="px-6 pb-32 md:px-10 md:pb-44">
         <div className="mx-auto max-w-[1200px]">
-          <div className="liquid-glass flex min-h-[650px] flex-col items-center justify-center rounded-[36px] border border-violet-500/30 bg-black/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_60px_rgba(168,85,247,0.2)]">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.4)]">
+          <div className="liquid-glass-card relative overflow-hidden flex min-h-[650px] flex-col items-center justify-center rounded-[36px] border border-violet-500/35 bg-gradient-to-b from-violet-950/45 via-[#080512]/75 to-[#040208]/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_80px_rgba(168,85,247,0.22)]">
+            {/* Ambient glows */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-violet-600/30 blur-[130px]" />
+            <div className="pointer-events-none absolute -left-24 -bottom-24 h-96 w-96 rounded-full bg-cyan-600/20 blur-[130px]" />
+
+            <div className="relative z-10 mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.4)]">
               <Check size={26} />
             </div>
 
-            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300">
+            <div className="liquid-glass relative z-10 mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300">
               <Sparkles size={12} className="text-violet-300" />
               <span>REGISTRATION CONFIRMED // SAVISKAR 2026</span>
             </div>
 
-            <h2 className="max-w-[800px] text-[clamp(3rem,7vw,6.5rem)] font-light leading-[0.88] tracking-tight text-white">
+            <h2 className="relative z-10 max-w-[800px] text-[clamp(3rem,7vw,6.5rem)] font-light leading-[0.88] tracking-tight text-white">
               You&apos;re <span className="font-editorial text-violet-300 font-normal italic">in.</span>
             </h2>
 
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
+            <p className="relative z-10 mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
               Your Saviskar 2026 registration has been successfully verified and entered into the championship roster.
             </p>
 
             {qrCode && (
-              <div className="mt-8 flex flex-col items-center">
+              <div className="relative z-10 mt-8 flex flex-col items-center">
                 <div className="rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/20">
                   <img
                     src={qrCode}
@@ -1311,7 +1323,7 @@ export default function RegistrationForm() {
             )}
 
             {participantId && (
-              <div className="mt-6 rounded-2xl border border-violet-500/30 bg-violet-950/40 px-6 py-4 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+              <div className="relative z-10 mt-6 rounded-2xl border border-violet-500/30 bg-violet-950/40 px-6 py-4 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
                 <p className="mb-1 text-[10px] font-mono uppercase tracking-[0.2em] text-white/50">
                   Permanent Participant ID
                 </p>
@@ -1322,7 +1334,7 @@ export default function RegistrationForm() {
             )}
 
             {teamMembers.length > 0 && (
-              <div className="mt-6 w-full max-w-xl rounded-2xl border border-white/12 bg-white/[0.03] p-5 text-left backdrop-blur-md">
+              <div className="relative z-10 mt-6 w-full max-w-xl rounded-2xl border border-white/12 bg-white/[0.03] p-5 text-left backdrop-blur-md">
                 <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-violet-300 font-semibold mb-3">
                   Squad Participant IDs
                 </p>
@@ -1356,11 +1368,11 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            <p className="mt-6 max-w-md text-xs leading-relaxed text-white/40">
+            <p className="relative z-10 mt-6 max-w-md text-xs leading-relaxed text-white/40">
               Present this QR code on your phone at the festival accreditation desks upon arrival at CGC University Mohali.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <div className="relative z-10 mt-8 flex flex-wrap items-center justify-center gap-4">
               <button
                 type="button"
                 onClick={() => {
@@ -1396,10 +1408,17 @@ export default function RegistrationForm() {
   return (
     <section className="px-5 pb-32 md:px-10 md:pb-44">
       <div className="mx-auto max-w-[1240px]">
-        <div className="liquid-glass relative overflow-hidden rounded-[32px] sm:rounded-[40px] border border-white/15 bg-black/80 p-6 sm:p-10 md:p-14 lg:p-16 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_80px_rgba(168,85,247,0.12)]">
-          {/* Ambient stage backlights */}
-          <div className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-violet-600/15 blur-[160px]" />
-          <div className="pointer-events-none absolute -left-32 bottom-20 h-[450px] w-[450px] rounded-full bg-cyan-600/10 blur-[150px]" />
+        <div className="liquid-glass-card relative overflow-hidden rounded-[32px] sm:rounded-[44px] border border-white/15 bg-gradient-to-b from-[#0c0916]/80 via-[#07050f]/75 to-[#040208]/85 p-6 sm:p-10 md:p-14 lg:p-16 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_80px_rgba(168,85,247,0.16)]">
+          {/* Ambient stage backlights blending with festival canopy */}
+          <div className="pointer-events-none absolute -right-32 -top-32 h-[600px] w-[600px] rounded-full bg-violet-600/20 blur-[180px]" />
+          <div className="pointer-events-none absolute -left-32 top-1/3 h-[550px] w-[550px] rounded-full bg-cyan-600/15 blur-[170px]" />
+          <div className="pointer-events-none absolute right-10 bottom-20 h-[500px] w-[500px] rounded-full bg-fuchsia-600/15 blur-[170px]" />
+
+          {/* Subtle celestial grid texture that fades in */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+
+          {/* Soft specular top-rim lighting */}
+          <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-px w-3/4 bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
 
           {/* Form Header */}
           <div className="relative z-10 mb-12 border-b border-white/10 pb-10">
@@ -1419,7 +1438,7 @@ export default function RegistrationForm() {
 
           <form onSubmit={handleSubmit} className="relative z-10 space-y-12">
             {/* EXISTING PARTICIPANT ID (ACCREDITATION SYNC) */}
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.025] p-6 md:p-8 backdrop-blur-md transition-all hover:border-white/15">
+            <div className="rounded-[24px] border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-6 md:p-8 backdrop-blur-xl transition-all hover:border-violet-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
               <div className="flex items-start gap-4 sm:gap-5">
                 <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-950/40 text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
                   <Users size={19} />
@@ -1516,7 +1535,7 @@ export default function RegistrationForm() {
                   </div>
 
                   {participantLookup && (
-                    <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 backdrop-blur-md">
+                    <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(52,211,153,0.15)]">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <div className="flex items-center gap-2">
@@ -1633,7 +1652,7 @@ export default function RegistrationForm() {
               ) : (
                 <>
                   {participantLookup && (
-                    <div className="rounded-2xl border border-white/10 bg-black/60 p-5 text-white backdrop-blur-md">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-white backdrop-blur-md">
                       <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
                         Add Another Event
                       </p>
@@ -1644,8 +1663,8 @@ export default function RegistrationForm() {
                   )}
 
                   {/* SEARCH & REALM PILLS */}
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-3 sm:p-4 backdrop-blur-md">
-                    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/50 px-4 py-3 focus-within:border-violet-400/60 focus-within:ring-1 focus-within:ring-violet-400/30 transition-all">
+                  <div className="rounded-2xl border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-3 sm:p-4 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+                    <div className="flex items-center gap-3 rounded-xl border border-white/12 bg-black/40 px-4 py-3 focus-within:border-violet-400/60 focus-within:ring-1 focus-within:ring-violet-400/30 focus-within:bg-black/60 transition-all">
                       <Search className="h-4 w-4 shrink-0 text-white/40" />
 
                       <input
@@ -1701,7 +1720,7 @@ export default function RegistrationForm() {
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/30 via-black/70 to-black/90 p-5 md:p-6 backdrop-blur-xl shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+                        <div className="rounded-2xl border border-violet-500/35 bg-gradient-to-br from-violet-950/40 via-[#0a0714]/70 to-[#05030a]/85 p-5 md:p-6 backdrop-blur-2xl shadow-[0_0_45px_rgba(168,85,247,0.18),inset_0_1px_1px_rgba(255,255,255,0.12)]">
                           <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
                             <div>
                               <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
@@ -1781,8 +1800,8 @@ export default function RegistrationForm() {
                   </AnimatePresence>
 
                   {/* COMPACT EVENT LIST */}
-                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md">
-                    <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] px-5 py-3.5">
+                  <div className="overflow-hidden rounded-2xl border border-white/12 bg-gradient-to-b from-white/[0.03] to-black/40 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+                    <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3.5">
                       <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                         {filteredEvents.length}{" "}
                         {filteredEvents.length === 1 ? "competition" : "competitions"} available
@@ -1833,8 +1852,8 @@ export default function RegistrationForm() {
                               onClick={() => toggleEvent(event.id)}
                               className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${
                                 selected
-                                  ? "bg-violet-950/25 border-l-4 border-l-violet-400 hover:bg-violet-950/35"
-                                  : "border-l-4 border-l-transparent hover:bg-white/[0.03]"
+                                  ? "bg-violet-950/35 border-l-4 border-l-violet-400 hover:bg-violet-950/45 shadow-[inset_0_0_30px_rgba(168,85,247,0.08)]"
+                                  : "border-l-4 border-l-transparent hover:bg-white/[0.04]"
                               }`}
                             >
                               {/* CHECK */}
@@ -1936,7 +1955,7 @@ export default function RegistrationForm() {
                   return (
                     <div
                       key={event.id}
-                      className="rounded-[28px] border border-white/12 bg-white/[0.025] p-6 md:p-8 backdrop-blur-md"
+                      className="rounded-[28px] border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-6 md:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]"
                     >
                       {/* EVENT HEADER */}
                       <div className="flex items-start justify-between gap-6 border-b border-white/10 pb-6">
@@ -1981,7 +2000,7 @@ export default function RegistrationForm() {
                           </Field>
 
                           {event.id === firstTeamEventId && (
-                            <div className="rounded-2xl border border-white/10 bg-black/50 p-6 md:p-8 backdrop-blur-sm">
+                            <div className="rounded-2xl border border-white/12 bg-black/40 p-6 md:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
                               <div className="mb-6 border-b border-white/10 pb-4">
                                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
                                   Member 01 — Lead Participant Details
@@ -2107,7 +2126,7 @@ export default function RegistrationForm() {
                               {state.members.map((member, index) => (
                                 <div
                                   key={index}
-                                  className="rounded-2xl border border-white/10 bg-black/40 p-5 md:p-6"
+                                  className="rounded-2xl border border-white/12 bg-black/40 p-5 md:p-6 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
                                 >
                                   <div className="mb-5 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -2267,7 +2286,7 @@ export default function RegistrationForm() {
 
             {/* PAYMENT SUMMARY & CHECKOUT TERMINAL */}
             {selectedEvents.length > 0 && (
-              <div className="rounded-[28px] border border-violet-500/30 bg-gradient-to-br from-violet-950/40 via-black/80 to-black p-6 sm:p-8 md:p-10 backdrop-blur-2xl shadow-[0_20px_60px_rgba(168,85,247,0.15)]">
+              <div className="rounded-[28px] border border-violet-500/35 bg-gradient-to-br from-violet-950/40 via-[#0b0816]/75 to-[#040208]/90 p-6 sm:p-8 md:p-10 backdrop-blur-2xl shadow-[0_20px_70px_rgba(168,85,247,0.2),inset_0_1px_1px_rgba(255,255,255,0.12)]">
                 <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between border-b border-white/10 pb-6">
                   <div>
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
@@ -2340,7 +2359,7 @@ export default function RegistrationForm() {
             )}
 
             {/* CODE OF CONDUCT AGREEMENT */}
-            <label className="flex cursor-pointer items-start gap-3.5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5 transition hover:border-white/20">
+            <label className="flex cursor-pointer items-start gap-3.5 rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-5 transition hover:border-violet-400/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <input
                 type="checkbox"
                 name="agreement"

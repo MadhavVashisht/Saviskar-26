@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import { ArrowLeft, ArrowUpRight, Mail, Phone, Sparkles } from "lucide-react";
+import MouseSpotlight from "@/components/ui/MouseSpotlight";
 import RegistrationForm from "@/components/registration/RegistrationForm";
 
 export const metadata: Metadata = {
@@ -35,16 +37,34 @@ export default async function RegisterPage({
   const fromAdmin = params.from === "admin";
 
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
-      {/* Panoramic Festival Background & Stage Haze */}
+    <main className="relative min-h-screen w-full bg-black text-white selection:bg-white selection:text-black">
+      {/* 1. FIXED FULL-BLEED PANORAMIC STADIUM BACKGROUND */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/75 to-black/95 z-10" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.3)_0%,rgba(0,0,0,0.9)_100%)] z-10" />
-        
-        {/* Subtle stage haze spots */}
-        <div className="absolute left-[15%] top-[10%] h-[600px] w-[600px] rounded-full bg-violet-700/15 blur-[170px]" />
-        <div className="absolute right-[10%] top-[35%] h-[550px] w-[550px] rounded-full bg-cyan-600/10 blur-[160px]" />
+        <Image
+          src="/images/realms-page-bg.jpg"
+          alt="Saviskar 2026 Festival Amphitheater Stadium Canopy"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center opacity-40 will-change-transform"
+        />
+
+        {/* Multi-layered cinematic gradient vignettes */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/55 to-black/95" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.25)_0%,rgba(0,0,0,0.85)_100%)]" />
+
+        {/* Subtle celestial stardust grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_50%_at_50%_35%,#000_60%,transparent_100%)] pointer-events-none" />
+
+        {/* Subtle Ambient Cosmic Haze */}
+        <div className="absolute left-[15%] top-[12%] h-[650px] w-[650px] rounded-full bg-violet-600/15 blur-[180px]" />
+        <div className="absolute right-[10%] top-[35%] h-[550px] w-[550px] rounded-full bg-cyan-500/10 blur-[170px]" />
         <div className="absolute left-[20%] bottom-[15%] h-[600px] w-[600px] rounded-full bg-fuchsia-600/10 blur-[180px]" />
+      </div>
+
+      {/* Interactive Cursor Spotlight */}
+      <div className="pointer-events-none fixed inset-0 z-10">
+        <MouseSpotlight />
       </div>
 
       {/* Top Navigation */}
@@ -125,7 +145,7 @@ export default async function RegisterPage({
       </div>
 
       {/* Official Help & Helpline Bottom Section */}
-      <section className="relative z-10 border-t border-white/10 bg-black/80 px-6 py-20 text-white md:px-10 md:py-28">
+      <section className="relative z-10 border-t border-white/10 bg-black/60 backdrop-blur-xl px-6 py-20 text-white md:px-10 md:py-28">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-10 md:flex-row md:items-start md:justify-between">
           <div>
             <span className="text-[10px] uppercase tracking-[0.3em] text-violet-400">
