@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import Hero from "@/components/starnight/Hero/Hero";
 import PastPerformances from "@/components/starnight/PastPerformances/PastPerformances";
-import GuessArtist from "@/components/starnight/GuessArtist/GuessArtist";
-import LightsOut from "@/components/starnight/LightsOut/LightsOut";
-import StarNightReveal from "@/components/starnight/StarNightReveal";
+
+const GuessArtist = dynamic(
+  () => import("@/components/starnight/GuessArtist/GuessArtist")
+);
+const LightsOut = dynamic(
+  () => import("@/components/starnight/LightsOut/LightsOut")
+);
+const StarNightReveal = dynamic(
+  () => import("@/components/starnight/StarNightReveal")
+);
 
 export const metadata: Metadata = {
   title: "Star Night — Headline Concerts",

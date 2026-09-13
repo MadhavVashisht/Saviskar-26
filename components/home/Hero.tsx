@@ -4,8 +4,10 @@ import { motion } from "motion/react";
 import MouseSpotlight from "@/components/ui/MouseSpotlight";
 import { ArrowDown, ArrowRight } from "lucide-react";
 import SplitText from "@/components/SplitText";
+import { useSmoothScroll } from "@/components/providers/SmoothScrollProvider";
 
 export default function Hero() {
+  const { scrollTo } = useSmoothScroll();
   return (
     <section className="relative flex min-h-screen min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-transparent text-white">
       {/* Theatrical Concert Atmospheric Overlays (ScrollEngine3D provides the crisp 8K stadium scene) */}
@@ -172,7 +174,9 @@ export default function Hero() {
       </div>
 
       {/* Ambient Scroll Down Indicator */}
-      <motion.div
+      <motion.button
+        type="button"
+        onClick={() => scrollTo("#story", { duration: 1.4 })}
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: false }}
@@ -184,11 +188,12 @@ export default function Hero() {
           duration: 2.2,
           ease: "easeInOut",
         }}
-        className="hidden xl:flex absolute bottom-4 left-1/2 -translate-x-1/2 text-white/35 flex-col items-center gap-1"
+        className="hidden xl:flex absolute bottom-4 left-1/2 -translate-x-1/2 text-white/35 hover:text-white/80 transition-colors flex-col items-center gap-1 cursor-pointer focus:outline-none z-30"
+        aria-label="Scroll down to Story"
       >
         <span className="text-[9px] uppercase tracking-[0.3em]">Scroll</span>
         <ArrowDown size={14} />
-      </motion.div>
+      </motion.button>
 
       {/* Multi-stop Continuous Atmosphere Blend into Next Section */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-black/70 to-black" />

@@ -1,13 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Preloader from "@/components/ui/Preloader";
-import ScrollEngine3D from "@/components/ui/ScrollEngine3D";
 import Navbar from "@/components/ui/Navbar";
 import Hero from "@/components/home/Hero";
-import Story from "@/components/home/Story";
-import About from "@/components/home/About";
-import GalleryGlimpse from "@/components/home/GalleryGlimpse";
-import Footer from "@/components/ui/Footer";
+
+// Lazy-loaded components for optimal initial paint & bundle efficiency
+const ScrollEngine3D = dynamic(() => import("@/components/ui/ScrollEngine3D"), {
+  ssr: false,
+});
+const Story = dynamic(() => import("@/components/home/Story"));
+const About = dynamic(() => import("@/components/home/About"));
+const GalleryGlimpse = dynamic(() => import("@/components/home/GalleryGlimpse"), {
+  ssr: false,
+});
+const Footer = dynamic(() => import("@/components/ui/Footer"));
 
 export default function LandingPage() {
   return (

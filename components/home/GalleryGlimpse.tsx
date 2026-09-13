@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useRef } from "react";
+import { motion, useInView } from "motion/react";
 import Link from "next/link";
 import { ArrowUpRight, Sparkles, Eye, Camera } from "lucide-react";
 import DomeGallery, { DomeGalleryImage } from "@/components/ui/DomeGallery";
@@ -12,6 +13,12 @@ const DOME_175_TILES: DomeGalleryImage[] = Array.from({ length: 175 }, (_, i) =>
 }));
 
 export default function GalleryGlimpse() {
+  const domeContainerRef = useRef<HTMLDivElement>(null);
+  const isDomeInView = useInView(domeContainerRef, {
+    once: true,
+    margin: "600px 0px",
+  });
+
   return (
     <section
       id="gallery"
@@ -70,20 +77,29 @@ export default function GalleryGlimpse() {
         {/* Soft atmospheric stage halo behind the dome */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[750px] w-full max-w-[1500px] rounded-full bg-gradient-to-r from-violet-600/15 via-fuchsia-600/10 to-indigo-600/15 blur-[180px] -z-10" />
 
-        <div className="relative h-[560px] w-full sm:h-[680px] md:h-[780px] lg:h-[860px]">
-          <DomeGallery
-            images={DOME_175_TILES}
-            fit={0.76}
-            fitBasis="width"
-            minRadius={540}
-            maxRadius={Infinity}
-            overlayBlurColor="transparent"
-            grayscale={false}
-            openedImageWidth="min(480px, 86vw)"
-            openedImageHeight="min(380px, 65vh)"
-            imageBorderRadius="30px"
-            openedImageBorderRadius="24px"
-          />
+        <div
+          ref={domeContainerRef}
+          className="relative h-[560px] w-full sm:h-[680px] md:h-[780px] lg:h-[860px]"
+        >
+          {isDomeInView ? (
+            <DomeGallery
+              images={DOME_175_TILES}
+              fit={0.76}
+              fitBasis="width"
+              minRadius={540}
+              maxRadius={Infinity}
+              overlayBlurColor="transparent"
+              grayscale={false}
+              openedImageWidth="min(480px, 86vw)"
+              openedImageHeight="min(380px, 65vh)"
+              imageBorderRadius="30px"
+              openedImageBorderRadius="24px"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full border-2 border-violet-500/20 border-t-violet-400 animate-spin" />
+            </div>
+          )}
 
           {/* Floating Interactive Glass Prompt */}
           <div className="pointer-events-none absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 rounded-full border border-white/15 bg-black/80 px-4 py-1.5 sm:px-5 sm:py-2 text-[11px] sm:text-xs font-medium text-white/90 backdrop-blur-md shadow-[0_10px_25px_rgba(0,0,0,0.6)] whitespace-nowrap max-w-[92vw]">
