@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, FileDown, Sparkles } from "lucide-react";
 import Image from "next/image";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "50+ Competitive Realms",
   description:
