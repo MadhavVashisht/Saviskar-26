@@ -8,35 +8,53 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const categories = {
-  cultural: {
-    number: "01",
-    title: "Cultural",
-    tagline: "Dance. Music. Performance.",
-    description:
-      "High-voltage music, choreography, theatre, and grand performances taking over the central Saviskar concert mainstage.",
-    image: "/images/concert-cultural-stage.jpg",
-    rulebookUrl: "/rulebooks/saviskar-2026-cultural-rulebook.pdf",
-  },
   technical: {
-    number: "02",
+    number: "01",
     title: "Technical",
     tagline: "Build. Invent. Compete.",
     description:
       "Where cutting-edge code meets robotics and mechanical ingenuity. Compete across futuristic realms designed for builders and hackers.",
-    image: "/images/concert-tech-stage.jpg",
+    image: "/images/realm-technical-v2.jpg",
     rulebookUrl: "/rulebooks/saviskar-2026-technical-rulebook.pdf",
   },
   "non-technical": {
-    number: "03",
+    number: "02",
     title: "Non-Technical",
     tagline: "Create. Think. Express.",
     description:
       "Strategic simulations, visual arts, filmmaking, debates, and creative expression designed beyond the classroom.",
-    image: "/images/concert-solution-panoramic.jpg",
+    image: "/images/realm-nontech-v2.jpg",
     rulebookUrl: "/rulebooks/saviskar-2026-non-technical-rulebook.pdf",
   },
-  sports: {
+  cultural: {
+    number: "03",
+    title: "Cultural",
+    tagline: "Dance. Music. Performance.",
+    description:
+      "High-voltage music, choreography, theatre, and grand performances taking over the central Saviskar concert mainstage.",
+    image: "/images/realm-cultural-v2.jpg",
+    rulebookUrl: "/rulebooks/saviskar-2026-cultural-rulebook.pdf",
+  },
+  aivishkar: {
     number: "04",
+    title: "AIvishkar: An AI Tech Expo",
+    tagline: "Autonomous. Neural. Beyond Human Frontier.",
+    description:
+      "Flagship National AI Exposition featuring autonomous humanoid robotics, neural agent showcases, computer vision labs, and tech startup venture demo pitches.",
+    image: "/images/realm-aivishkar-ai.jpg",
+    rulebookUrl: "/rulebooks/saviskar-2026-aivishkar-rulebook.pdf",
+  },
+  avishkar: {
+    number: "04",
+    title: "AIvishkar: An AI Tech Expo",
+    tagline: "Autonomous. Neural. Beyond Human Frontier.",
+    description:
+      "Flagship National AI Exposition featuring autonomous humanoid robotics, neural agent showcases, computer vision labs, and tech startup venture demo pitches.",
+    image: "/images/realm-aivishkar-ai.jpg",
+    rulebookUrl: "/rulebooks/saviskar-2026-aivishkar-rulebook.pdf",
+  },
+  sports: {
+    number: "05",
     title: "Sports",
     tagline: "Play. Push. Win.",
     description:
