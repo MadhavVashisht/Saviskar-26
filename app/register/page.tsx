@@ -36,19 +36,24 @@ export default async function RegisterPage({
 
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
-      {/* Background Stage Haze */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-[15%] top-[10%] h-[600px] w-[600px] rounded-full bg-violet-700/10 blur-[160px]" />
-        <div className="absolute right-[10%] top-[35%] h-[550px] w-[550px] rounded-full bg-purple-600/10 blur-[150px]" />
+      {/* Panoramic Festival Background & Stage Haze */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/75 to-black/95 z-10" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.3)_0%,rgba(0,0,0,0.9)_100%)] z-10" />
+        
+        {/* Subtle stage haze spots */}
+        <div className="absolute left-[15%] top-[10%] h-[600px] w-[600px] rounded-full bg-violet-700/15 blur-[170px]" />
+        <div className="absolute right-[10%] top-[35%] h-[550px] w-[550px] rounded-full bg-cyan-600/10 blur-[160px]" />
+        <div className="absolute left-[20%] bottom-[15%] h-[600px] w-[600px] rounded-full bg-fuchsia-600/10 blur-[180px]" />
       </div>
 
       {/* Top Navigation */}
-      <header className="relative z-20 px-6 py-8 md:px-10">
+      <header className="relative z-20 px-6 py-6 md:px-10">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
           {fromAdmin ? (
             <Link
               href="/admin"
-              className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/70 transition hover:text-white"
+              className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
             >
               <ArrowLeft size={14} />
               <span>Back to Admin</span>
@@ -56,49 +61,58 @@ export default async function RegisterPage({
           ) : (
             <Link
               href="/"
-              className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/70 transition hover:text-white"
+              className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
             >
               <ArrowLeft size={14} />
-              <span>Saviskar</span>
+              <span>Saviskar Home</span>
             </Link>
           )}
 
-          <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.25em] text-violet-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_8px_#c084fc]" />
-            <span>AEVORIAN REVERIE • REGISTRATION</span>
+          <div className="liquid-glass hidden sm:inline-flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-white/80 px-4 py-1.5 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
+            <span>CGC UNIVERSITY MOHALI</span>
+            <span className="text-white/30">|</span>
+            <span className="text-violet-300">AEVORIAN REVERIE</span>
           </div>
 
           <Link
             href="/events"
-            className="liquid-glass hidden items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium text-white/70 transition hover:text-white sm:flex"
+            className="liquid-glass flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
           >
-            <span>All Realms</span>
+            <span>All 4 Realms</span>
             <ArrowUpRight size={13} />
           </Link>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 px-6 pb-16 pt-16 md:px-10 md:pb-24 md:pt-20">
+      <section className="relative z-10 px-6 pb-12 pt-10 md:px-10 md:pb-16 md:pt-14">
         <div className="mx-auto max-w-[1200px]">
-          <div className="liquid-glass mb-7 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/70">
-            <Sparkles size={12} className="text-violet-400" />
-            CGC University Mohali • Aevorian Reverie
+          <div className="liquid-glass mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.3em] text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+            <Sparkles size={12} className="text-violet-300 animate-spin" />
+            <span>OFFICIAL ACCREDITATION PORTAL // SAVISKAR 2026</span>
           </div>
 
-          <h1 className="max-w-[1000px] text-[clamp(4.2rem,10vw,9.5rem)] font-light leading-[0.82] tracking-tight text-white">
+          <h1 className="max-w-[1100px] text-[clamp(3.5rem,9.5vw,9rem)] font-light leading-[0.84] tracking-tight text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)]">
             Your stage <br />
-            <span className="font-editorial text-violet-300 font-normal">starts here.</span>
+            <span className="font-editorial text-violet-300 font-normal italic drop-shadow-[0_4px_30px_rgba(168,85,247,0.4)]">
+              starts here.
+            </span>
           </h1>
 
-          <div className="mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-t border-white/10 pt-8">
-            <p className="max-w-lg text-base leading-7 text-white/60">
-              Choose your realm, specify team members, lock in your squad, and claim your official accreditation pass for Saviskar 2026. Open to competitors and creators from 500+ colleges and universities nationwide.
+          <div className="mt-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-t border-white/12 pt-8">
+            <p className="max-w-2xl text-sm leading-relaxed text-zinc-300 md:text-base font-normal">
+              Select your competitive realms, add team members, lock in your squad, and claim your official accreditation pass for Saviskar 2026. Open to delegates from 500+ universities nationwide.
             </p>
 
-            <span className="font-mono text-xs text-white/40">
-              FAST-TRACK DIGITAL VERIFICATION
-            </span>
+            <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-violet-300/80">
+              <span className="liquid-glass rounded-full px-3 py-1 border border-violet-500/20">
+                50+ Competitions
+              </span>
+              <span className="liquid-glass rounded-full px-3 py-1 border border-violet-500/20">
+                Instant QR Pass
+              </span>
+            </div>
           </div>
         </div>
       </section>

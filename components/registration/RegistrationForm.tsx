@@ -18,6 +18,11 @@ import {
   Trash2,
   Users,
   X,
+  Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+  Search,
+  CreditCard,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabase";
@@ -1142,8 +1147,8 @@ export default function RegistrationForm() {
     return (
       <section className="px-6 pb-32 md:px-10 md:pb-44">
         <div className="mx-auto max-w-[1200px]">
-          <div className="flex min-h-[650px] flex-col items-center justify-center rounded-[32px] bg-black px-6 py-16 text-center text-white">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20">
+          <div className="liquid-glass flex min-h-[580px] flex-col items-center justify-center rounded-[36px] border border-white/15 bg-black/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_60px_rgba(168,85,247,0.15)]">
+            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-violet-500/30 bg-violet-950/40 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{
@@ -1151,21 +1156,22 @@ export default function RegistrationForm() {
                   duration: 1.2,
                   ease: "linear",
                 }}
-                className="h-5 w-5 rounded-full border-2 border-white/20 border-t-white"
+                className="h-6 w-6 rounded-full border-2 border-violet-400/30 border-t-violet-400"
               />
             </div>
 
-            <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Processing Payment
-            </p>
+            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300">
+              <Sparkles size={11} className="animate-spin" />
+              <span>SECURE PAYMENT INITIALIZATION</span>
+            </div>
 
-            <h2 className="max-w-[800px] text-[clamp(2.5rem,5vw,5rem)] font-semibold leading-[0.88] tracking-[-0.065em]">
-              Almost there.
+            <h2 className="max-w-[700px] text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-tight tracking-tight text-white">
+              Almost <span className="font-editorial text-violet-300 font-normal italic">there.</span>
             </h2>
 
-            <p className="mt-7 max-w-md text-sm leading-6 text-white/45 md:text-base">
-              Please complete your payment in the checkout window.
-              Do not close this page.
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
+              Please complete your registration in the checkout window.
+              Keep this browser tab open while processing completes.
             </p>
           </div>
         </div>
@@ -1183,78 +1189,79 @@ export default function RegistrationForm() {
     return (
       <section className="px-6 pb-32 md:px-10 md:pb-44">
         <div className="mx-auto max-w-[1200px]">
-          <div className="flex min-h-[650px] flex-col items-center justify-center rounded-[32px] bg-black px-6 py-16 text-center text-white">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-              <AlertCircle size={22} />
+          <div className="liquid-glass flex min-h-[580px] flex-col items-center justify-center rounded-[36px] border border-amber-500/30 bg-black/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_60px_rgba(245,158,11,0.15)]">
+            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/30 bg-amber-950/40 text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+              <AlertCircle size={26} />
             </div>
 
-            <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Payment Pending
-            </p>
+            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-amber-300">
+              <span>ACTION REQUIRED</span>
+            </div>
 
-            <h2 className="max-w-[800px] text-[clamp(2.5rem,5vw,5rem)] font-semibold leading-[0.88] tracking-[-0.065em]">
-              Not done yet.
+            <h2 className="max-w-[700px] text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-tight tracking-tight text-white">
+              Payment <span className="font-editorial text-amber-300 font-normal italic">pending.</span>
             </h2>
 
-            <p className="mt-7 max-w-md text-sm leading-6 text-white/45 md:text-base">
-              Your registration was saved but the payment of{" "}
-              <span className="font-medium text-white/80">
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
+              Your registration slot was saved, but the fee of{" "}
+              <span className="font-mono font-bold text-white">
                 ₹{pendingPaymentAmount.toLocaleString("en-IN")}
               </span>{" "}
-              was not completed. You can retry the payment now.
+              was not completed. You can resume and retry right now.
             </p>
 
             {errorMessage && (
-              <div className="mt-5 flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                <AlertCircle size={14} />
-                {errorMessage}
+              <div className="mt-6 flex items-center gap-2.5 rounded-xl border border-red-500/30 bg-red-950/30 px-5 py-3 text-sm text-red-300">
+                <AlertCircle size={15} />
+                <span>{errorMessage}</span>
               </div>
             )}
 
             {participantId && (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-4">
-                <p className="mb-2 text-[9px] uppercase tracking-[0.2em] text-white/35">
-                  Participant ID
+              <div className="mt-6 rounded-2xl border border-white/12 bg-white/[0.04] px-6 py-4 backdrop-blur-md">
+                <p className="mb-1 text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">
+                  Your Participant ID
                 </p>
-                <p className="break-all font-mono text-xs text-white/80 md:text-sm">
+                <p className="break-all font-mono text-sm font-semibold text-violet-300 md:text-base">
                   {participantId}
                 </p>
               </div>
             )}
 
-            <button
-              type="button"
-              disabled={paymentProcessing}
-              onClick={async () => {
-                setErrorMessage("");
-                setPaymentPending(false);
-                await initiatePaymentCheckout(
-                  pendingPaymentOrderId,
-                  participantId
-                );
-              }}
-              className="mt-10 rounded-full bg-white px-8 py-3.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50"
-            >
-              {paymentProcessing
-                ? "Opening checkout..."
-                : "Retry Payment"}
-            </button>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <button
+                type="button"
+                disabled={paymentProcessing}
+                onClick={async () => {
+                  setErrorMessage("");
+                  setPaymentPending(false);
+                  await initiatePaymentCheckout(
+                    pendingPaymentOrderId,
+                    participantId
+                  );
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black transition-all hover:scale-105 hover:bg-violet-100 shadow-[0_10px_25px_rgba(255,255,255,0.25)] disabled:opacity-50"
+              >
+                <CreditCard size={15} />
+                <span>{paymentProcessing ? "Opening checkout..." : "Retry Payment Now"}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setPaymentPending(false);
-                setPendingPaymentOrderId("");
-                setPendingPaymentAmount(0);
-                setParticipantId("");
-                setTeamMembers([]);
-                setQrCode("");
-                setErrorMessage("");
-              }}
-              className="mt-3 rounded-full border border-white/20 px-6 py-3 text-sm text-white/60 transition hover:bg-white hover:text-black"
-            >
-              Start a new registration
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentPending(false);
+                  setPendingPaymentOrderId("");
+                  setPendingPaymentAmount(0);
+                  setParticipantId("");
+                  setTeamMembers([]);
+                  setQrCode("");
+                  setErrorMessage("");
+                }}
+                className="liquid-glass inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white"
+              >
+                <span>Start a new registration</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1268,79 +1275,79 @@ export default function RegistrationForm() {
     return (
       <section className="px-6 pb-32 md:px-10 md:pb-44">
         <div className="mx-auto max-w-[1200px]">
-          <div className="flex min-h-[650px] flex-col items-center justify-center rounded-[32px] bg-black px-6 py-16 text-center text-white">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-white text-black">
-              <Check size={22} />
+          <div className="liquid-glass flex min-h-[650px] flex-col items-center justify-center rounded-[36px] border border-violet-500/30 bg-black/85 px-6 py-16 text-center text-white backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_60px_rgba(168,85,247,0.2)]">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.4)]">
+              <Check size={26} />
             </div>
 
-            <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Registration confirmed
-            </p>
+            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300">
+              <Sparkles size={12} className="text-violet-300" />
+              <span>REGISTRATION CONFIRMED // SAVISKAR 2026</span>
+            </div>
 
-            <h2 className="max-w-[800px] text-[clamp(3rem,7vw,7rem)] font-semibold leading-[0.88] tracking-[-0.065em]">
-              You&apos;re in.
+            <h2 className="max-w-[800px] text-[clamp(3rem,7vw,6.5rem)] font-light leading-[0.88] tracking-tight text-white">
+              You&apos;re <span className="font-editorial text-violet-300 font-normal italic">in.</span>
             </h2>
 
-            <p className="mt-7 max-w-md text-sm leading-6 text-white/45 md:text-base">
-              Your Saviskar registration has been successfully
-              received.
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300 md:text-base">
+              Your Saviskar 2026 registration has been successfully verified and entered into the championship roster.
             </p>
 
             {qrCode && (
-              <div className="mt-10">
-                <div className="rounded-[28px] bg-white p-5 shadow-2xl">
+              <div className="mt-8 flex flex-col items-center">
+                <div className="rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/20">
                   <img
                     src={qrCode}
-                    alt="Registration QR Code"
-                    className="h-[210px] w-[210px] md:h-[240px] md:w-[240px]"
+                    alt="Official Entry QR Code"
+                    className="h-[200px] w-[200px] md:h-[230px] md:w-[230px]"
                   />
                 </div>
 
-                <div className="mt-5 flex items-center justify-center gap-2 text-white/40">
+                <div className="mt-4 flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-violet-300">
                   <QrCode size={14} />
-
-                  <p className="text-[10px] uppercase tracking-[0.2em]">
-                    Entry QR Code
-                  </p>
+                  <span>OFFICIAL DIGITAL ENTRY PASS</span>
                 </div>
               </div>
             )}
 
             {participantId && (
-              <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-4">
-                <p className="mb-2 text-[9px] uppercase tracking-[0.2em] text-white/35">
-                  Participant ID
+              <div className="mt-6 rounded-2xl border border-violet-500/30 bg-violet-950/40 px-6 py-4 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                <p className="mb-1 text-[10px] font-mono uppercase tracking-[0.2em] text-white/50">
+                  Permanent Participant ID
                 </p>
-
-                <p className="break-all font-mono text-xs text-white/80 md:text-sm">
+                <p className="break-all font-mono text-sm font-bold text-white md:text-base">
                   {participantId}
                 </p>
               </div>
             )}
 
             {teamMembers.length > 0 && (
-              <div className="mt-6 w-full max-w-xl rounded-[20px] border border-white/10 bg-white/[0.04] p-5 text-left">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
-                  Team Participant IDs
+              <div className="mt-6 w-full max-w-xl rounded-2xl border border-white/12 bg-white/[0.03] p-5 text-left backdrop-blur-md">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-violet-300 font-semibold mb-3">
+                  Squad Participant IDs
                 </p>
 
-                <div className="mt-4 space-y-3">
+                <div className="space-y-2.5">
                   {teamMembers.map((member) => (
                     <div
                       key={member.participantId}
-                      className="flex flex-col gap-1 rounded-[14px] border border-white/10 bg-white/[0.03] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
                         <p className="text-sm font-medium text-white">
                           {member.name}
-                          {member.isTeamHead ? " · Team Head" : ""}
+                          {member.isTeamHead ? (
+                            <span className="ml-2 rounded-full border border-violet-500/30 bg-violet-950/50 px-2 py-0.5 text-[9px] font-mono text-violet-300 uppercase">
+                              Team Head
+                            </span>
+                          ) : null}
                         </p>
-                        <p className="mt-1 text-xs text-white/45">
+                        <p className="text-xs text-white/45">
                           {member.email}
                         </p>
                       </div>
 
-                      <p className="font-mono text-xs text-white/80">
+                      <p className="font-mono text-xs font-semibold text-white/80">
                         {member.participantId}
                       </p>
                     </div>
@@ -1349,33 +1356,34 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            <p className="mt-6 max-w-sm text-xs leading-5 text-white/35">
-              Keep this QR code available on your phone. The same
-              participant ID can be used to identify your Saviskar
-              registrations.
+            <p className="mt-6 max-w-md text-xs leading-relaxed text-white/40">
+              Present this QR code on your phone at the festival accreditation desks upon arrival at CGC University Mohali.
             </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                setSubmitted(false);
-                setParticipantId("");
-                setQrCode("");
-                setErrorMessage("");
-              }}
-              className="mt-10 rounded-full border border-white/20 px-6 py-3 text-sm transition hover:bg-white hover:text-black"
-            >
-              Register another participant
-            </button>
-            {fromAdmin && (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <button
                 type="button"
-                onClick={() => router.push("/admin")}
-                className="mt-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-white/90"
+                onClick={() => {
+                  setSubmitted(false);
+                  setParticipantId("");
+                  setQrCode("");
+                  setErrorMessage("");
+                }}
+                className="liquid-glass inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-white transition-all hover:bg-white/10 hover:border-violet-400"
               >
-                ← Back to Admin Panel
+                <span>Register another participant</span>
               </button>
-            )}
+
+              {fromAdmin && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/admin")}
+                  className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-violet-100"
+                >
+                  <span>← Back to Admin Panel</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -1386,54 +1394,60 @@ export default function RegistrationForm() {
    * MAIN FORM
    */
   return (
-    <section className="px-6 pb-32 md:px-10 md:pb-44">
-      <div className="mx-auto max-w-[1200px]">
-        <div className="registration-monochrome-wrapper liquid-glass rounded-[32px] border border-white/15 bg-black/85 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_50px_rgba(168,85,247,0.12)] backdrop-blur-2xl md:p-12 lg:p-16">
-          <div className="mb-14 border-b border-white/10 pb-10">
-            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-violet-300">
-              Official Entry Form
+    <section className="px-5 pb-32 md:px-10 md:pb-44">
+      <div className="mx-auto max-w-[1240px]">
+        <div className="liquid-glass relative overflow-hidden rounded-[32px] sm:rounded-[40px] border border-white/15 bg-black/80 p-6 sm:p-10 md:p-14 lg:p-16 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_80px_rgba(168,85,247,0.12)]">
+          {/* Ambient stage backlights */}
+          <div className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-violet-600/15 blur-[160px]" />
+          <div className="pointer-events-none absolute -left-32 bottom-20 h-[450px] w-[450px] rounded-full bg-cyan-600/10 blur-[150px]" />
+
+          {/* Form Header */}
+          <div className="relative z-10 mb-12 border-b border-white/10 pb-10">
+            <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] sm:text-[11px] font-mono font-semibold uppercase tracking-[0.25em] text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+              <Sparkles size={12} className="text-violet-300 animate-spin" />
+              <span>OFFICIAL DELEGATE ENTRY FORM</span>
             </div>
 
-            <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">
-              Tell us about <span className="font-editorial text-violet-300 font-normal">yourself.</span>
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-white">
+              Tell us about <span className="font-editorial text-violet-300 font-normal italic">yourself.</span>
             </h2>
 
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/60">
-              Select one or more realm competitions. You only need to register
-              once — your official Saviskar Participant ID will stay the same
-              across all your events.
+            <p className="mt-4 max-w-2xl text-sm sm:text-base leading-relaxed text-zinc-300 font-normal">
+              Select one or more competitive realms. You only need to register once — your verified Saviskar Participant ID remains linked across all your solo and team competitions.
             </p>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-12"
-          >
-            {/* EXISTING PARTICIPANT ID */}
-            <div className="rounded-[24px] border border-black/10 bg-black/[0.025] p-6">
-              <div className="flex items-start gap-4">
-                <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white">
-                  <Users size={17} />
+          <form onSubmit={handleSubmit} className="relative z-10 space-y-12">
+            {/* EXISTING PARTICIPANT ID (ACCREDITATION SYNC) */}
+            <div className="rounded-[24px] border border-white/10 bg-white/[0.025] p-6 md:p-8 backdrop-blur-md transition-all hover:border-white/15">
+              <div className="flex items-start gap-4 sm:gap-5">
+                <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-950/40 text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+                  <Users size={19} />
                 </div>
 
-                <div className="w-full">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
-                    Already registered?
-                  </p>
+                <div className="w-full min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+                      Already Registered?
+                    </span>
+                    <span className="text-white/20">•</span>
+                    <span className="text-xs text-white/50">
+                      Accreditation Sync
+                    </span>
+                  </div>
 
-                  <h3 className="mt-2 text-xl font-semibold tracking-tight">
-                    Add another event to your Participant ID.
+                  <h3 className="mt-1.5 text-lg sm:text-xl font-medium tracking-tight text-white">
+                    Add another competition to your Participant ID.
                   </h3>
 
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-black/40">
-                    Leave this empty if this is your first
-                    registration.
+                  <p className="mt-1 text-xs sm:text-sm text-white/60">
+                    If this is your first event registration at Saviskar 2026, leave this section blank and proceed below.
                   </p>
 
-                  <div className="mt-5 flex flex-col gap-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35 mb-1">
+                  <div className="mt-6 flex flex-col gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                      <div>
+                        <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                           Participant ID
                         </label>
                         <input
@@ -1452,12 +1466,12 @@ export default function RegistrationForm() {
                             }
                           }}
                           placeholder="Example: SVK26-8D25C998"
-                          className="w-full border-b border-black/15 bg-transparent py-3 font-mono text-sm uppercase outline-none transition placeholder:text-black/20 focus:border-black"
+                          className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 font-mono text-sm uppercase text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
                         />
                       </div>
 
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35 mb-1">
+                      <div>
+                        <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                           Registered Email
                         </label>
                         <input
@@ -1476,7 +1490,7 @@ export default function RegistrationForm() {
                             }
                           }}
                           placeholder="name@example.com"
-                          className="w-full border-b border-black/15 bg-transparent py-3 text-sm outline-none transition placeholder:text-black/20 focus:border-black"
+                          className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
                         />
                       </div>
 
@@ -1484,17 +1498,17 @@ export default function RegistrationForm() {
                         type="button"
                         onClick={() => void findParticipant()}
                         disabled={participantLookupLoading || !existingParticipantId.trim() || !existingParticipantEmail.trim()}
-                        className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-medium text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-6 text-xs font-semibold text-black transition-all hover:bg-violet-100 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {participantLookupLoading ? (
                           <>
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            Finding
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                            <span>Verifying</span>
                           </>
                         ) : (
                           <>
-                            Find Participant
-                            <ArrowRight size={15} />
+                            <span>Find Participant</span>
+                            <ArrowRight size={14} />
                           </>
                         )}
                       </button>
@@ -1502,65 +1516,67 @@ export default function RegistrationForm() {
                   </div>
 
                   {participantLookup && (
-                    <div className="mt-5 rounded-[20px] border border-black/10 bg-white p-5">
+                    <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 backdrop-blur-md">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-white">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400 text-black shadow-[0_0_10px_#34d399]">
                               <Check size={12} />
                             </span>
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-black/35">
-                              Participant found
+                            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                              Participant Verified
                             </p>
                           </div>
-                          <h4 className="mt-2 text-xl font-semibold">
+                          <h4 className="mt-2 text-lg font-semibold text-white">
                             {participantLookup.name}
                           </h4>
-                          <p className="mt-1 text-sm text-black/45">
+                          <p className="mt-0.5 text-xs text-white/60">
                             {participantLookup.email}
                           </p>
                         </div>
-                        <p className="font-mono text-xs text-black/45">
+                        <p className="font-mono text-xs font-semibold text-emerald-300/90 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-3 py-1 self-start sm:self-auto">
                           {participantLookup.participantId}
                         </p>
                       </div>
 
-                      <div className="mt-5 border-t border-black/10 pt-4">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-black/30">
-                          Already registered
+                      <div className="mt-5 border-t border-white/10 pt-4">
+                        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 mb-3">
+                          Current Registered Events
                         </p>
 
                         {participantLookupEvents.length === 0 ? (
-                          <p className="mt-2 text-sm text-black/45">
-                            No existing event registrations found.
+                          <p className="text-xs text-white/50">
+                            No active event registrations currently tied to this ID.
                           </p>
                         ) : (
-                          <div className="mt-3 flex flex-col gap-3">
+                          <div className="grid gap-2.5 sm:grid-cols-2">
                             {participantLookupEvents.map((item) => (
                               <div
                                 key={item.participantEventId}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-black/[0.03] p-4"
+                                className="flex flex-col justify-between gap-2 rounded-xl border border-white/10 bg-black/40 p-3.5"
                               >
-                                <div>
-                                  <p className="font-semibold text-sm">{item.eventName}</p>
-                                  <div className="mt-1 flex items-center gap-2">
-                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${item.paymentStatus === "paid" ? "bg-green-100 text-green-700 border border-green-200" :
-                                        item.paymentStatus === "pending" ? "bg-red-100 text-red-700 border border-red-200" :
-                                          "bg-black/10 text-black/60"
-                                      }`}>
-                                      {item.paymentStatus ? item.paymentStatus.replace(/_/g, " ") : "FREE"}
-                                    </span>
-                                    {item.paymentAmount ? (
-                                      <span className="text-xs font-mono text-black/60">₹{item.paymentAmount}</span>
-                                    ) : null}
-                                  </div>
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="font-medium text-sm text-white">{item.eventName}</p>
+                                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${
+                                    item.paymentStatus === "paid"
+                                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                      : item.paymentStatus === "pending"
+                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                      : "bg-white/10 text-white/70 border border-white/10"
+                                  }`}>
+                                    {item.paymentStatus ? item.paymentStatus.replace(/_/g, " ") : "FREE"}
+                                  </span>
                                 </div>
+
+                                {item.paymentAmount ? (
+                                  <span className="text-xs font-mono text-white/60">₹{item.paymentAmount}</span>
+                                ) : null}
 
                                 {item.paymentStatus === "pending" && (item.paymentAmount || 0) > 0 && (
                                   <button
                                     type="button"
                                     onClick={() => handlePaymentRecovery(item)}
-                                    className="rounded-full bg-black px-5 py-2.5 text-xs font-medium text-white transition hover:scale-[1.02]"
+                                    className="mt-1 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-violet-100 transition-all self-start"
                                   >
                                     Complete Payment
                                   </button>
@@ -1577,77 +1593,67 @@ export default function RegistrationForm() {
             </div>
 
             {/* EVENT SELECTION */}
-            <div className="space-y-7">
-              <div>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
-                      Events
-                    </p>
-
-                    <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em]">
-                      What are you joining?
-                    </h3>
-
-                    <p className="mt-2 text-sm text-black/40">
-                      Search and select as many events as you want.
-                    </p>
+            <div className="space-y-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-5">
+                <div>
+                  <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
+                    <Sparkles size={11} />
+                    <span>SELECT YOUR COMPETITIONS</span>
                   </div>
 
-                  <AnimatePresence mode="popLayout">
-                    {selectedEvents.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                        className="w-fit rounded-full bg-black px-4 py-2 text-xs font-medium text-white"
-                      >
-                        {selectedEvents.length}{" "}
-                        {selectedEvents.length === 1 ? "event" : "events"} selected
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <h3 className="mt-2 text-2xl sm:text-3xl font-light tracking-tight text-white">
+                    What are you <span className="font-editorial text-violet-300 font-normal italic">joining?</span>
+                  </h3>
+
+                  <p className="mt-1 text-sm text-zinc-300 font-normal">
+                    Search and choose as many competitions across all 4 realms as you want.
+                  </p>
                 </div>
+
+                <AnimatePresence mode="popLayout">
+                  {selectedEvents.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      className="w-fit rounded-full border border-violet-500/30 bg-violet-950/50 px-4 py-2 font-mono text-xs font-semibold text-violet-300 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+                    >
+                      {selectedEvents.length}{" "}
+                      {selectedEvents.length === 1 ? "Event" : "Events"} Selected
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {eventsLoading ? (
-                <div className="rounded-[24px] border border-black/10 p-8 text-sm text-black/40">
-                  Loading events...
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-12 text-center text-sm text-white/50 backdrop-blur-md">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-violet-400 border-t-transparent mb-3" />
+                  <p>Loading competitive realms...</p>
                 </div>
               ) : (
                 <>
                   {participantLookup && (
-                    <div className="rounded-[24px] bg-black p-5 text-white md:p-6">
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                        Add another event
+                    <div className="rounded-2xl border border-white/10 bg-black/60 p-5 text-white backdrop-blur-md">
+                      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+                        Add Another Event
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-white/60">
-                        Events already registered to this Participant ID are hidden. Search below to add another event.
+                      <p className="mt-1 text-xs sm:text-sm text-white/70">
+                        Competitions already registered to this Participant ID are excluded from the list below.
                       </p>
                     </div>
                   )}
 
-                  {/* SEARCH */}
-                  <div className="rounded-[24px] border border-black/10 bg-black/[0.018] p-3">
-                    <div className="flex items-center gap-3 rounded-[18px] bg-white px-4 py-3">
-                      <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        className="h-5 w-5 shrink-0 text-black/35"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <circle cx="11" cy="11" r="6.5" />
-                        <path d="m16 16 4.5 4.5" />
-                      </svg>
+                  {/* SEARCH & REALM PILLS */}
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-3 sm:p-4 backdrop-blur-md">
+                    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/50 px-4 py-3 focus-within:border-violet-400/60 focus-within:ring-1 focus-within:ring-violet-400/30 transition-all">
+                      <Search className="h-4 w-4 shrink-0 text-white/40" />
 
                       <input
                         type="search"
                         value={eventSearch}
                         onChange={(e) => setEventSearch(e.target.value)}
-                        placeholder="Search events..."
-                        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/30"
+                        placeholder="Search competitions (e.g. RoboWars, Hackathon, Dance, AI Expo)..."
+                        className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 outline-none"
                         aria-label="Search events"
                       />
 
@@ -1655,16 +1661,16 @@ export default function RegistrationForm() {
                         <button
                           type="button"
                           onClick={() => setEventSearch("")}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-black/45 transition hover:bg-black hover:text-white"
+                          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-white/20 hover:text-white"
                           aria-label="Clear event search"
                         >
-                          <X size={13} />
+                          <X size={12} />
                         </button>
                       )}
                     </div>
 
                     {/* CATEGORY FILTERS */}
-                    <div className="mt-3 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="mt-3 flex gap-2 overflow-x-auto px-0.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {eventCategories.map((category) => {
                         const active = eventCategory === category;
 
@@ -1673,10 +1679,11 @@ export default function RegistrationForm() {
                             key={category}
                             type="button"
                             onClick={() => setEventCategory(category)}
-                            className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-medium transition ${active
-                                ? "bg-black text-white"
-                                : "bg-white text-black/45 hover:bg-black/[0.06] hover:text-black"
-                              }`}
+                            className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all ${
+                              active
+                                ? "bg-white text-black font-semibold shadow-[0_0_15px_rgba(255,255,255,0.35)]"
+                                : "border border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                            }`}
                           >
                             {category}
                           </button>
@@ -1685,7 +1692,7 @@ export default function RegistrationForm() {
                     </div>
                   </div>
 
-                  {/* SELECTED EVENTS */}
+                  {/* SELECTED EVENTS DRAWER */}
                   <AnimatePresence initial={false}>
                     {selectedEvents.length > 0 && (
                       <motion.div
@@ -1694,25 +1701,25 @@ export default function RegistrationForm() {
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="rounded-[24px] bg-black p-5 text-white md:p-6">
-                          <div className="flex items-center justify-between gap-4">
+                        <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/30 via-black/70 to-black/90 p-5 md:p-6 backdrop-blur-xl shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+                          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
                             <div>
-                              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                                Selected events
+                              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+                                Chosen Competitions
                               </p>
-                              <p className="mt-1 text-sm text-white/55">
-                                Your choices are saved below.
+                              <p className="text-xs text-white/60">
+                                Details for these will be configured below.
                               </p>
                             </div>
 
-                            <p className="text-sm font-semibold">
+                            <p className="font-mono text-sm font-bold text-violet-300">
                               {totalPrice > 0
-                                ? `₹${totalPrice.toLocaleString("en-IN")}`
-                                : "Free"}
+                                ? `Total: ₹${totalPrice.toLocaleString("en-IN")}`
+                                : "Total: Free"}
                             </p>
                           </div>
 
-                          <div className="mt-4 divide-y divide-white/10">
+                          <div className="mt-3 divide-y divide-white/10">
                             {selectedEvents.map((event) => {
                               const state = getTeamState(event.id);
                               const isTeam = isTeamEvent(event);
@@ -1726,8 +1733,8 @@ export default function RegistrationForm() {
                                   event.payment_unit === "per_team"
                                     ? fee
                                     : isTeam
-                                      ? fee * (1 + state.members.length)
-                                      : fee;
+                                    ? fee * (1 + state.members.length)
+                                    : fee;
                               }
 
                               return (
@@ -1736,21 +1743,21 @@ export default function RegistrationForm() {
                                   key={event.id}
                                   className="flex items-center gap-3 py-3"
                                 >
-                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black">
+                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-400 text-black shadow-[0_0_10px_#c084fc]">
                                     <Check size={13} />
                                   </div>
 
                                   <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium">
+                                    <p className="truncate text-sm font-medium text-white">
                                       {event.name}
                                     </p>
-                                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-white/35">
+                                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/40">
                                       {event.category}
-                                      {isTeam ? " · Team" : " · Individual"}
+                                      {isTeam ? " · Team" : " · Solo"}
                                     </p>
                                   </div>
 
-                                  <span className="shrink-0 text-xs text-white/55">
+                                  <span className="shrink-0 font-mono text-xs font-medium text-violet-200">
                                     {amount > 0
                                       ? `₹${amount.toLocaleString("en-IN")}`
                                       : "Free"}
@@ -1759,10 +1766,10 @@ export default function RegistrationForm() {
                                   <button
                                     type="button"
                                     onClick={() => removeSelectedEvent(event.id)}
-                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/35 transition hover:bg-white hover:text-black"
+                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/40 transition hover:bg-red-500/20 hover:text-red-400"
                                     aria-label={`Remove ${event.name}`}
                                   >
-                                    <X size={14} />
+                                    <X size={13} />
                                   </button>
                                 </motion.div>
                               );
@@ -1774,11 +1781,11 @@ export default function RegistrationForm() {
                   </AnimatePresence>
 
                   {/* COMPACT EVENT LIST */}
-                  <div className="overflow-hidden rounded-[24px] border border-black/10 bg-white">
-                    <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-black/30">
+                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md">
+                    <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] px-5 py-3.5">
+                      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                         {filteredEvents.length}{" "}
-                        {filteredEvents.length === 1 ? "event" : "events"} found
+                        {filteredEvents.length === 1 ? "competition" : "competitions"} available
                       </p>
 
                       {eventSearch || eventCategory !== "All" ? (
@@ -1788,7 +1795,7 @@ export default function RegistrationForm() {
                             setEventSearch("");
                             setEventCategory("All");
                           }}
-                          className="text-[10px] font-medium text-black/40 underline-offset-4 hover:text-black hover:underline"
+                          className="font-mono text-[10px] font-medium text-violet-300 underline-offset-4 hover:underline"
                         >
                           Reset filters
                         </button>
@@ -1797,13 +1804,13 @@ export default function RegistrationForm() {
 
                     {filteredEvents.length === 0 ? (
                       <div className="px-6 py-14 text-center">
-                        <p className="text-sm font-medium">No events found.</p>
-                        <p className="mt-2 text-xs text-black/40">
-                          Try another search or category.
+                        <p className="text-sm font-medium text-white">No competitions found.</p>
+                        <p className="mt-1 text-xs text-white/40">
+                          Try searching for keywords like &quot;Robotics&quot;, &quot;Dance&quot;, &quot;Hackathon&quot;, or change the realm filter.
                         </p>
                       </div>
                     ) : (
-                      <div className="divide-y divide-black/[0.07]">
+                      <div className="divide-y divide-white/[0.06]">
                         {filteredEvents.map((event, index) => {
                           const selected = selectedEventIds.includes(event.id);
                           const team = isTeamEvent(event);
@@ -1818,50 +1825,50 @@ export default function RegistrationForm() {
                               initial={{ opacity: 0, y: 8 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{
-                                duration: 0.22,
-                                delay: Math.min(index * 0.018, 0.18),
+                                duration: 0.2,
+                                delay: Math.min(index * 0.015, 0.15),
                               }}
                               key={event.id}
                               type="button"
                               onClick={() => toggleEvent(event.id)}
-                              className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-colors md:px-6 ${selected
-                                  ? "bg-black text-white"
-                                  : "bg-white hover:bg-black/[0.025]"
-                                }`}
+                              className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${
+                                selected
+                                  ? "bg-violet-950/25 border-l-4 border-l-violet-400 hover:bg-violet-950/35"
+                                  : "border-l-4 border-l-transparent hover:bg-white/[0.03]"
+                              }`}
                             >
                               {/* CHECK */}
                               <div
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${selected
-                                    ? "border-white bg-white text-black"
-                                    : "border-black/15 text-transparent group-hover:border-black/35"
-                                  }`}
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
+                                  selected
+                                    ? "bg-violet-400 text-black shadow-[0_0_12px_#c084fc]"
+                                    : "border border-white/20 text-transparent group-hover:border-white/40"
+                                }`}
                               >
-                                <Check size={14} />
+                                <Check size={13} />
                               </div>
 
                               {/* NAME */}
                               <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                  <h4 className="truncate text-[15px] font-semibold tracking-[-0.015em] md:text-base">
+                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                                  <h4 className="truncate text-[15px] font-medium tracking-tight text-white md:text-base">
                                     {event.name}
                                   </h4>
 
                                   <span
-                                    className={`rounded-full px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.16em] ${selected
-                                        ? "bg-white/10 text-white/50"
-                                        : "bg-black/[0.045] text-black/35"
-                                      }`}
+                                    className={`rounded-full px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border border-white/10 ${
+                                      selected
+                                        ? "bg-violet-500/20 text-violet-300 border-violet-500/30"
+                                        : "bg-white/[0.04] text-white/50"
+                                    }`}
                                   >
                                     {event.category}
                                   </span>
                                 </div>
 
-                                <div
-                                  className={`mt-1.5 flex flex-wrap items-center gap-x-2 text-[10px] ${selected ? "text-white/40" : "text-black/35"
-                                    }`}
-                                >
+                                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-white/45">
                                   <span>
-                                    {team ? "Team event" : "Individual event"}
+                                    {team ? "Team Event" : "Individual Event"}
                                   </span>
 
                                   {team &&
@@ -1879,26 +1886,24 @@ export default function RegistrationForm() {
                               </div>
 
                               {/* PRICE */}
-                              <div className="hidden shrink-0 text-right sm:block">
-                                <p
-                                  className={`text-[8px] uppercase tracking-[0.16em] ${selected ? "text-white/30" : "text-black/25"
-                                    }`}
-                                >
-                                  Registration
+                              <div className="hidden shrink-0 text-right sm:block font-mono">
+                                <p className="text-[9px] uppercase tracking-wider text-white/40">
+                                  Fee
                                 </p>
-                                <p className="mt-1 text-sm font-semibold">
+                                <p className={`mt-0.5 text-xs font-semibold ${fee > 0 ? "text-white" : "text-emerald-400"}`}>
                                   {fee > 0
                                     ? `₹${fee.toLocaleString("en-IN")}`
-                                    : "Free"}
+                                    : "FREE"}
                                 </p>
                               </div>
 
                               <ArrowRight
-                                size={15}
-                                className={`shrink-0 transition-all ${selected
-                                    ? "translate-x-0 text-white/45"
-                                    : "-translate-x-1 text-black/15 group-hover:translate-x-0 group-hover:text-black/40"
-                                  }`}
+                                size={14}
+                                className={`shrink-0 transition-transform ${
+                                  selected
+                                    ? "text-violet-300"
+                                    : "text-white/20 group-hover:translate-x-1 group-hover:text-white/60"
+                                }`}
                               />
                             </motion.button>
                           );
@@ -1906,24 +1911,21 @@ export default function RegistrationForm() {
                       </div>
                     )}
                   </div>
-
-                  <p className="text-xs text-black/30">
-                    Select multiple events here. Their individual details will appear below.
-                  </p>
                 </>
               )}
             </div>
 
             {/* SELECTED EVENT CONFIGURATION */}
             {selectedEvents.length > 0 && (
-              <div className="space-y-8 border-t border-black/10 pt-12">
+              <div className="space-y-8 border-t border-white/10 pt-12">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
-                    Event details
-                  </p>
+                  <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
+                    <Sparkles size={11} />
+                    <span>EVENT CONFIGURATION</span>
+                  </div>
 
-                  <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em]">
-                    Complete your selections.
+                  <h3 className="mt-2 text-2xl sm:text-3xl font-light tracking-tight text-white">
+                    Complete your <span className="font-editorial text-violet-300 font-normal italic">selections.</span>
                   </h3>
                 </div>
 
@@ -1934,85 +1936,78 @@ export default function RegistrationForm() {
                   return (
                     <div
                       key={event.id}
-                      className="rounded-[28px] border border-black/10 bg-black/[0.018] p-6 md:p-8"
+                      className="rounded-[28px] border border-white/12 bg-white/[0.025] p-6 md:p-8 backdrop-blur-md"
                     >
                       {/* EVENT HEADER */}
-                      <div className="flex items-start justify-between gap-6">
+                      <div className="flex items-start justify-between gap-6 border-b border-white/10 pb-6">
                         <div>
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-black/30">
-                            Event {String(eventIndex + 1).padStart(2, "0")}
+                          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+                            Competition {String(eventIndex + 1).padStart(2, "0")}
                           </p>
 
-                          <h4 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
+                          <h4 className="mt-2 text-2xl md:text-3xl font-light text-white">
                             {event.name}
                           </h4>
 
-                          <p className="mt-2 text-sm text-black/40">
+                          <p className="mt-1 text-xs sm:text-sm text-white/60">
                             {team
-                              ? "Add your team information below."
-                              : "No additional event information is required."}
+                              ? "Specify squad name and teammate roster below."
+                              : "Solo competition — personal accreditation details below apply."}
                           </p>
                         </div>
 
                         <button
                           type="button"
-                          onClick={() =>
-                            removeSelectedEvent(event.id)
-                          }
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 text-black/40 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+                          onClick={() => removeSelectedEvent(event.id)}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/40 transition hover:border-red-400/40 hover:bg-red-500/20 hover:text-red-400"
                           aria-label={`Remove ${event.name}`}
                         >
-                          <X size={16} />
+                          <X size={15} />
                         </button>
                       </div>
 
-                      {/* TEAM EVENT */}
+                      {/* TEAM EVENT CONFIGURATION */}
                       {team && (
                         <div className="mt-8 space-y-8">
-                          <Field label="Team name">
+                          <Field label="Squad / Team Name">
                             <input
                               type="text"
                               value={state.teamName}
-                              onChange={(e) =>
-                                updateTeamName(
-                                  event.id,
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Enter your team name"
+                              onChange={(e) => updateTeamName(event.id, e.target.value)}
+                              placeholder="e.g. CyberVanguard CGC"
                               required
-                              className="w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black"
+                              className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
                             />
                           </Field>
 
                           {event.id === firstTeamEventId && (
-                            <div className="rounded-[22px] border border-black/10 bg-white p-6 md:p-8">
-                              <div className="mb-7">
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-black/30">
-                                  Member 1 — Your details
+                            <div className="rounded-2xl border border-white/10 bg-black/50 p-6 md:p-8 backdrop-blur-sm">
+                              <div className="mb-6 border-b border-white/10 pb-4">
+                                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+                                  Member 01 — Lead Participant Details
                                 </p>
 
-                                <h5 className="mt-2 text-xl font-semibold">
-                                  Enter your personal details.
+                                <h5 className="mt-1 text-lg font-medium text-white">
+                                  Your Personal Details
                                 </h5>
 
-                                <p className="mt-2 text-sm leading-5 text-black/40">
-                                  You are Member 1 of the team. These details will be used to create or identify your permanent Participant ID.
+                                <p className="mt-1 text-xs text-white/60">
+                                  You are Member 01 and the primary delegate for this squad. These details anchor your official pass.
                                 </p>
                               </div>
 
-                              <div className="grid gap-8 md:grid-cols-2">
-                                <Field label="Full name">
+                              <div className="grid gap-6 md:grid-cols-2">
+                                <Field label="Full Name">
                                   <input
                                     key={`team-name-${participantLookup?.participantId ?? "new"}`}
                                     type="text"
                                     name="name"
                                     defaultValue={participantLookup?.name ?? ""}
-                                    placeholder="Your name"
+                                    placeholder="Your full name"
                                     required
                                     minLength={2}
                                     readOnly={Boolean(participantLookup)}
-                                    className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                                    className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                                   />
                                 </Field>
 
@@ -2022,15 +2017,15 @@ export default function RegistrationForm() {
                                     type="text"
                                     name="college"
                                     defaultValue={participantLookup?.college ?? ""}
-                                    placeholder="Your institution"
+                                    placeholder="e.g. CGC University Mohali"
                                     required
                                     minLength={2}
                                     readOnly={Boolean(participantLookup)}
-                                    className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                                    className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                                   />
                                 </Field>
 
-                                <Field label="Email">
+                                <Field label="Email Address">
                                   <input
                                     key={`team-email-${participantLookup?.participantId ?? "new"}`}
                                     type="email"
@@ -2039,11 +2034,11 @@ export default function RegistrationForm() {
                                     placeholder="you@example.com"
                                     required
                                     readOnly={Boolean(participantLookup)}
-                                    className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                                    className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                                   />
                                 </Field>
 
-                                <Field label="Phone">
+                                <Field label="Phone / WhatsApp Number">
                                   <input
                                     key={`team-phone-${participantLookup?.participantId ?? "new"}`}
                                     type="tel"
@@ -2053,189 +2048,139 @@ export default function RegistrationForm() {
                                     required
                                     pattern="[0-9+\-\s]{10,18}"
                                     readOnly={Boolean(participantLookup)}
-                                    className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                                    className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                                   />
                                 </Field>
                               </div>
 
-                              <div className="mt-8 border-t border-black/10 pt-6">
+                              <div className="mt-6 border-t border-white/10 pt-5">
                                 <label
                                   htmlFor={`team-head-${event.id}`}
-                                  className="flex cursor-pointer items-start gap-3"
+                                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-violet-400/40"
                                 >
                                   <input
                                     id={`team-head-${event.id}`}
                                     type="checkbox"
                                     checked={state.isTeamHead}
-                                    onChange={(e) =>
-                                      updateTeamHead(
-                                        event.id,
-                                        e.target.checked
-                                      )
-                                    }
-                                    className="mt-1 h-4 w-4 cursor-pointer accent-black"
+                                    onChange={(e) => updateTeamHead(event.id, e.target.checked)}
+                                    className="mt-0.5 h-4 w-4 cursor-pointer accent-violet-500"
                                   />
 
-                                  <span>
-                                    <span className="block text-sm font-semibold text-black">
-                                      I am the Team Head
+                                  <div>
+                                    <span className="block text-sm font-medium text-white">
+                                      I am the Team Head / Squad Captain
                                     </span>
-                                    <span className="mt-1 block text-sm leading-5 text-black/40">
-                                      Select this if you are responsible for this team.
+                                    <span className="mt-0.5 block text-xs text-white/50">
+                                      Select this if you are leading and representing this squad at Saviskar 2026.
                                     </span>
-                                  </span>
+                                  </div>
                                 </label>
                               </div>
                             </div>
                           )}
 
-                          <div className="border-t border-black/10 pt-8">
+                          {/* SQUAD MEMBERS LIST */}
+                          <div className="border-t border-white/10 pt-6">
                             <div className="flex items-end justify-between gap-4">
                               <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
-                                  Team members
+                                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
+                                  Team Members
                                 </p>
 
-                                <h5 className="mt-2 text-xl font-semibold">
+                                <h5 className="mt-1 text-lg font-medium text-white">
                                   Add your teammates.
                                 </h5>
 
-                                <p className="mt-2 text-sm text-black/40">
-                                  Add the remaining members of your team below.
+                                <p className="mt-0.5 text-xs text-white/50">
+                                  Fill in the verified contact details of remaining squad members.
                                 </p>
                               </div>
 
                               {event.max_team_size && (
-                                <p className="shrink-0 text-sm text-black/40">
-                                  {state.members.length + 1} /{" "}
-                                  {event.max_team_size}
-                                </p>
+                                <span className="font-mono text-xs text-violet-300 rounded-full border border-violet-500/30 bg-violet-950/40 px-3 py-1">
+                                  {state.members.length + 1} / {event.max_team_size} Members
+                                </span>
                               )}
                             </div>
 
-                            <div className="mt-7 space-y-5">
-                              {state.members.map(
-                                (member, index) => (
-                                  <div
-                                    key={index}
-                                    className="rounded-[22px] border border-black/10 bg-white p-6"
-                                  >
-                                    <div className="mb-6 flex items-center justify-between">
-                                      <div>
-                                        <p className="text-[9px] uppercase tracking-[0.2em] text-black/30">
-                                          Team member
-                                        </p>
-
-                                        <h6 className="mt-1 text-lg font-semibold">
-                                          Member{" "}
-                                          {index + 2}
-                                        </h6>
-                                      </div>
-
-                                      {event.min_team_size &&
-                                        state.members.length <=
-                                        event.min_team_size - 1 ? (
-                                        <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-black/25">
+                            <div className="mt-5 space-y-4">
+                              {state.members.map((member, index) => (
+                                <div
+                                  key={index}
+                                  className="rounded-2xl border border-white/10 bg-black/40 p-5 md:p-6"
+                                >
+                                  <div className="mb-5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs font-semibold text-violet-300">
+                                        Member 0{index + 2}
+                                      </span>
+                                      {event.min_team_size && state.members.length <= event.min_team_size - 1 ? (
+                                        <span className="rounded-full border border-amber-500/30 bg-amber-950/30 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-amber-300">
                                           Required
                                         </span>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            removeTeamMember(
-                                              event.id,
-                                              index
-                                            )
-                                          }
-                                          className="flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50"
-                                        >
-                                          <Trash2
-                                            size={15}
-                                          />
-                                        </button>
-                                      )}
+                                      ) : null}
                                     </div>
 
-                                    <div className="grid gap-8 md:grid-cols-2">
-                                      <Field label="Full name">
-                                        <input
-                                          type="text"
-                                          value={
-                                            member.name
-                                          }
-                                          onChange={(e) =>
-                                            updateTeamMember(
-                                              event.id,
-                                              index,
-                                              "name",
-                                              e.target.value
-                                            )
-                                          }
-                                          placeholder="Member name"
-                                          required
-                                          className="w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black"
-                                        />
-                                      </Field>
-
-                                      <Field label="Email">
-                                        <input
-                                          type="email"
-                                          value={
-                                            member.email
-                                          }
-                                          onChange={(e) =>
-                                            updateTeamMember(
-                                              event.id,
-                                              index,
-                                              "email",
-                                              e.target.value
-                                            )
-                                          }
-                                          placeholder="member@example.com"
-                                          required
-                                          className="w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black"
-                                        />
-                                      </Field>
-
-                                      <Field label="Phone">
-                                        <input
-                                          type="tel"
-                                          value={
-                                            member.phone
-                                          }
-                                          onChange={(e) =>
-                                            updateTeamMember(
-                                              event.id,
-                                              index,
-                                              "phone",
-                                              e.target.value
-                                            )
-                                          }
-                                          placeholder="+91 98765 43210"
-                                          required
-                                          className="w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black"
-                                        />
-                                      </Field>
-                                    </div>
+                                    {!(event.min_team_size && state.members.length <= event.min_team_size - 1) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeTeamMember(event.id, index)}
+                                        className="flex h-8 w-8 items-center justify-center rounded-full border border-red-500/20 text-red-400 transition hover:bg-red-500/20"
+                                        aria-label="Remove team member"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
                                   </div>
-                                )
-                              )}
+
+                                  <div className="grid gap-5 md:grid-cols-3">
+                                    <Field label="Member Full Name">
+                                      <input
+                                        type="text"
+                                        value={member.name}
+                                        onChange={(e) => updateTeamMember(event.id, index, "name", e.target.value)}
+                                        placeholder="Full name"
+                                        required
+                                        className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
+                                      />
+                                    </Field>
+
+                                    <Field label="Member Email">
+                                      <input
+                                        type="email"
+                                        value={member.email}
+                                        onChange={(e) => updateTeamMember(event.id, index, "email", e.target.value)}
+                                        placeholder="member@example.com"
+                                        required
+                                        className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
+                                      />
+                                    </Field>
+
+                                    <Field label="Member Phone">
+                                      <input
+                                        type="tel"
+                                        value={member.phone}
+                                        onChange={(e) => updateTeamMember(event.id, index, "phone", e.target.value)}
+                                        placeholder="+91 98765 43210"
+                                        required
+                                        className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
+                                      />
+                                    </Field>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
 
-                            {event.max_team_size &&
-                              state.members.length + 1 <
-                              event.max_team_size && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    addTeamMember(event)
-                                  }
-                                  className="mt-6 flex items-center gap-2 rounded-full border border-black/15 px-5 py-3 text-sm font-medium transition hover:bg-black hover:text-white"
-                                >
-                                  <Plus size={16} />
-                                  Add team member
-                                </button>
-                              )}
+                            {event.max_team_size && state.members.length + 1 < event.max_team_size && (
+                              <button
+                                type="button"
+                                onClick={() => addTeamMember(event)}
+                                className="mt-5 inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-950/30 px-5 py-2.5 text-xs font-semibold text-violet-200 hover:bg-violet-900/40 hover:border-violet-400 transition-all shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                              >
+                                <Plus size={15} />
+                                <span>Add Team Member</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
@@ -2245,32 +2190,32 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            {/* PERSONAL INFORMATION — shown separately for normal/individual registration.
-                For team registration, Member 1 details are collected inside the team section above. */}
+            {/* PERSONAL INFORMATION — shown separately for individual/solo registration. */}
             {!hasTeamEvent && (
-              <div className="space-y-8 border-t border-black/10 pt-12">
+              <div className="space-y-6 border-t border-white/10 pt-10">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
-                    Participant details
-                  </p>
+                  <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
+                    <Sparkles size={11} />
+                    <span>DELEGATE ACCREDITATION</span>
+                  </div>
 
-                  <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em]">
-                    Your information.
+                  <h3 className="mt-2 text-2xl sm:text-3xl font-light tracking-tight text-white">
+                    Your <span className="font-editorial text-violet-300 font-normal italic">information.</span>
                   </h3>
                 </div>
 
-                <div className="grid gap-10 md:grid-cols-2">
-                  <Field label="Full name">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Field label="Full Name">
                     <input
                       key={`name-${participantLookup?.participantId ?? "new"}`}
                       type="text"
                       name="name"
                       defaultValue={participantLookup?.name ?? ""}
-                      placeholder="Your name"
+                      placeholder="Your full name"
                       required
                       minLength={2}
                       readOnly={Boolean(participantLookup)}
-                      className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                      className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                     />
                   </Field>
 
@@ -2280,17 +2225,17 @@ export default function RegistrationForm() {
                       type="text"
                       name="college"
                       defaultValue={participantLookup?.college ?? ""}
-                      placeholder="Your institution"
+                      placeholder="e.g. CGC University Mohali"
                       required
                       minLength={2}
                       readOnly={Boolean(participantLookup)}
-                      className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                      className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                     />
                   </Field>
                 </div>
 
-                <div className="grid gap-10 md:grid-cols-2">
-                  <Field label="Email">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Field label="Email Address">
                     <input
                       key={`email-${participantLookup?.participantId ?? "new"}`}
                       type="email"
@@ -2299,11 +2244,11 @@ export default function RegistrationForm() {
                       placeholder="you@example.com"
                       required
                       readOnly={Boolean(participantLookup)}
-                      className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                      className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                     />
                   </Field>
 
-                  <Field label="Phone">
+                  <Field label="Phone / WhatsApp Number">
                     <input
                       key={`phone-${participantLookup?.participantId ?? "new"}`}
                       type="tel"
@@ -2313,58 +2258,40 @@ export default function RegistrationForm() {
                       required
                       pattern="[0-9+\-\s]{10,18}"
                       readOnly={Boolean(participantLookup)}
-                      className={`w-full border-b border-black/15 bg-transparent py-4 text-lg outline-none transition placeholder:text-black/25 focus:border-black ${participantLookup ? "text-black/55" : ""}`}
+                      className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                     />
                   </Field>
                 </div>
               </div>
-
             )}
 
-            {/* PAYMENT SUMMARY */}
+            {/* PAYMENT SUMMARY & CHECKOUT TERMINAL */}
             {selectedEvents.length > 0 && (
-              <div className="rounded-[28px] bg-black p-6 text-white md:p-8">
-                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div className="rounded-[28px] border border-violet-500/30 bg-gradient-to-br from-violet-950/40 via-black/80 to-black p-6 sm:p-8 md:p-10 backdrop-blur-2xl shadow-[0_20px_60px_rgba(168,85,247,0.15)]">
+                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between border-b border-white/10 pb-6">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
-                      Registration summary
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
+                      REGISTRATION SUMMARY
                     </p>
 
-                    <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em]">
+                    <h3 className="mt-2 text-2xl sm:text-3xl font-light tracking-tight text-white">
                       {selectedEvents.length}{" "}
-                      {selectedEvents.length === 1
-                        ? "event"
-                        : "events"}{" "}
-                      selected
+                      {selectedEvents.length === 1 ? "Competition" : "Competitions"}{" "}
+                      Selected
                     </h3>
 
                     <div className="mt-5 space-y-2">
                       {selectedEvents.map((event) => {
-                        const state = getTeamState(
-                          event.id
-                        );
-
+                        const state = getTeamState(event.id);
                         let amount = 0;
 
-                        if (
-                          event.payment_type === "paid"
-                        ) {
-                          const fee = Number(
-                            event.registration_fee || 0
-                          );
+                        if (event.payment_type === "paid") {
+                          const fee = Number(event.registration_fee || 0);
 
-                          if (
-                            event.payment_unit ===
-                            "per_team"
-                          ) {
+                          if (event.payment_unit === "per_team") {
                             amount = fee;
-                          } else if (
-                            isTeamEvent(event)
-                          ) {
-                            amount =
-                              fee *
-                              (1 +
-                                state.members.length);
+                          } else if (isTeamEvent(event)) {
+                            amount = fee * (1 + state.members.length);
                           } else {
                             amount = fee;
                           }
@@ -2375,16 +2302,12 @@ export default function RegistrationForm() {
                             key={event.id}
                             className="flex items-center justify-between gap-6 text-sm"
                           >
-                            <span className="text-white/50">
+                            <span className="text-zinc-300">
                               {event.name}
                             </span>
 
-                            <span className="font-medium text-white/80">
-                              {amount > 0
-                                ? `₹${amount.toLocaleString(
-                                  "en-IN"
-                                )}`
-                                : "Free"}
+                            <span className="font-mono text-sm font-medium text-white">
+                              {amount > 0 ? `₹${amount.toLocaleString("en-IN")}` : "Free"}
                             </span>
                           </div>
                         );
@@ -2393,91 +2316,82 @@ export default function RegistrationForm() {
                   </div>
 
                   <div className="md:text-right">
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-white/30">
-                      Total
+                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-violet-300">
+                      Total Payable
                     </p>
 
-                    <p className="mt-2 text-4xl font-semibold tracking-[-0.04em]">
-                      {totalPrice > 0
-                        ? `₹${totalPrice.toLocaleString(
-                          "en-IN"
-                        )}`
-                        : "Free"}
+                    <p className={`mt-1 text-3xl sm:text-5xl font-bold font-mono tracking-tight ${totalPrice > 0 ? "text-white" : "text-emerald-400"}`}>
+                      {totalPrice > 0 ? `₹${totalPrice.toLocaleString("en-IN")}` : "FREE"}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-white/50 font-mono">
+                  <span className="flex items-center gap-1.5 text-violet-300">
+                    <ShieldCheck size={14} />
+                    <span>Official UGC Certified Passes</span>
+                  </span>
+                  <span>•</span>
+                  <span>Instant Razorpay Processing</span>
+                  <span>•</span>
+                  <span>Live QR Pass Generated</span>
                 </div>
               </div>
             )}
 
-            {/* AGREEMENT */}
-            <label className="flex cursor-pointer items-start gap-3 border-t border-black/10 pt-8">
+            {/* CODE OF CONDUCT AGREEMENT */}
+            <label className="flex cursor-pointer items-start gap-3.5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5 transition hover:border-white/20">
               <input
                 type="checkbox"
                 name="agreement"
                 required
-                className="mt-1 h-4 w-4 accent-black"
+                className="mt-1 h-4 w-4 cursor-pointer accent-violet-500"
               />
 
-              <span className="max-w-2xl text-sm leading-6 text-black/45">
-                I confirm that the information provided above
-                is correct and I agree to follow the official
-                Saviskar event rules.
+              <span className="max-w-2xl text-xs sm:text-sm leading-relaxed text-zinc-300">
+                I confirm that all delegate information provided above is authentic and I agree to strictly adhere to the official Saviskar 2026 code of conduct and tournament rulebooks.
               </span>
             </label>
 
             {errorMessage && (
-              <div className="flex items-center gap-3 rounded-2xl bg-red-50 px-5 py-4 text-sm text-red-700">
-                <AlertCircle size={18} />
+              <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-950/40 px-5 py-4 text-sm text-red-300 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
+                <AlertCircle size={18} className="shrink-0 text-red-400" />
                 <span>{errorMessage}</span>
               </div>
             )}
 
-            {/* SUBMIT */}
-            <div className="flex flex-col items-stretch justify-between gap-6 border-t border-black/10 pt-8 sm:flex-row sm:items-center">
+            {/* SUBMIT & CHECKOUT ACTION */}
+            <div className="flex flex-col items-stretch justify-between gap-6 border-t border-white/10 pt-8 sm:flex-row sm:items-center">
               <div>
-                <p className="text-xs text-black/35">
+                <p className="font-mono text-xs text-white/60">
                   {selectedEvents.length === 0
-                    ? "Select at least one event."
-                    : `${selectedEvents.length} event${selectedEvents.length === 1
-                      ? ""
-                      : "s"
-                    } selected`}
+                    ? "Select at least one competition to continue."
+                    : `${selectedEvents.length} event${selectedEvents.length === 1 ? "" : "s"} ready for registration.`}
                 </p>
 
                 {totalPrice > 0 && (
-                  <p className="mt-1 text-sm font-medium">
-                    Total: ₹
-                    {totalPrice.toLocaleString(
-                      "en-IN"
-                    )}
+                  <p className="mt-1 font-mono text-sm font-semibold text-violet-300">
+                    Grand Total: ₹{totalPrice.toLocaleString("en-IN")}
                   </p>
                 )}
               </div>
 
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  eventsLoading ||
-                  selectedEventIds.length === 0
-                }
-                className="group flex min-w-[220px] items-center justify-center gap-3 rounded-full bg-black px-7 py-4 text-sm font-medium text-white transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={loading || eventsLoading || selectedEventIds.length === 0}
+                className="group flex min-w-[240px] items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition-all hover:scale-105 hover:bg-violet-100 shadow-[0_10px_35px_rgba(255,255,255,0.3)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
               >
                 {loading ? (
                   <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Registering
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                    <span>Processing Registration...</span>
                   </>
                 ) : (
                   <>
-                    {totalPrice > 0
-                      ? "Continue registration"
-                      : "Complete registration"}
-
-                    <ArrowRight
-                      size={16}
-                      className="transition-transform group-hover:translate-x-1"
-                    />
+                    <span>
+                      {totalPrice > 0 ? "Proceed to Checkout" : "Confirm Official Registration"}
+                    </span>
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                   </>
                 )}
               </button>
@@ -2492,16 +2406,17 @@ export default function RegistrationForm() {
 function Field({
   label,
   children,
+  className = "",
 }: {
   label: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <label className="block">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black/40">
+    <label className={`block space-y-2 ${className}`}>
+      <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300/80">
         {label}
       </span>
-
       {children}
     </label>
   );
