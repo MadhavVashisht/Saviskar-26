@@ -1,7 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeft, ArrowUpRight, Mail, Phone, Sparkles } from "lucide-react";
 import RegistrationForm from "@/components/registration/RegistrationForm";
+
+export const metadata: Metadata = {
+  title: "Official Registration Portal",
+  description:
+    "Register for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Fast-track digital verification for 50+ realms across technology, culture, hackathons, and sports.",
+  openGraph: {
+    title: "Official Registration | Saviskar 2026: Aevorian Reverie",
+    description:
+      "Join thousands of university delegates nationwide for Saviskar 2026 at CGC University, Mohali.",
+  },
+};
 
 function RegistrationFormLoading() {
   return (
@@ -60,7 +72,7 @@ export default async function RegisterPage({
             href="/events"
             className="liquid-glass hidden items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium text-white/70 transition hover:text-white sm:flex"
           >
-            <span>All Arenas</span>
+            <span>All Realms</span>
             <ArrowUpRight size={13} />
           </Link>
         </div>
@@ -81,7 +93,7 @@ export default async function RegisterPage({
 
           <div className="mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-t border-white/10 pt-8">
             <p className="max-w-lg text-base leading-7 text-white/60">
-              Choose your arena, specify team members, and complete your secure registration to claim your official badge at Saviskar 2026.
+              Choose your realm, specify team members, lock in your squad, and claim your official accreditation pass for Saviskar 2026. Open to competitors and creators from 500+ colleges and universities nationwide.
             </p>
 
             <span className="font-mono text-xs text-white/40">
@@ -111,7 +123,7 @@ export default async function RegisterPage({
             </h2>
 
             <p className="mt-3 max-w-md text-sm leading-6 text-white/50">
-              Our student coordinators are available daily to assist with bulk college delegations, solo registrations, and payment confirmations.
+              Our student coordinators are available daily to assist with bulk university delegations, solo registrations, and payment confirmations.
             </p>
           </div>
 
@@ -133,8 +145,8 @@ export default async function RegisterPage({
             >
               <Phone size={18} className="text-violet-300" />
               <div>
-                <p className="text-[9px] uppercase tracking-wider text-white/40">Helpline</p>
-                <p className="text-xs font-medium text-white">+91 76673 40235</p>
+                <p className="text-[9px] uppercase tracking-wider text-white/40">Helpline Numbers</p>
+                <p className="text-xs font-medium text-white">+91 76673 40235 • +91 80997 31133</p>
               </div>
             </a>
           </div>

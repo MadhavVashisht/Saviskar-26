@@ -122,9 +122,8 @@ export default function SchedulePage() {
                 transition={{ delay: 0.35, duration: 0.8 }}
                 className="mt-10 max-w-xl text-base leading-7 text-white/50 md:text-lg"
               >
-                Everything between the first arrival and the final applause.
-                Follow the journey through every competition, performance and
-                moment that makes Saviskar.
+                48 hours of non-stop competition, innovation, and celebration.
+                From the opening inauguration ceremony to the midnight Star Night finale at CGC University, Mohali (24–25 October 2026).
               </motion.p>
             </div>
 
@@ -209,7 +208,7 @@ export default function SchedulePage() {
               href="/register"
               className="group flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-medium text-black transition-transform hover:scale-[1.03]"
             >
-              Register for Saviskar
+              Register for Saviskar 2026
               <ArrowUpRight
                 size={16}
                 className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-async function createRulebook(arenaName, subtitle, eventsList, filename) {
+async function createRulebook(realmName, subtitle, eventsList, filename) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 841.89]); // A4
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -38,7 +38,7 @@ async function createRulebook(arenaName, subtitle, eventsList, filename) {
   });
 
   // Title
-  page.drawText(`SAVISKAR 2026 — ${arenaName.toUpperCase()} RULEBOOK`, {
+  page.drawText(`SAVISKAR 2026 — ${realmName.toUpperCase()} RULEBOOK`, {
     x: 50,
     y: height - 80,
     size: 18,
@@ -47,7 +47,7 @@ async function createRulebook(arenaName, subtitle, eventsList, filename) {
   });
 
   // Tagline
-  page.drawText(`Official Arena Regulations & Guidelines • ${subtitle}`, {
+  page.drawText(`Official Realm Regulations & Guidelines • ${subtitle}`, {
     x: 50,
     y: height - 105,
     size: 10,
@@ -58,7 +58,7 @@ async function createRulebook(arenaName, subtitle, eventsList, filename) {
   let y = height - 180;
 
   // General Instructions
-  page.drawText("1. GENERAL ELIGIBILITY & REGISTRATION", {
+  page.drawText("1. GENERAL PARTICIPATION GUIDELINES", {
     x: 50,
     y,
     size: 12,
@@ -67,20 +67,21 @@ async function createRulebook(arenaName, subtitle, eventsList, filename) {
   });
   y -= 20;
 
-  const generalLines = [
-    "• Valid college/university student ID card is mandatory for all participants at registration check-in.",
-    "• All teams must report to the venue desk at least 45 minutes prior to their scheduled event start.",
-    "• Any violation of university code of conduct or unsportsmanlike behavior will result in immediate disqualification.",
-    "• The decision of the judging panel and festival convenors shall be final and binding.",
+  const generalRules = [
+    "• All participants must carry a valid College / University ID card along with their digital Saviskar pass.",
+    "• Reporting time for all events is strictly 45 minutes prior to the scheduled start time.",
+    "• Cross-college teams are permitted unless explicitly prohibited in specific event guidelines.",
+    "• The decision of the judging panel and jury will be final and binding on all teams.",
+    "• Any form of indiscipline, malpractice, or misconduct will lead to immediate disqualification.",
   ];
 
-  for (const line of generalLines) {
-    page.drawText(line, { x: 60, y, size: 9, font, color: rgb(0.25, 0.25, 0.25) });
+  for (const rule of generalRules) {
+    page.drawText(rule, { x: 50, y, size: 9, font, color: rgb(0.3, 0.3, 0.3) });
     y -= 16;
   }
 
   y -= 15;
-  page.drawText("2. ARENA COMPETITIONS & FORMAT", {
+  page.drawText("2. REALM COMPETITIONS & FORMAT", {
     x: 50,
     y,
     size: 12,
@@ -149,28 +150,28 @@ async function createRulebook(arenaName, subtitle, eventsList, filename) {
 }
 
 async function run() {
-  await createRulebook("Cultural Arena", "Dance. Music. Performance.", [
+  await createRulebook("Cultural Realm", "Dance. Music. Performance.", [
     { title: "Step Stars (Solo Dance)", desc: "Time limit: 3-5 mins. Props allowed with prior approval. Audio tracks on pen drive." },
     { title: "Step It Up (Western Dance Crew)", desc: "Team size: 8-20 members. Time limit: 6-8 mins. Judged on synchronization and choreography." },
     { title: "Gully War (Rap Battle)", desc: "Original lyrics required. Rounds of 90 seconds. No profanity or explicit vulgarity." },
     { title: "Battle of Bands", desc: "Time limit: 12 mins (including setup). Drum kit provided. Judged on tight arrangement." },
   ], "saviskar-2026-cultural-rulebook.pdf");
 
-  await createRulebook("Technical Arena", "Build. Invent. Compete.", [
+  await createRulebook("Technical Realm", "Build. Invent. Compete.", [
     { title: "Code Cracker (Bug Hunt)", desc: "Competitive debugging and algorithmic problem solving. Languages: C++, Java, Python." },
     { title: "Dronathon", desc: "Drone obstacle clearance and aerial stability challenge. Pre-flight safety check mandatory." },
     { title: "RoboRace", desc: "Autonomous and manually controlled bots on dynamic racing tracks with varying terrain." },
     { title: "TechXhibit", desc: "Working hardware and software prototypes aligned with sustainable technological innovation." },
   ], "saviskar-2026-technical-rulebook.pdf");
 
-  await createRulebook("Sports Arena", "Play. Push. Win.", [
+  await createRulebook("Sports Realm", "Play. Push. Win.", [
     { title: "Track & Field Sprinting", desc: "Standard IAAF track guidelines apply. Clean spikes and designated jerseys mandatory." },
     { title: "Basketball Invitational", desc: "4 quarters of 10 mins each. FIBA tournament rules enforced by certified referees." },
     { title: "Badminton Open", desc: "Best of 3 sets of 21 points. Non-marking gum sole shoes strictly mandatory." },
     { title: "Volleyball Championship", desc: "Rally point system. Best of 3 sets. Rotation and net contact violations strictly enforced." },
   ], "saviskar-2026-sports-rulebook.pdf");
 
-  await createRulebook("Non-Technical Arena", "Create. Think. Express.", [
+  await createRulebook("Non-Technical Realm", "Create. Think. Express.", [
     { title: "Doodle Art & Face Painting", desc: "Theme announced on the spot. Materials must be skin-safe. Time limit: 90 minutes." },
     { title: "Short Film Contest", desc: "Maximum duration: 7 minutes. Must include festival title card. Original cinematography only." },
     { title: "Open Mic & Standup", desc: "Original content only. 4-minute strict timer. Audience engagement and stage presence." },

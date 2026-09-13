@@ -19,12 +19,12 @@ const CRITICAL_IMAGES = [
 ];
 
 const STATUS_STEPS = [
-  { at: 0, text: "INITIALIZING AEVORIAN FREQUENCIES" },
-  { at: 20, text: "SYNCING 8K STAGE ASSETS & FONTS" },
-  { at: 45, text: "TUNING VOLUMETRIC LIGHTING RIGS" },
-  { at: 68, text: "EXPANDING CINEMA IMMERSION • FULLSCREEN ACTIVE" },
+  { at: 0, text: "INITIALIZING AEVORIAN FREQUENCIES // SRIJAN × AVISHKAR" },
+  { at: 20, text: "CALIBRATING 50+ REALMS // CGC UNIVERSITY MOHALI" },
+  { at: 45, text: "SYNCING 8K STAGE ILLUMINATIONS & SOUND RIGS" },
+  { at: 68, text: "WHERE TOMORROW DREAMS AWAKE • EXPANDING IMMERSION" },
   { at: 88, text: "ALL SYSTEMS PRIMED • AWAKENING FESTIVAL REALM" },
-  { at: 99, text: "AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL" },
+  { at: 99, text: "AEVORIAN REVERIE UNLOCKED • ENTERING SAVISKAR 2026" },
 ];
 
 export default function Preloader({
@@ -47,13 +47,13 @@ export default function Preloader({
   const [statusText, setStatusText] = useState(STATUS_STEPS[0].text);
   const [isExiting, setIsExiting] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 9 });
+  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 8 });
   const [timecode, setTimecode] = useState("00:00:00:00");
   const [windowSize, setWindowSize] = useState({ w: 1440, h: 900 });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const assetsReadyRef = useRef(false);
-  const targetProgressRef = useRef(15);
+  const isExitingRef = useRef(false);
 
   // Clear any legacy session flag so preloader is never blocked
   useEffect(() => {
@@ -64,12 +64,12 @@ export default function Preloader({
     }
   }, []);
 
-  // Measure window for pixel-perfect expansion
+  // Measure window for responsive expansion
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
-        w: window.innerWidth,
-        h: window.innerHeight,
+        w: typeof window !== "undefined" ? window.innerWidth : 1440,
+        h: typeof window !== "undefined" ? window.innerHeight : 900,
       });
     };
     handleResize();
@@ -78,58 +78,69 @@ export default function Preloader({
   }, []);
 
   const finishLoading = useCallback(() => {
-    if (isExiting) return;
+    if (isExitingRef.current) return;
+    isExitingRef.current = true;
     setIsExiting(true);
     setTimeout(() => {
       setShowPreloader(false);
       onComplete?.();
-    }, 600);
-  }, [isExiting, onComplete]);
+    }, 550);
+  }, [onComplete]);
 
   const finishLoadingRef = useRef(finishLoading);
   useEffect(() => {
     finishLoadingRef.current = finishLoading;
   }, [finishLoading]);
 
-  // Real asset preloading tracker (Images, Fonts, DOM, Preloader Video)
+  // Robust asset preloader with per-asset timeout protection (never hangs)
   useEffect(() => {
     if (!showPreloader) return;
 
     let isMounted = true;
+
+    // Helper: wrap any promise with a strict timeout so a single slow asset never blocks
+    const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 1800): Promise<T | null> => {
+      return Promise.race([
+        promise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+      ]);
+    };
+
     const preloadImage = (src: string) =>
-      new Promise<void>((resolve) => {
-        const img = new Image();
-        img.src = src;
-        img.onload = () => resolve();
-        img.onerror = () => resolve();
-      });
+      withTimeout(
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        })
+      );
 
     const fontPromise =
       typeof document !== "undefined" && document.fonts
-        ? document.fonts.ready.catch(() => {})
+        ? withTimeout(document.fonts.ready.catch(() => {}), 1500)
         : Promise.resolve();
 
     const docPromise =
       typeof document !== "undefined" && document.readyState === "complete"
         ? Promise.resolve()
-        : new Promise<void>((resolve) => {
-            window.addEventListener("load", () => resolve(), { once: true });
-          });
-
-    const videoPromise = new Promise<void>((resolve) => {
-      if (typeof window === "undefined") return resolve();
-      const vid = document.createElement("video");
-      vid.src = "/PreLoader/preloader.mp4";
-      vid.preload = "auto";
-      vid.onloadeddata = () => resolve();
-      vid.onerror = () => resolve();
-    });
+        : withTimeout(
+            new Promise<void>((resolve) => {
+              if (document.readyState === "complete") {
+                resolve();
+              } else {
+                window.addEventListener("load", () => resolve(), { once: true });
+                // Also resolve on DOMContentLoaded as faster reliable fallback
+                window.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
+              }
+            }),
+            1500
+          );
 
     const assetPromises = [
       ...CRITICAL_IMAGES.map(preloadImage),
       fontPromise,
       docPromise,
-      videoPromise,
     ];
 
     const totalAssets = assetPromises.length;
@@ -141,11 +152,6 @@ export default function Preloader({
         if (!isMounted) return;
         completedCount++;
         setAssetCount({ loaded: completedCount, total: totalAssets });
-        const currentRatio = completedCount / totalAssets;
-        targetProgressRef.current = Math.max(
-          targetProgressRef.current,
-          Math.floor(currentRatio * 100)
-        );
         if (completedCount >= totalAssets) {
           assetsReadyRef.current = true;
           setAssetsLoaded(true);
@@ -153,29 +159,39 @@ export default function Preloader({
       });
     });
 
+    // Hard fallback safety: assets considered ready after 2.4s max regardless of network
+    const hardSafetyTimer = setTimeout(() => {
+      if (isMounted) {
+        assetsReadyRef.current = true;
+        setAssetsLoaded(true);
+      }
+    }, 2400);
+
     return () => {
       isMounted = false;
+      clearTimeout(hardSafetyTimer);
     };
   }, [showPreloader]);
 
-  // Real-time animation pacing & timecode loop
+  // Smooth, monotonic cinematic progress engine
+  // Eliminates instant jump to 96% and guarantees steady, organic pacing
   useEffect(() => {
     if (!showPreloader) return;
 
-    // Lock page scroll during preloader
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const startTime = performance.now();
-    const minDurationMs = minDurationSeconds * 1000;
+    // Sweet-spot target duration: ~2.6 seconds total
+    const targetDurationMs = Math.max(2200, minDurationSeconds * 1000);
     let currentPct = 0;
 
     const interval = setInterval(() => {
       const now = performance.now();
       const elapsed = now - startTime;
-      const timeRatio = Math.min(1, elapsed / minDurationMs);
+      const timeRatio = Math.min(1, elapsed / targetDurationMs);
 
-      // Live SMPTE-style timecode calculation
+      // SMPTE timecode calculation
       const totalFrames = Math.floor((elapsed / 1000) * 24);
       const s = Math.floor(elapsed / 1000) % 60;
       const m = Math.floor(elapsed / 60000) % 60;
@@ -185,21 +201,30 @@ export default function Preloader({
       );
 
       const isAssetsDone = assetsReadyRef.current;
-      const isMinTimeElapsed = elapsed >= minDurationMs;
 
-      if (isAssetsDone && isMinTimeElapsed) {
-        // Real assets loaded + smooth minimum transition elapsed -> accelerate to 100%
-        currentPct += Math.max(3.5, (100 - currentPct) * 0.38);
-      } else {
-        // Progress toward real asset ratio, capped at 88% until all assets are primed
-        const maxAllowed = isAssetsDone ? 96 : 88;
-        const target = Math.min(
-          maxAllowed,
-          Math.max(targetProgressRef.current, timeRatio * 85)
-        );
-        if (currentPct < target) {
-          currentPct += Math.max(1, (target - currentPct) * 0.18);
-        }
+      // Calculate organic target progress based on smoothstep time curve
+      // Smoothstep: 3*t^2 - 2*t^3 gives a cinematic ease-in-out feel
+      const smoothStep = timeRatio * timeRatio * (3 - 2 * timeRatio);
+      const timeTarget = smoothStep * 100;
+
+      let desiredTarget = timeTarget;
+
+      // If assets are still loading after 75% time, hold gently at 82% until ready
+      if (!isAssetsDone && desiredTarget > 82) {
+        desiredTarget = 82;
+      }
+
+      // If assets are ready and time has reached target, glide to 100%
+      if (isAssetsDone && timeRatio >= 0.95) {
+        desiredTarget = 100;
+      }
+
+      // STRICT RATE LIMITER: Prevents any instant teleportation to 96%
+      // Maximum delta per 24ms tick is 1.4% -> smoothly takes minimum 1.8s even if cached
+      const delta = desiredTarget - currentPct;
+      if (delta > 0) {
+        const step = Math.min(1.4, Math.max(0.4, delta * 0.12));
+        currentPct = Math.min(100, currentPct + step);
       }
 
       const displayPct = Math.min(100, Math.floor(currentPct));
@@ -213,36 +238,38 @@ export default function Preloader({
         }
       }
 
-      // When completion reached -> smoothly transition into website
-      if (currentPct >= 99.5) {
+      // Completion reached: hold for 140ms and transition into festival
+      if (currentPct >= 99.8) {
         clearInterval(interval);
         setProgress(100);
-        setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING FESTIVAL");
+        setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING SAVISKAR 2026");
         setTimeout(() => {
           finishLoadingRef.current();
-        }, 160);
+        }, 140);
       }
-    }, 28);
+    }, 24);
 
-    // Fallback safety timeout so slow networks never hang
-    const safetyTimer = setTimeout(() => {
-      assetsReadyRef.current = true;
-      setAssetsLoaded(true);
-    }, 5500);
+    // Ultimate fallback timer: force completion at 3.4 seconds max
+    const maxSafetyTimer = setTimeout(() => {
+      setProgress(100);
+      finishLoadingRef.current();
+    }, 3400);
 
     return () => {
       document.body.style.overflow = originalOverflow;
       clearInterval(interval);
-      clearTimeout(safetyTimer);
+      clearTimeout(maxSafetyTimer);
     };
   }, [showPreloader, minDurationSeconds]);
 
-  // Attempt video autoPlay gracefully
+  // Video playback management on the mounted element
   useEffect(() => {
-    if (showPreloader && videoRef.current) {
-      videoRef.current.playbackRate = 1.0;
-      videoRef.current.play().catch(() => {
-        // Autoplay policy fallback
+    if (!showPreloader) return;
+    const vid = videoRef.current;
+    if (vid) {
+      vid.playbackRate = 1.0;
+      vid.play().catch(() => {
+        // Autoplay policy fallback (video will show poster/webp)
       });
     }
   }, [showPreloader]);
@@ -256,16 +283,20 @@ export default function Preloader({
     finishLoadingRef.current();
   };
 
-  // Expansion curve calculation:
-  // Starts expanding at 15% and covers 100% full screen by 88%
-  const rawExpansion = Math.max(0, Math.min(1, (progress - 15) / (88 - 15)));
-  const easedExpansion = rawExpansion * rawExpansion * (3 - 2 * rawExpansion);
+  // Fluid Expansion Calculation:
+  // Begins expanding immediately from 0% and reaches 100% full screen by 72%
+  // This completely eliminates getting stuck in a small window!
+  const expansionProgress = Math.max(0, Math.min(1, progress / 72));
+  // Smooth cubic easing for the expansion
+  const easedExpansion =
+    expansionProgress * expansionProgress * (3 - 2 * expansionProgress);
 
-  // Exact pixel dimensions during expansion
-  const initialWidth = Math.min(840, windowSize.w * 0.88);
-  const initialHeight = Math.min(560, windowSize.h * 0.62);
+  const isFullscreen = easedExpansion >= 0.99 || isExiting;
 
-  const isFullscreen = easedExpansion >= 0.999;
+  // Initial cinematic 16:9 aperture in center (responsive)
+  const initialWidth = Math.min(780, windowSize.w * 0.82);
+  const initialHeight = Math.min(500, windowSize.h * 0.56);
+
   const currentWidth = isFullscreen
     ? windowSize.w
     : initialWidth + (windowSize.w - initialWidth) * easedExpansion;
@@ -274,14 +305,14 @@ export default function Preloader({
     ? windowSize.h
     : initialHeight + (windowSize.h - initialHeight) * easedExpansion;
 
-  const currentRadius = isFullscreen ? 0 : Math.max(0, Math.round(20 * (1 - easedExpansion)));
-  const currentBorderOpacity = isFullscreen ? 0 : (1 - easedExpansion) * 0.22;
-  const currentShadowSpread = isFullscreen ? 0 : Math.round(90 * (1 - easedExpansion));
+  const currentRadius = isFullscreen ? 0 : Math.max(0, Math.round(18 * (1 - easedExpansion)));
+  const currentBorderOpacity = isFullscreen ? 0 : (1 - easedExpansion) * 0.25;
+  const currentShadowSpread = isFullscreen ? 0 : Math.round(80 * (1 - easedExpansion));
 
-  // Progressive color awakening: monochrome transitions smoothly to rich festival color from 62% to 94%
-  const colorAwakenRatio = Math.max(0, Math.min(1, (progress - 62) / (94 - 62)));
+  // Progressive color awakening: monochrome transitions smoothly to rich festival color from 50% to 90%
+  const colorAwakenRatio = Math.max(0, Math.min(1, (progress - 50) / 40));
   const currentGrayscale = Math.max(0, 1 - colorAwakenRatio);
-  const currentSaturate = 1 + colorAwakenRatio * 0.25;
+  const currentSaturate = 1 + colorAwakenRatio * 0.3;
 
   return (
     <AnimatePresence>
@@ -358,15 +389,18 @@ export default function Preloader({
 
           {/* Center Stage: Gradually Expands to Cover Entire Screen */}
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden z-10 bg-neutral-950 flex items-center justify-center will-change-[width,height,border-radius]"
+            className={`absolute overflow-hidden z-10 bg-neutral-950 flex items-center justify-center will-change-[width,height,border-radius] transition-[border-radius,box-shadow] duration-200 ${
+              isFullscreen
+                ? "inset-0 left-0 top-0 translate-x-0 translate-y-0 w-full h-full"
+                : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            }`}
             style={{
-              width: `${currentWidth}px`,
-              height: `${currentHeight}px`,
-              borderRadius: `${currentRadius}px`,
-              borderWidth: `${(1 - easedExpansion) * 1.5}px`,
+              width: isFullscreen ? "100%" : `${currentWidth}px`,
+              height: isFullscreen ? "100%" : `${currentHeight}px`,
+              borderRadius: isFullscreen ? "0px" : `${currentRadius}px`,
+              borderWidth: isFullscreen ? "0px" : `${(1 - easedExpansion) * 1.5}px`,
               borderColor: `rgba(255, 255, 255, ${currentBorderOpacity})`,
-              boxShadow: `0 0 ${currentShadowSpread}px rgba(0,0,0,0.95)`,
-              transition: "box-shadow 0.2s ease-out",
+              boxShadow: isFullscreen ? "none" : `0 0 ${currentShadowSpread}px rgba(0,0,0,0.95)`,
             }}
           >
             {/* Viewfinder Camera HUD (Active during initial expand, gracefully fades on full screen) */}
@@ -432,6 +466,14 @@ export default function Preloader({
               playsInline
               loop
               preload="auto"
+              onLoadedData={() => {
+                assetsReadyRef.current = true;
+                setAssetsLoaded(true);
+              }}
+              onCanPlay={() => {
+                assetsReadyRef.current = true;
+                setAssetsLoaded(true);
+              }}
               className="w-full h-full object-cover transition-all duration-700 ease-out"
               style={{
                 transform: `scale(${1 + easedExpansion * 0.04})`,
@@ -531,7 +573,7 @@ export default function Preloader({
                     ? "FULLSCREEN IMMERSION ACTIVE"
                     : "CALIBRATING STADIUM MATRIX"}
                 </span>
-                <span>CGC UNIVERSITY</span>
+                <span>CGC UNIVERSITY MOHALI</span>
               </div>
             </div>
           </div>

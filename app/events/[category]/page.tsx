@@ -13,7 +13,7 @@ const categories = {
     title: "Cultural",
     tagline: "Dance. Music. Performance.",
     description:
-      "A premier stage for expression, rhythm and performances that turn moments into memories under stadium lights.",
+      "High-voltage music, choreography, theatre, and grand performances taking over the central Saviskar concert mainstage.",
     image: "/images/concert-cultural-stage.jpg",
     rulebookUrl: "/rulebooks/saviskar-2026-cultural-rulebook.pdf",
   },
@@ -22,7 +22,7 @@ const categories = {
     title: "Technical",
     tagline: "Build. Invent. Compete.",
     description:
-      "Where cutting-edge code meets mechanical ingenuity. Step into futuristic laser-lit arenas designed for creators.",
+      "Where cutting-edge code meets robotics and mechanical ingenuity. Compete across futuristic realms designed for builders and hackers.",
     image: "/images/concert-tech-stage.jpg",
     rulebookUrl: "/rulebooks/saviskar-2026-technical-rulebook.pdf",
   },
@@ -31,7 +31,7 @@ const categories = {
     title: "Non-Technical",
     tagline: "Create. Think. Express.",
     description:
-      "Creativity, strategy and unconventional challenges designed to test creative expression and spontaneous wit.",
+      "Strategic simulations, visual arts, filmmaking, debates, and creative expression designed beyond the classroom.",
     image: "/images/concert-solution-panoramic.jpg",
     rulebookUrl: "/rulebooks/saviskar-2026-non-technical-rulebook.pdf",
   },
@@ -40,7 +40,7 @@ const categories = {
     title: "Sports",
     tagline: "Play. Push. Win.",
     description:
-      "Under towering stadium floodlights and flame pillars, bring unstoppable athletic energy and compete for glory.",
+      "Under towering stadium floodlights and electric realm energy, bring unstoppable athletic stamina and compete for glory.",
     image: "/images/concert-sports-arena.jpg",
     rulebookUrl: "/rulebooks/saviskar-2026-sports-rulebook.pdf",
   },
@@ -111,12 +111,12 @@ export default function CategoryPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
         <div className="text-center">
-          <h1 className="text-5xl font-semibold">Arena Not Found</h1>
+          <h1 className="text-5xl font-semibold">Realm Not Found</h1>
           <Link
             href="/events"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-violet-200"
           >
-            <ArrowLeft size={16} /> Back to Arenas
+            <ArrowLeft size={16} /> Back to Realms
           </Link>
         </div>
       </main>
@@ -149,7 +149,7 @@ export default function CategoryPage() {
               className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition hover:text-white"
             >
               <ArrowLeft size={14} />
-              <span>All Arenas</span>
+              <span>All Realms</span>
             </Link>
 
             <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/50">
@@ -170,7 +170,7 @@ export default function CategoryPage() {
         {/* Hero Content */}
         <div className="relative z-10 mx-auto flex min-h-[92vh] max-w-[1440px] flex-col justify-end px-6 pb-16 md:px-10 md:pb-24">
           <span className="mb-4 font-mono text-xs tracking-[0.3em] text-violet-300">
-            ARENA {categoryInfo.number}
+            REALM {categoryInfo.number}
           </span>
 
           <h1 className="text-[clamp(4rem,12vw,11.5rem)] font-light leading-[0.8] tracking-tight text-white">
@@ -234,7 +234,7 @@ export default function CategoryPage() {
               <div className="py-20 text-center">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
                 <p className="mt-4 text-sm text-white/40">
-                  Loading verified arena events...
+                  Loading verified realm competitions...
                 </p>
               </div>
             )}

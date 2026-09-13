@@ -1399,7 +1399,7 @@ export default function RegistrationForm() {
             </h2>
 
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/60">
-              Select one or more arena events. You only need to register
+              Select one or more realm competitions. You only need to register
               once — your official Saviskar Participant ID will stay the same
               across all your events.
             </p>

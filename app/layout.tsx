@@ -21,22 +21,72 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: {
-    default: "Saviskar 2026 | Aevorian Reverie",
-    template: "%s | Saviskar 2026 — Aevorian Reverie",
+    default: "Saviskar 2026 | Aevorian Reverie — Annual National University Fest | CGC University, Mohali",
+    template: "%s | Saviskar 2026 — Aevorian Reverie | CGC University, Mohali",
   },
   description:
-    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. The premier techno-cultural festival of CGC University, Mohali.",
+    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. A future imagined so vividly, it begins to exist. Featuring 50+ competitive realms across technology, cultural arts, national hackathons, robotics, sports, and headline Star Night concerts.",
+  keywords: [
+    "Saviskar 2026",
+    "Aevorian Reverie",
+    "Where Tomorrow Dreams Awake",
+    "A future imagined so vividly it begins to exist",
+    "Srijan",
+    "Avishkar",
+    "CGC University Mohali",
+    "CGC Landran",
+    "Annual National University Festival",
+    "North India University Fest",
+    "Techno-Cultural Fest 2026",
+    "Star Night CGC University",
+    "National Hackathons 2026",
+    "Robotics Realm",
+    "Inter-University Competitions",
+    "Punjab University Festival",
+    "Student Festival Registrations"
+  ],
+  authors: [{ name: "CGC University, Mohali", url: "https://saviskar-2026.vercel.app" }],
+  creator: "CGC University, Mohali",
+  publisher: "CGC University, Mohali",
+  category: "University Festival & National Competitions",
   metadataBase: new URL("https://saviskar-2026.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
     description:
-      "Register for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. 50+ Events, 100+ Colleges, 2 Days.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, 500+ Colleges & Universities, 25,000+ Participants, 2 Action-Packed Days.",
+    url: "https://saviskar-2026.vercel.app",
     siteName: "Saviskar 2026",
+    locale: "en_IN",
     type: "website",
+    images: [
+      {
+        url: "/images/concert-stadium.jpg",
+        width: 1920,
+        height: 1080,
+        alt: "Saviskar 2026 Aevorian Reverie Mainstage Stadium Realm at CGC University, Mohali",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
+    description:
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali.",
+    images: ["/images/concert-stadium.jpg"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

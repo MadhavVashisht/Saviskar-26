@@ -287,7 +287,7 @@ const heroImage =
             <div className="flex flex-col justify-end">
               <p className="max-w-lg text-base leading-7 text-white/60">
                 Official eligibility requirements, competition formats,
-                judging criteria and arena-specific regulations verified by the CGC University festival committee.
+                judging criteria and realm-specific regulations verified by the CGC University festival committee.
               </p>
 
               <a
@@ -296,7 +296,7 @@ const heroImage =
                 className="mt-8 liquid-glass inline-flex w-fit items-center gap-2.5 rounded-full px-6 py-3.5 text-sm font-medium text-white transition hover:bg-white/15 hover:border-violet-400"
               >
                 <FileDown size={16} />
-                Download {currentEvent.category ? currentEvent.category.toUpperCase() : "ARENA"} Rulebook PDF
+                Download {currentEvent.category ? currentEvent.category.toUpperCase() : "REALM"} Rulebook PDF
               </a>
             </div>
           </div>

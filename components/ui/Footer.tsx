@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, Mail, Phone, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -8,8 +9,34 @@ export default function Footer() {
   const [contactOpen, setContactOpen] = useState(false);
 
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-black px-6 py-16 text-white md:px-10 md:py-20">
-      <div className="mx-auto max-w-[1400px]">
+    <motion.footer
+      initial={{ opacity: 0, y: 35 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, amount: 0.15 }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="relative z-10 overflow-hidden border-t border-white/10 bg-black/60 backdrop-blur-2xl px-4 py-12 sm:px-6 sm:py-16 text-white md:px-10 md:py-20"
+    >
+      {/* 8K Stadium Concert Fireworks Continuation Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="relative h-full w-full">
+          <Image
+            src="/images/scene-finale-celebration.jpg"
+            alt="Saviskar 2026 Concert Stadium Celebration Continuation"
+            fill
+            sizes="100vw"
+            priority
+            loading="eager"
+            className="object-cover object-bottom opacity-35"
+          />
+        </div>
+
+        {/* Volumetric Concert Lighting & Multi-Layer Stage Haze Overlays */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.22)_0%,rgba(0,0,0,0.55)_50%,rgba(0,0,0,0.88)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/35 to-black/90 pointer-events-none" />
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-[450px] w-[80vw] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.12)_0%,transparent_70%)] blur-[90px] pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-[1400px]">
         <div className="flex flex-col gap-12 border-b border-white/10 pb-16 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2.5 text-2xl font-bold tracking-[0.15em]">
@@ -18,8 +45,7 @@ export default function Footer() {
             </div>
 
             <p className="mt-4 max-w-sm text-sm leading-6 text-white/45">
-              The premier annual techno-cultural celebration of CGC University, Mohali.
-              Two days of high-octane competition, innovation, and star performances.
+              North India&apos;s flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. Born from the roots of Srijan and Avishkar, uniting 25,000+ creators across 500+ colleges under Aevorian Reverie.
             </p>
 
             <div className="mt-6 flex flex-col gap-1">
@@ -27,7 +53,7 @@ export default function Footer() {
                 Theme: Aevorian Reverie
               </span>
               <span className="font-editorial text-xs text-white/50 tracking-wider">
-                Where Tomorrow Dreams Awake
+                Where Tomorrow Dreams Awake • &ldquo;A future imagined so vividly, it begins to exist.&rdquo;
               </span>
             </div>
           </div>
@@ -37,8 +63,8 @@ export default function Footer() {
               About
             </Link>
 
-            <Link href="/#events" className="transition-colors hover:text-white">
-              Arenas
+            <Link href="/events" className="transition-colors hover:text-white">
+              Realms
             </Link>
 
             <Link href="/#gallery" className="transition-colors hover:text-white">
@@ -76,9 +102,27 @@ export default function Footer() {
             </a>
 
             <a
-              href="/rulebooks/saviskar-2026-general-rulebook.pdf"
+              href="https://www.youtube.com/@SaviskarCGCJ"
               target="_blank"
-              download
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 transition-colors hover:text-white"
+            >
+              YouTube
+              <ArrowUpRight size={13} />
+            </a>
+
+            <a
+              href="https://www.linkedin.com/company/cgcuniversitymohali/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 transition-colors hover:text-white"
+            >
+              LinkedIn
+              <ArrowUpRight size={13} />
+            </a>
+
+            <a
+              href="/events"
               className="flex items-center gap-1 text-violet-300 hover:text-white"
             >
               Rulebooks
@@ -88,10 +132,15 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col gap-4 pt-8 text-[12px] text-white/35 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 Saviskar • CGC University, Mohali. All rights reserved.</p>
+          <div>
+            <p className="font-medium text-white/60">CGC University, Mohali</p>
+            <p className="mt-0.5 text-[11px] text-white/40">
+              State Highway 12A, Chandigarh-Sirhind Road, Sahibzada Ajit Singh Nagar, Punjab 140307
+            </p>
+          </div>
 
           <p className="font-mono text-[11px] tracking-wider text-white/40">
-            SECTOR 112, LANDRAN, MOHALI, PUNJAB • 140307
+            © 2026 SAVISKAR • CGC UNIVERSITY MOHALI • ALL RIGHTS RESERVED
           </p>
         </div>
       </div>
@@ -112,7 +161,7 @@ export default function Footer() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="liquid-glass relative w-full max-w-md rounded-[32px] border border-white/15 bg-black/90 p-8 text-white shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(168,85,247,0.18)] md:p-10"
+              className="liquid-glass relative max-h-[90vh] overflow-y-auto w-full max-w-lg rounded-[28px] sm:rounded-[32px] border border-white/15 bg-black/95 p-6 sm:p-8 text-white shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(168,85,247,0.18)] md:p-10 scrollbar-thin scrollbar-thumb-white/10"
               onClick={(event) => event.stopPropagation()}
             >
               <motion.button
@@ -120,7 +169,7 @@ export default function Footer() {
                 whileTap={{ scale: 0.9 }}
                 type="button"
                 onClick={() => setContactOpen(false)}
-                className="absolute right-6 top-6 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-colors hover:text-white"
+                className="absolute right-4 top-4 sm:right-6 sm:top-6 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-colors hover:text-white"
                 aria-label="Close contact"
               >
                 <X size={16} />
@@ -135,7 +184,7 @@ export default function Footer() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-white/50">
-                Have questions regarding event registrations, schedules, or campus venue? Contact the student coordinators.
+                Have questions regarding event registrations, university delegations, schedules, or campus venue? Contact our student coordinators.
               </p>
 
               <div className="mt-8 space-y-3">
@@ -158,52 +207,92 @@ export default function Footer() {
                   </div>
                 </motion.a>
 
-                <motion.a
-                  whileHover={{ scale: 1.02, x: 2 }}
-                  whileTap={{ scale: 0.98 }}
-                  href="tel:+917667340235"
-                  className="liquid-glass flex items-center gap-4 rounded-2xl border border-white/10 p-4 transition-colors hover:border-violet-500/40 hover:bg-white/10"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
-                    <Phone size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
-                      Student Coordinator Helpline
-                    </p>
-                    <p className="mt-0.5 text-sm font-medium text-white">
-                      +91 76673 40235
-                    </p>
-                  </div>
-                </motion.a>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <motion.a
+                    whileHover={{ scale: 1.02, x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                    href="tel:+917667340235"
+                    className="liquid-glass flex items-center gap-3 rounded-2xl border border-white/10 p-3.5 transition-colors hover:border-violet-500/40 hover:bg-white/10"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
+                      <Phone size={16} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
+                        Convenor Desk
+                      </p>
+                      <p className="mt-0.5 text-xs font-medium text-white">
+                        +91 76673 40235
+                      </p>
+                    </div>
+                  </motion.a>
 
-                <motion.a
-                  whileHover={{ scale: 1.02, x: 2 }}
-                  whileTap={{ scale: 0.98 }}
-                  href="tel:+918099731133"
-                  className="liquid-glass flex items-center gap-4 rounded-2xl border border-white/10 p-4 transition-colors hover:border-violet-500/40 hover:bg-white/10"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
-                    <Phone size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
-                      Technical & Event Support
-                    </p>
-                    <p className="mt-0.5 text-sm font-medium text-white">
-                      +91 80997 31133
-                    </p>
-                  </div>
-                </motion.a>
+                  <motion.a
+                    whileHover={{ scale: 1.02, x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                    href="tel:+918099731133"
+                    className="liquid-glass flex items-center gap-3 rounded-2xl border border-white/10 p-3.5 transition-colors hover:border-violet-500/40 hover:bg-white/10"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
+                      <Phone size={16} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
+                        Technical & Realm Ops
+                      </p>
+                      <p className="mt-0.5 text-xs font-medium text-white">
+                        +91 80997 31133
+                      </p>
+                    </div>
+                  </motion.a>
+
+                  <motion.a
+                    whileHover={{ scale: 1.02, x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                    href="tel:+919454775557"
+                    className="liquid-glass flex items-center gap-3 rounded-2xl border border-white/10 p-3.5 transition-colors hover:border-violet-500/40 hover:bg-white/10"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
+                      <Phone size={16} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
+                        Hospitality Desk
+                      </p>
+                      <p className="mt-0.5 text-xs font-medium text-white">
+                        +91 94547 75557
+                      </p>
+                    </div>
+                  </motion.a>
+
+                  <motion.a
+                    whileHover={{ scale: 1.02, x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                    href="tel:+918572815510"
+                    className="liquid-glass flex items-center gap-3 rounded-2xl border border-white/10 p-3.5 transition-colors hover:border-violet-500/40 hover:bg-white/10"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
+                      <Phone size={16} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
+                        Registrations
+                      </p>
+                      <p className="mt-0.5 text-xs font-medium text-white">
+                        +91 85728 15510
+                      </p>
+                    </div>
+                  </motion.a>
+                </div>
               </div>
 
               <div className="mt-6 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center text-[10px] text-white/40">
-                Campus Venue: CGC University, Sector 112, Landran, Mohali, Punjab
+                Campus Venue: CGC University, Sector 112, Landran, Mohali, Punjab - 140307, India
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </footer>
+    </motion.footer>
   );
 }

@@ -108,9 +108,7 @@ export default function PastPerformances() {
               transition={{ delay: 0.1, duration: 0.75 }}
               className="mt-7 max-w-[500px] text-base leading-8 text-white/55 md:text-lg"
             >
-              Every Star Night leaves behind memories that echo long after
-              the lights fade. Relive the performances that brought thousands
-              together under one unforgettable stage.
+              Every Star Night leaves behind electric memories that echo through college corridors long after the lights fade. Relive the monumental performances that united 25,000+ voices under the roaring CGC University mainstage.
             </motion.p>
 
             <div className="mt-12 hidden items-center gap-4 lg:flex">

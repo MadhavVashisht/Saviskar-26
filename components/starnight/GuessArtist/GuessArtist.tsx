@@ -15,9 +15,9 @@ export default function GuessArtist() {
   const [revealed, setRevealed] = useState(false);
 
   const clues = [
-    "The voice has already echoed across millions of playlists.",
-    "Their songs have turned ordinary nights into unforgettable ones.",
-    "The next Star Night stage is waiting for them.",
+    "Their anthems have shattered stadium sound barriers across millions of global streams.",
+    "Their high-octane tracks turn massive college crowds into an ocean of flashlight waves and mosh pits.",
+    "The Aevorian Reverie headline stage at CGC University Mohali is primed for their arrival.",
   ];
 
   return (

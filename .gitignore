@@ -11,3 +11,6 @@ node_modules/
 # Supabase local/temp files
 supabase/.temp/
 
+# Scratch & logs
+scratch/
+*.log

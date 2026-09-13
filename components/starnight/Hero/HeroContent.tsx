@@ -74,11 +74,11 @@ export default function HeroContent() {
         className="mt-10 max-w-xl"
       >
         <p className="text-lg leading-8 text-white/70">
-          Thousands of voices.
+          25,000+ collegiate voices singing as one.
           <br />
-          One stage.
+          Ground-shaking bass. Towering pyrotechnics.
           <br />
-          One unforgettable night.
+          One unforgettable headline night at CGC University Mohali.
         </p>
       </motion.div>
 
