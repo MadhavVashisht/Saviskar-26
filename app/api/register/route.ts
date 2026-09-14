@@ -1085,18 +1085,18 @@ export async function POST(
 
         const emailMembers = isTeam
           ? teamRowsForEvent
-              .filter(
-                (row: any) =>
-                  String(row.participant_id) !== String(participant?.id ?? "")
-              )
-              .map((row: any) => ({
-                participantId: String(row.participants?.participant_id ?? ""),
-                name: String(row.name ?? ""),
-                college: String(row.participants?.college ?? ""),
-                email: String(row.email ?? ""),
-                phone: String(row.phone ?? ""),
-                isTeamLeader: row.is_team_leader === true,
-              }))
+            .filter(
+              (row: any) =>
+                String(row.participant_id) !== String(participant?.id ?? "")
+            )
+            .map((row: any) => ({
+              participantId: String(row.participants?.participant_id ?? ""),
+              name: String(row.name ?? ""),
+              college: String(row.participants?.college ?? ""),
+              email: String(row.email ?? ""),
+              phone: String(row.phone ?? ""),
+              isTeamLeader: row.is_team_leader === true,
+            }))
           : [];
 
         let paymentResumeUrl: string | null = null;
@@ -1194,30 +1194,30 @@ export async function POST(
 
       totalAmount,
 
-paymentRequired:
-  totalAmount > 0,
+      paymentRequired:
+        totalAmount > 0,
 
-paymentOrder:
-  paymentOrder
-    ? {
-        id:
-          paymentOrder.id,
+      paymentOrder:
+        paymentOrder
+          ? {
+            id:
+              paymentOrder.id,
 
-        orderReference:
-          paymentOrder.order_reference,
+            orderReference:
+              paymentOrder.order_reference,
 
-        amount:
-          Number(
-            paymentOrder.amount
-          ),
+            amount:
+              Number(
+                paymentOrder.amount
+              ),
 
-        currency:
-          paymentOrder.currency,
+            currency:
+              paymentOrder.currency,
 
-        status:
-          paymentOrder.status,
-      }
-    : null,
+            status:
+              paymentOrder.status,
+          }
+          : null,
 
       /*
        * Payment is deliberately not started here.

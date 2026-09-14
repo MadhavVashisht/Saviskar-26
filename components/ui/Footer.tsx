@@ -102,7 +102,7 @@ export default function Footer() {
             </a>
 
             <a
-              href="https://www.youtube.com/@SaviskarCGCJ"
+              href="https://www.youtube.com/@SaviskarCGCU"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 transition-colors hover:text-white"

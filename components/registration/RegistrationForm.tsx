@@ -1576,13 +1576,12 @@ export default function RegistrationForm() {
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <p className="font-medium text-sm text-white">{item.eventName}</p>
-                                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${
-                                    item.paymentStatus === "paid"
+                                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${item.paymentStatus === "paid"
                                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                                       : item.paymentStatus === "pending"
-                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                      : "bg-white/10 text-white/70 border border-white/10"
-                                  }`}>
+                                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                        : "bg-white/10 text-white/70 border border-white/10"
+                                    }`}>
                                     {item.paymentStatus ? item.paymentStatus.replace(/_/g, " ") : "FREE"}
                                   </span>
                                 </div>
@@ -1698,11 +1697,10 @@ export default function RegistrationForm() {
                             key={category}
                             type="button"
                             onClick={() => setEventCategory(category)}
-                            className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all ${
-                              active
+                            className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all ${active
                                 ? "bg-white text-black font-semibold shadow-[0_0_15px_rgba(255,255,255,0.35)]"
                                 : "border border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
-                            }`}
+                              }`}
                           >
                             {category}
                           </button>
@@ -1752,8 +1750,8 @@ export default function RegistrationForm() {
                                   event.payment_unit === "per_team"
                                     ? fee
                                     : isTeam
-                                    ? fee * (1 + state.members.length)
-                                    : fee;
+                                      ? fee * (1 + state.members.length)
+                                      : fee;
                               }
 
                               return (
@@ -1850,19 +1848,17 @@ export default function RegistrationForm() {
                               key={event.id}
                               type="button"
                               onClick={() => toggleEvent(event.id)}
-                              className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${
-                                selected
+                              className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${selected
                                   ? "bg-violet-950/35 border-l-4 border-l-violet-400 hover:bg-violet-950/45 shadow-[inset_0_0_30px_rgba(168,85,247,0.08)]"
                                   : "border-l-4 border-l-transparent hover:bg-white/[0.04]"
-                              }`}
+                                }`}
                             >
                               {/* CHECK */}
                               <div
-                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
-                                  selected
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${selected
                                     ? "bg-violet-400 text-black shadow-[0_0_12px_#c084fc]"
                                     : "border border-white/20 text-transparent group-hover:border-white/40"
-                                }`}
+                                  }`}
                               >
                                 <Check size={13} />
                               </div>
@@ -1875,11 +1871,10 @@ export default function RegistrationForm() {
                                   </h4>
 
                                   <span
-                                    className={`rounded-full px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border border-white/10 ${
-                                      selected
+                                    className={`rounded-full px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border border-white/10 ${selected
                                         ? "bg-violet-500/20 text-violet-300 border-violet-500/30"
                                         : "bg-white/[0.04] text-white/50"
-                                    }`}
+                                      }`}
                                   >
                                     {event.category}
                                   </span>
@@ -1918,11 +1913,10 @@ export default function RegistrationForm() {
 
                               <ArrowRight
                                 size={14}
-                                className={`shrink-0 transition-transform ${
-                                  selected
+                                className={`shrink-0 transition-transform ${selected
                                     ? "text-violet-300"
                                     : "text-white/20 group-hover:translate-x-1 group-hover:text-white/60"
-                                }`}
+                                  }`}
                               />
                             </motion.button>
                           );

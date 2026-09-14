@@ -127,9 +127,9 @@ export async function GET(
       checked_in: boolean | null;
       checked_in_at: string | null;
       events:
-        | { name: string | null }
-        | { name: string | null }[]
-        | null;
+      | { name: string | null }
+      | { name: string | null }[]
+      | null;
     }> | null) ?? [];
 
   return response({
