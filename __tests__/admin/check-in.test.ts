@@ -8,14 +8,15 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
 process.env.SUPABASE_SECRET_KEY = "test-secret-key";
 
 const mockDbState: {
+  lastSelectedColumns?: string;
   participantEvents: Record<
     string,
     {
       id: string;
       payment_status: string;
+      payment_amount: number | null;
       checked_in: boolean;
       checked_in_at: string | null;
-      events: { payment_amount: number };
     }
   >;
 } = {
@@ -27,20 +28,23 @@ function createMockSupabaseAdmin() {
     from: (table: string) => {
       if (table === "participant_events") {
         return {
-          select: (_columns: string) => ({
-            eq: (column: string, value: string) => ({
-              single: async () => {
-                if (column === "id") {
-                  const record = mockDbState.participantEvents[value];
-                  if (!record) {
-                    return { data: null, error: { message: "Not found" } };
+          select: (_columns: string) => {
+            mockDbState.lastSelectedColumns = _columns;
+            return {
+              eq: (column: string, value: string) => ({
+                single: async () => {
+                  if (column === "id") {
+                    const record = mockDbState.participantEvents[value];
+                    if (!record) {
+                      return { data: null, error: { message: "Not found" } };
+                    }
+                    return { data: record, error: null };
                   }
-                  return { data: record, error: null };
-                }
-                return { data: null, error: { message: "Not found" } };
-              },
-            }),
-          }),
+                  return { data: null, error: { message: "Not found" } };
+                },
+              }),
+            };
+          },
           update: (updates: { checked_in: boolean; checked_in_at: string | null }) => {
             let targetId: string | null = null;
             let requiredPaymentStatus: string | null = null;
@@ -95,41 +99,65 @@ describe("P0-02: Check-In API Payment Gate Enforcement", () => {
       "pe-free": {
         id: "pe-free",
         payment_status: "not_required",
+        payment_amount: 0,
         checked_in: false,
         checked_in_at: null,
-        events: { payment_amount: 0 },
       },
       // Paid event with completed payment (amount = 200, status = paid)
       "pe-paid-ok": {
         id: "pe-paid-ok",
         payment_status: "paid",
+        payment_amount: 200,
         checked_in: false,
         checked_in_at: null,
-        events: { payment_amount: 200 },
       },
       // Paid event with pending payment (amount = 200, status = pending)
       "pe-paid-pending": {
         id: "pe-paid-pending",
         payment_status: "pending",
+        payment_amount: 200,
         checked_in: false,
         checked_in_at: null,
-        events: { payment_amount: 200 },
       },
       // Paid event with failed payment (amount = 200, status = failed)
       "pe-paid-failed": {
         id: "pe-paid-failed",
         payment_status: "failed",
+        payment_amount: 200,
         checked_in: false,
         checked_in_at: null,
-        events: { payment_amount: 200 },
       },
       // Paid event with missing / refunded payment (amount = 200, status = refunded)
       "pe-paid-refunded": {
         id: "pe-paid-refunded",
         payment_status: "refunded",
+        payment_amount: 200,
         checked_in: false,
         checked_in_at: null,
-        events: { payment_amount: 200 },
+      },
+      // Inconsistent payment: null payment_amount
+      "pe-null-amount": {
+        id: "pe-null-amount",
+        payment_status: "paid",
+        payment_amount: null,
+        checked_in: false,
+        checked_in_at: null,
+      },
+      // Inconsistent payment: not_required with positive amount
+      "pe-inconsistent-free": {
+        id: "pe-inconsistent-free",
+        payment_status: "not_required",
+        payment_amount: 200,
+        checked_in: false,
+        checked_in_at: null,
+      },
+      // Inconsistent payment: pending with amount 0
+      "pe-inconsistent-pending": {
+        id: "pe-inconsistent-pending",
+        payment_status: "pending",
+        payment_amount: 0,
+        checked_in: false,
+        checked_in_at: null,
       },
     };
 
@@ -248,5 +276,55 @@ describe("P0-02: Check-In API Payment Gate Enforcement", () => {
 
     const res = await POST(makeRequest({ participantEventId: "pe-paid-ok", action: "check_in" }));
     expect(res.status).toBe(401);
+  });
+
+  it("K. Check-in query selects participant_events.payment_amount directly without joining events", async () => {
+    await POST(makeRequest({ participantEventId: "pe-paid-ok", action: "check_in" }));
+    expect(mockDbState.lastSelectedColumns).toBe("id, payment_status, payment_amount");
+    expect(mockDbState.lastSelectedColumns).not.toContain("events");
+  });
+
+  it("L. Inconsistent payment state: null payment_amount -> fail closed with 400", async () => {
+    const res = await POST(makeRequest({ participantEventId: "pe-null-amount", action: "check_in" }));
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("Inconsistent payment record: invalid amount.");
+    expect(mockDbState.participantEvents["pe-null-amount"].checked_in).toBe(false);
+  });
+
+  it("M. Inconsistent payment state: positive amount with not_required status -> fail closed with 400", async () => {
+    const res = await POST(makeRequest({ participantEventId: "pe-inconsistent-free", action: "check_in" }));
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("Inconsistent payment record.");
+    expect(mockDbState.participantEvents["pe-inconsistent-free"].checked_in).toBe(false);
+  });
+
+  it("N. Inconsistent payment state: pending with zero amount -> denied with 402", async () => {
+    const res = await POST(makeRequest({ participantEventId: "pe-inconsistent-pending", action: "check_in" }));
+    expect(res.status).toBe(402);
+    const data = await res.json();
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("Payment not complete");
+    expect(data.paymentStatus).toBe("pending");
+    expect(mockDbState.participantEvents["pe-inconsistent-pending"].checked_in).toBe(false);
+  });
+
+  it("O. Forged client payment_amount: 0 in body cannot bypass payment gate", async () => {
+    const res = await POST(
+      makeRequest({
+        participantEventId: "pe-paid-pending",
+        action: "check_in",
+        payment_amount: 0,
+        paymentAmount: 0,
+      })
+    );
+    expect(res.status).toBe(402);
+    const data = await res.json();
+    expect(data.success).toBe(false);
+    expect(data.paymentStatus).toBe("pending");
+    expect(mockDbState.participantEvents["pe-paid-pending"].checked_in).toBe(false);
   });
 });

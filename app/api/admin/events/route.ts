@@ -106,15 +106,6 @@ function normalisePayload(body: EventPayload) {
       ? "team"
       : "individual";
 
-  const paymentUnit = [
-    "free",
-    "per_student",
-    "per_team",
-    "tbd",
-  ].includes(String(body.payment_unit))
-    ? String(body.payment_unit)
-    : "free";
-
   const fee =
     numberOrNull(body.registration_fee) ?? 0;
 
@@ -122,6 +113,25 @@ function normalisePayload(body: EventPayload) {
     throw new Error(
       "Registration fee cannot be negative."
     );
+  }
+
+  let paymentUnit: "per_student" | "per_team" | null = null;
+
+  if (fee > 0) {
+    const rawUnit = String(body.payment_unit ?? "").trim();
+    if (rawUnit === "per_team") {
+      paymentUnit = "per_team";
+    } else if (rawUnit === "per_student") {
+      paymentUnit = "per_student";
+    } else {
+      throw new Error(
+        "Paid events must specify a payment unit ('per_student' or 'per_team')."
+      );
+    }
+  } else {
+    // Free events (fee === 0) must always store payment_unit as null in the database.
+    // "free", "tbd", null, undefined, or empty values are all safely normalized to null.
+    paymentUnit = null;
   }
 
   const minTeamSize =

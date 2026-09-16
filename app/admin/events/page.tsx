@@ -259,13 +259,20 @@ const [role, setRole] = useState<"master" | "admin" | null>(null);
 
     try {
       const method = editing.id ? "PATCH" : "POST";
+      const feeNumber = Number(editing.registration_fee || 0);
+      const paymentUnit =
+        feeNumber === 0 || editing.payment_unit === "free"
+          ? null
+          : editing.payment_unit;
+
       const response = await fetch("/api/admin/events", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...editing,
           slug: editing.slug || slugify(editing.name),
-          registration_fee: Number(editing.registration_fee || 0),
+          registration_fee: feeNumber,
+          payment_unit: paymentUnit,
           min_team_size:
             editing.registration_type === "team"
               ? Number(editing.min_team_size || 0) || null

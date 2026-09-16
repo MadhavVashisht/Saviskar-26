@@ -51,7 +51,7 @@ function Counter({
   );
 }
 
-const EVENT_START = new Date("2026-10-24T00:00:00+05:30").getTime();
+const EVENT_START = new Date("2026-10-28T00:00:00+05:30").getTime();
 
 function Countdown() {
   const [timeLeft, setTimeLeft] = useState({
@@ -99,7 +99,7 @@ function Countdown() {
             The Countdown
           </span>
         </div>
-        <span className="font-mono text-xs font-medium text-violet-300">OCTOBER 24, 2026</span>
+        <span className="font-mono text-xs font-medium text-violet-300">OCTOBER 28, 2026</span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

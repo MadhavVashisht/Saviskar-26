@@ -65,25 +65,85 @@ export async function POST(request: NextRequest) {
   if (action === "check_in") {
     const { data: participantEvent, error: fetchError } = await supabaseAdmin
       .from("participant_events")
-      .select("id, payment_status, events ( payment_amount )")
+      .select("id, payment_status, payment_amount")
       .eq("id", participantEventId)
       .single();
 
-    if (fetchError || !participantEvent) {
+    if (fetchError) {
+      if (fetchError.code === "PGRST116" || fetchError.message === "Not found") {
+        return response({ success: false, error: "Participant event not found." }, 404);
+      }
       console.error("Failed to fetch participant event for payment check:", fetchError);
+      return response({ success: false, error: "Could not verify participant event." }, 500);
+    }
+
+    if (!participantEvent) {
       return response({ success: false, error: "Participant event not found." }, 404);
     }
 
-    const eventRelation = participantEvent.events;
-    const event = Array.isArray(eventRelation) ? eventRelation[0] : eventRelation;
-    paymentAmount = event?.payment_amount ?? 0;
+    const rawAmount = participantEvent.payment_amount;
+    const paymentStatus = participantEvent.payment_status;
 
-    if (paymentAmount > 0 && participantEvent.payment_status !== "paid") {
+    // Fail closed if payment_amount is null, undefined, or not a non-negative number
+    if (
+      rawAmount === null ||
+      rawAmount === undefined ||
+      typeof rawAmount !== "number" ||
+      Number.isNaN(rawAmount) ||
+      rawAmount < 0
+    ) {
+      console.error("Check-in rejected: invalid payment_amount on participant event", {
+        participantEventId,
+        payment_amount: rawAmount,
+      });
+      return response(
+        {
+          success: false,
+          error: "Inconsistent payment record: invalid amount.",
+          paymentStatus: paymentStatus ?? "unpaid",
+        },
+        400
+      );
+    }
+
+    paymentAmount = rawAmount;
+
+    // Fail closed on inconsistent payment state (e.g. not_required with positive amount)
+    if (paymentAmount > 0 && paymentStatus === "not_required") {
+      console.error("Check-in rejected: inconsistent payment state (not_required with positive amount)", {
+        participantEventId,
+        paymentAmount,
+        paymentStatus,
+      });
+      return response(
+        {
+          success: false,
+          error: "Inconsistent payment record.",
+          paymentStatus,
+        },
+        400
+      );
+    }
+
+    // For paid events (paymentAmount > 0), payment_status must be 'paid'
+    if (paymentAmount > 0 && paymentStatus !== "paid") {
       return response(
         {
           success: false,
           error: "Payment not complete",
-          paymentStatus: participantEvent.payment_status ?? "unpaid",
+          paymentStatus: paymentStatus ?? "unpaid",
+        },
+        402
+      );
+    }
+
+    // Fail closed on any non-free status that is not 'paid' (e.g. pending/failed/refunded with amount 0)
+    if (paymentStatus !== "paid" && paymentStatus !== "not_required") {
+      return response(
+        {
+          success: false,
+          error: "Payment not complete",
+          paymentStatus: paymentStatus ?? "unpaid",
         },
         402
       );
