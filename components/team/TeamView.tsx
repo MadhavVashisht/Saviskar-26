@@ -1,67 +1,39 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  FACULTY_LEADERSHIP,
-  FACULTY_DIRECTORATE,
-  SAC_OFFICE_BEARERS,
-  SAC_CORE_LEADS,
-  SAC_COUNCIL_MEMBERS,
-  TIER_1_BYTE,
-  TIER_2_BYTE,
-  SAC_COLLECTIVE_BYTE,
+  LEVEL_3_CULTURAL_DIRECTORATE,
+  LEVEL_4_OPERATIONS_COMMAND,
+  EDITORIAL_DIRECTOR,
+  EDITORIAL_DEAN,
+  EDITORIAL_PRESIDENCY,
+  TEAM_STATS,
 } from "@/data/teamData";
-import QuoteByteCard from "./QuoteByteCard";
-import FacultyCard from "./FacultyCard";
-import SacCard from "./SacCard";
+import DeskEditorialSpread from "./DeskEditorialSpread";
+import SacEditorialSection from "./SacEditorialSection";
+import EditorialPortraitCard from "./EditorialPortraitCard";
 import MouseSpotlight from "@/components/ui/MouseSpotlight";
 import {
-  Users,
   Sparkles,
-  Search,
   ArrowUpRight,
   ArrowLeft,
   Crown,
-  Compass,
   Layers,
-  ShieldCheck,
 } from "lucide-react";
 
 export default function TeamView() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedWing, setSelectedWing] = useState<string>("All");
-
-  // Wings list for filtering Council
-  const WINGS = [
-    "All",
-    "Technical & AI",
-    "Cultural & Stage",
-    "Media & PR",
-    "Logistics & Hospitality",
-    "Corporate & Sponsorship",
-    "Creative & Design",
+  const telemetryDials = [
+    { value: "01", label: "Apex Patron", sub: "Director Student Affairs" },
+    { value: "01", label: "Dean Leadership", sub: "Dean Student Affairs" },
+    { value: "04", label: "Directorate Leads", sub: "Culture & Operations" },
+    { value: "53", label: "SAC Council", sub: "Student Architects" },
   ];
-
-  // Filtered Council members based on search and wing filter
-  const filteredCouncilMembers = useMemo(() => {
-    return SAC_COUNCIL_MEMBERS.filter((member) => {
-      const matchesSearch =
-        member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.department.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesWing =
-        selectedWing === "All" || member.wing === selectedWing;
-
-      return matchesSearch && matchesWing;
-    });
-  }, [searchQuery, selectedWing]);
 
   return (
     <div className="relative min-h-screen bg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
-      {/* 1. FIXED FULL-BLEED PANORAMIC STADIUM BACKGROUND (MATCHING LANDING PAGE) */}
+      {/* 1. FIXED FULL-BLEED PANORAMIC STADIUM BACKGROUND */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <Image
           src="/images/concert-stadium.jpg"
@@ -93,308 +65,289 @@ export default function TeamView() {
         <MouseSpotlight />
       </div>
 
-      {/* FROSTED LIQUID-GLASS STICKY NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-black/60 backdrop-blur-2xl transition-all">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="group flex items-center gap-2 text-xs font-semibold text-white/70 transition-colors hover:text-white"
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 transition-transform group-hover:-translate-x-0.5">
-                <ArrowLeft size={13} />
-              </div>
-              <span className="hidden sm:inline">Saviskar 2026</span>
-            </Link>
+      {/* FLOATING TOP HEADER — matches Realms page */}
+      <header className="relative z-30 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-6 md:px-10">
+        <Link
+          href="/"
+          className="transition-all hover:scale-105 hover:opacity-90"
+        >
+          <Image
+            src="/logo.png"
+            alt="Saviskar 2026"
+            width={160}
+            height={160}
+            unoptimized
+            className="h-10 w-auto object-contain"
+            priority
+          />
+        </Link>
 
-            <span className="text-white/20">/</span>
-
-            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-300">
-              <Users size={13} />
-              <span>Organising Team</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/events"
-              className="liquid-glass flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/80 transition-all hover:text-white hover:scale-105"
-            >
-              <span>Explore Realms</span>
-              <ArrowUpRight size={12} />
-            </Link>
-
-            <Link
-              href="/register"
-              className="liquid-glass flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold text-violet-200 border-violet-500/40 bg-violet-600/20 transition-all hover:bg-violet-600/30 hover:scale-105 shadow-[0_0_20px_rgba(168,85,247,0.25)]"
-            >
-              <Sparkles size={12} />
-              <span>Register Now</span>
-            </Link>
-          </div>
+        {/* University Badge */}
+        <div className="liquid-glass hidden sm:inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
+          <span>CGC UNIVERSITY MOHALI</span>
+          <span className="text-white/30">|</span>
+          <span className="text-violet-300">AEVORIAN REVERIE</span>
         </div>
+
+        <Link
+          href="/events"
+          className="rounded-full bg-white px-5 py-2 text-xs font-semibold text-black transition-all hover:bg-violet-100 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+        >
+          Explore Realms
+        </Link>
       </header>
 
-      {/* HERO SECTION (MATCHING LANDING PAGE AESTHETICS - COUNTS REMOVED) */}
-      <section className="relative z-20 pt-16 pb-12 sm:pt-24 sm:pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl text-center flex flex-col items-center">
-          {/* University Badge */}
-          <div className="liquid-glass mb-5 inline-flex items-center gap-2 sm:gap-2.5 rounded-full px-4 py-1.5 text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider sm:tracking-[0.35em] text-white/80 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
-            <span>CGC UNIVERSITY • MOHALI</span>
-            <span className="text-white/30">|</span>
-            <span className="text-violet-300 shrink-0">ORGANISING COMMAND</span>
-          </div>
-
-          {/* Main Title with Editorial Serif */}
-          <h1 className="text-[clamp(2.5rem,7vw,5.5rem)] font-light leading-[0.98] sm:leading-[0.92] tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
-            Architects of <br />
-            <span className="font-editorial text-violet-300 font-normal">Aevorian Reverie.</span>
-          </h1>
-
-          <p className="mt-6 text-sm sm:text-base md:text-lg text-zinc-300 max-w-2xl mx-auto leading-relaxed font-normal">
-            Honoring the visionary faculty directorate, executive administration, and the 54-member Student Advisory Council (SAC) powering North India&apos;s flagship techno-cultural university festival.
-          </p>
-
-          {/* Quick Jump Navigation Pills */}
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-2 text-xs">
-            <a
-              href="#tier-1"
-              className="liquid-glass rounded-full px-4 py-1.5 text-white/70 hover:text-amber-300 hover:border-amber-400/40 transition-all hover:scale-105"
-            >
-              Director Students Affairs
-            </a>
-            <a
-              href="#tier-2"
-              className="liquid-glass rounded-full px-4 py-1.5 text-white/70 hover:text-cyan-300 hover:border-cyan-400/40 transition-all hover:scale-105"
-            >
-              Dean &amp; Cultural Directorate
-            </a>
-            <a
-              href="#tier-sac"
-              className="liquid-glass rounded-full px-4 py-1.5 text-white/70 hover:text-violet-300 hover:border-violet-400/40 transition-all hover:scale-105"
-            >
-              SAC Office Bearers
-            </a>
-            <a
-              href="#sac-core"
-              className="liquid-glass rounded-full px-4 py-1.5 text-white/70 hover:text-fuchsia-300 hover:border-fuchsia-400/40 transition-all hover:scale-105"
-            >
-              Core Members (19)
-            </a>
-            <a
-              href="#sac-council"
-              className="liquid-glass rounded-full px-4 py-1.5 text-white/70 hover:text-emerald-300 hover:border-emerald-400/40 transition-all hover:scale-105"
-            >
-              Council Members (32)
-            </a>
-          </div>
-        </div>
-      </section>
 
       {/* ========================================================
-          TIER 1: APEX EXECUTIVE LEADERSHIP (MRS. BISMIN DHALIWAL)
+          HERO & COMMAND TELEMETRY INTRO
       ======================================================== */}
-      <section id="tier-1" className="relative z-20 py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-20">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-white/[0.08] pb-4">
-          <div>
-            <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest text-amber-400">
-              <Crown size={14} />
-              <span>TIER 01 // APEX EXECUTIVE PATRON</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight text-white mt-1">
-              Directorate of Student Affairs
-            </h2>
-          </div>
-          <span className="font-mono text-xs text-white/40">
-            Institutional Leadership • Chief Patron
-          </span>
-        </div>
-
-        {/* Tier 1 Quote Byte */}
-        <div className="mb-8">
-          <QuoteByteCard data={TIER_1_BYTE} variant="tier1" />
-        </div>
-
-        {/* Tier 1 Solo Hero Showcase Card */}
-        <FacultyCard member={FACULTY_LEADERSHIP[0]} />
-      </section>
-
-      {/* ========================================================
-          TIER 2: DEAN & CULTURAL DIRECTORATE (DR. SACHIN SHARMA & TEAM)
-      ======================================================== */}
-      <section id="tier-2" className="relative z-20 py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-20">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-white/[0.08] pb-4">
-          <div>
-            <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest text-cyan-400">
-              <ShieldCheck size={14} />
-              <span>TIER 02 // DEAN &amp; CULTURAL DIRECTORATE</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight text-white mt-1">
-              Dean &amp; Operations Command
-            </h2>
-          </div>
-          <span className="font-mono text-xs text-white/40">
-            Council Governance &amp; Cultural Direction • 4 Leaders
-          </span>
-        </div>
-
-        {/* Tier 2 Quote Byte */}
-        <div className="mb-8">
-          <QuoteByteCard data={TIER_2_BYTE} variant="tier2" />
-        </div>
-
-        {/* Tier 2 Cards (Responsive Grid) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-          {FACULTY_DIRECTORATE.map((member) => (
-            <FacultyCard key={member.id} member={member} />
-          ))}
-        </div>
-      </section>
-
-      {/* ========================================================
-          TIERS 3 TO 5: STUDENT ADVISORY COUNCIL (SAC) - 53 MEMBERS
-      ======================================================== */}
-      <section id="tier-sac" className="relative z-20 py-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-20">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-white/[0.08] pb-4">
-          <div>
-            <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest text-violet-400">
-              <Users size={14} />
-              <span>STUDENT ADVISORY COUNCIL (SAC) // 53 ARCHITECTS</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight text-white mt-1">
-              The Student Command Roster
-            </h2>
-          </div>
-          <div className="flex items-center gap-2 font-mono text-xs text-violet-300">
-            <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
-            <span>Independent Cards With Photo Placeholders</span>
-          </div>
-        </div>
-
-        {/* SAC Collective Manifesto Byte */}
-        <div className="mb-12">
-          <QuoteByteCard data={SAC_COLLECTIVE_BYTE} variant="sac" />
-        </div>
-
-        {/* ======================================================
-            3A. SAC OFFICE BEARERS (PRESIDENT & VICE PRESIDENT)
-        ====================================================== */}
-        <div className="mb-14">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-amber-300">
-              <Crown size={13} />
-              <span>SAC Office Bearers (President &amp; Vice President)</span>
-            </div>
-            <span className="font-mono text-[11px] text-white/40">
-              Tier 03 // Apex Student Executives
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl">
-            {SAC_OFFICE_BEARERS.map((member) => (
-              <SacCard key={member.id} member={member} />
-            ))}
-          </div>
-        </div>
-
-        {/* ======================================================
-            3B. SAC CORE COMMITTEE (19 MEMBERS - MEDIUM CARDS)
-        ====================================================== */}
-        <div id="sac-core" className="mb-14 scroll-mt-24">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-violet-300">
-              <Layers size={13} />
-              <span>SAC Core Committee ({SAC_CORE_LEADS.length} Members)</span>
-            </div>
-            <span className="font-mono text-[11px] text-white/40">
-              Tier 04 // Core Committee Executives
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {SAC_CORE_LEADS.map((member) => (
-              <SacCard key={member.id} member={member} />
-            ))}
-          </div>
-        </div>
-
-        {/* ======================================================
-            3C. SAC COUNCIL MEMBERS (32 MEMBERS - COMPACT GRID)
-        ====================================================== */}
-        <div id="sac-council" className="scroll-mt-24">
-          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-t border-white/[0.08] pt-8">
-            <div>
-              <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <Compass size={13} />
-                <span>Student Advisory Council Members ({SAC_COUNCIL_MEMBERS.length} Members)</span>
-              </div>
-              <p className="text-xs text-white/50 mt-1">
-                Explore the student coordinators driving logistics, media, operations, fine arts, combat arenas, and stage engineering.
-              </p>
+      <section className="relative z-20 pt-12 pb-8 sm:pt-16 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 flex flex-col items-start text-left">
+            <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono tracking-widest text-violet-300 mb-6 shadow-[0_0_20px_rgba(168,85,247,0.25)]">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+              <span>SAVISKAR 2026 • ORGANISING COMMAND</span>
             </div>
 
-            {/* Live Search Input with Liquid Glass */}
-            <div className="relative w-full md:w-72">
-              <Search
-                size={14}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40"
-              />
-              <input
-                type="text"
-                placeholder="Search name, role, dept..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="liquid-glass w-full rounded-xl py-2 pl-9 pr-3 text-xs text-white placeholder-white/40 outline-none transition-all focus:border-violet-400/60 focus:ring-1 focus:ring-violet-400/40"
-              />
-            </div>
-          </div>
+            <h1 className="font-editorial text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-white tracking-tight leading-[1.08]">
+              The Architects of{" "}
+              <span className="font-normal italic text-transparent bg-clip-text bg-gradient-to-r from-violet-300 via-amber-200 to-cyan-300">
+                Aevorian Reverie
+              </span>
+            </h1>
 
-          {/* Filter Pills with Liquid Glass */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            {WINGS.map((wing) => (
-              <button
-                key={wing}
-                onClick={() => setSelectedWing(wing)}
-                className={`liquid-glass rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                  selectedWing === wing
-                    ? "border-violet-500/60 bg-violet-600/30 text-white shadow-[0_0_15px_rgba(168,85,247,0.35)] scale-105"
-                    : "text-white/60 hover:text-white hover:border-white/20"
-                }`}
-              >
-                {wing}
-              </button>
-            ))}
-          </div>
+            <p className="mt-4 text-sm sm:text-base md:text-lg text-zinc-300 max-w-2xl font-normal leading-relaxed">
+              Meet the executive patrons, cultural directorate, and student council leaders crafting North India’s premier techno-cultural convergence at CGC University, Mohali.
+            </p>
 
-          {/* Compact Mini-Cards Grid */}
-          {filteredCouncilMembers.length === 0 ? (
-            <div className="liquid-glass-card rounded-2xl p-10 text-center">
-              <p className="text-sm text-white/50">
-                No council members matched your search or wing filter.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedWing("All");
-                }}
-                className="mt-3 text-xs font-semibold text-violet-400 hover:text-violet-300"
-              >
-                Clear all filters
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              {filteredCouncilMembers.map((member) => (
-                <SacCard key={member.id} member={member} />
+            {/* INLINE TYPOGRAPHIC STAT ROW — no boxes, no backgrounds */}
+            <div className="mt-10 flex flex-wrap items-start gap-x-8 gap-y-4">
+              {telemetryDials.map((dial, idx) => (
+                <div key={idx} className="flex items-start gap-4">
+                  {idx > 0 && (
+                    <span className="h-8 w-px bg-white/[0.08] self-center flex-shrink-0" aria-hidden="true" />
+                  )}
+                  <div>
+                    <div className="font-editorial text-3xl sm:text-4xl font-bold text-white leading-none tracking-tight">
+                      {dial.value}
+                    </div>
+                    <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-400 mt-1.5 leading-tight">
+                      {dial.label}
+                    </div>
+                    <div className="font-mono text-[8px] text-white/25 tracking-wider mt-0.5">
+                      {dial.sub}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
+          </div>
+
+          {/* Right Column: Free-floating editorial graphic — no container, no border */}
+          <div className="lg:col-span-5 flex justify-center items-center py-8 lg:py-0">
+            <div className="relative flex flex-col items-center text-center gap-4">
+              {/* Ambient radial glow — not a box, just atmospheric */}
+              <div className="pointer-events-none absolute inset-0 scale-150 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.12)_0%,transparent_70%)]" aria-hidden="true" />
+
+              <div className="relative z-10 flex flex-col items-center gap-3">
+                {/* Crown — bare, no pill */}
+                <Crown size={32} className="text-amber-300/70" />
+
+                <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-violet-400/70">
+                  APEX COMMAND • COUNCIL CADRE
+                </span>
+
+                <h3 className="font-editorial text-3xl sm:text-4xl font-bold text-white leading-tight">
+                  Saviskar 2026
+                </h3>
+
+                <p className="font-editorial text-sm sm:text-base text-zinc-400 italic">
+                  Aevorian Reverie • CGC University
+                </p>
+
+                <div className="flex items-center gap-2 text-[11px] font-mono text-white/30 tracking-wide mt-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>53 Student Leaders • 7 Wings</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FOOTER CALL TO ACTION */}
-      <section className="relative z-20 mt-16 border-t border-white/[0.08] bg-gradient-to-b from-transparent to-black py-16 px-4 text-center">
+      {/* ========================================================
+          1. CANVA SPREAD: MRS. BISMIN DHALIWAL (CHIEF PATRON)
+      ======================================================== */}
+      <div id="patron-director">
+        <DeskEditorialSpread
+          titleBadge={EDITORIAL_DIRECTOR.titleBadge}
+          deskTitle={EDITORIAL_DIRECTOR.deskTitle}
+          dropCap={EDITORIAL_DIRECTOR.dropCap}
+          paragraphs={EDITORIAL_DIRECTOR.paragraphs}
+          signeeName={EDITORIAL_DIRECTOR.signeeName}
+          signeeRole={EDITORIAL_DIRECTOR.signeeRole}
+          initials={EDITORIAL_DIRECTOR.initials}
+          image={EDITORIAL_DIRECTOR.image}
+          accent="amber"
+          align="left"
+          showDeskPrefix
+        />
+      </div>
+
+      {/* ========================================================
+          2. CANVA SPREAD: DR. SACHIN SHARMA (DEAN STUDENT AFFAIRS)
+      ======================================================== */}
+      <div id="patron-dean">
+        <DeskEditorialSpread
+          titleBadge={EDITORIAL_DEAN.titleBadge}
+          deskTitle={EDITORIAL_DEAN.deskTitle}
+          dropCap={EDITORIAL_DEAN.dropCap}
+          paragraphs={EDITORIAL_DEAN.paragraphs}
+          signeeName={EDITORIAL_DEAN.signeeName}
+          signeeRole={EDITORIAL_DEAN.signeeRole}
+          initials={EDITORIAL_DEAN.initials}
+          image={EDITORIAL_DEAN.image}
+          accent="cyan"
+          align="right"
+          showDeskPrefix
+        />
+      </div>
+
+      {/* ========================================================
+          3. CULTURAL & OPERATIONS DIRECTORATE
+          Full-width editorial spreads — one per faculty member, alternating
+      ======================================================== */}
+      <div id="directorate">
+        {/* Section header — standalone, above the spreads */}
+        <div className="relative z-20 pt-16 pb-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-violet-400 mb-3">
+            <Layers size={11} />
+            <span>Festival Directorate // Cultural & Operations Command</span>
+          </div>
+          <h3 className="font-editorial text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight leading-[1.0]">
+            The Directorate
+          </h3>
+          <p className="mt-3 text-sm sm:text-base text-zinc-400 font-light leading-relaxed max-w-2xl">
+            Faculty leads supervising arena production, cultural competitions, fine arts curation, and campus logistics — the institutional spine of Saviskar 2026.
+          </p>
+        </div>
+
+        {/* Each directorate member as a full-width editorial spread, alternating alignment */}
+        {[...LEVEL_3_CULTURAL_DIRECTORATE, ...LEVEL_4_OPERATIONS_COMMAND].map((faculty, idx) => (
+          <DeskEditorialSpread
+            key={faculty.id}
+            titleBadge={`FESTIVAL DIRECTORATE // ${(faculty.honorific ?? "FACULTY").toUpperCase()}`}
+            deskTitle={(faculty.name ?? "").toUpperCase()}
+            dropCap={(faculty.bio ?? "F").charAt(0)}
+            paragraphs={[
+              (faculty.bio ?? `${faculty.name} oversees a critical domain of Saviskar 2026 — bringing institutional expertise, operational precision, and creative vision to every facet of festival execution.`).slice(1),
+              `${faculty.department ?? "CGC University"} — one of the pillars on which Aevorian Reverie stands.`,
+            ]}
+            signeeName={faculty.name ?? ""}
+            signeeRole={faculty.designation ?? (faculty.honorific ?? "")}
+            initials={(faculty.name ?? "??").split(" ").filter((n) => !["Dr.","Mrs.","Mr.","Ms."].includes(n)).slice(0,2).map((n) => n[0]).join("")}
+            image={faculty.image ?? ""}
+            accent="violet"
+            align={idx % 2 === 0 ? "right" : "left"}
+            showDeskPrefix={false}
+          />
+        ))}
+      </div>
+
+      {/* ========================================================
+          4. SAC PRESIDENCY — Side-by-Side Editorial Spread
+          Left: heading + drop-cap manifesto text, top-aligned
+          Right: SAC group photo placeholder, full height
+      ======================================================== */}
+      <section id="sac-presidency" className="relative z-20 py-16 sm:py-20"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+
+        {/* ── 2-column spread: text left / photo right, top-aligned ── */}
+        <div className="flex flex-col md:flex-row md:items-start min-h-[560px] sm:min-h-[640px]">
+
+          {/* LEFT — heading + manifesto text stacked, top-aligned, flush left */}
+          <div className="flex flex-col px-4 sm:px-6 lg:px-8 md:pl-8 lg:pl-16
+                          md:w-1/2 py-12 md:pt-0">
+
+            {/* Heading lives here, directly above the drop-cap text */}
+            <div className="mb-8">
+              <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-violet-400 mb-3">
+                {EDITORIAL_PRESIDENCY.titleBadge}
+              </div>
+              <h2 className="font-editorial text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight leading-[1.05]">
+                Student Advisory<br />Council Presidency
+              </h2>
+            </div>
+
+            {/* Drop-cap paragraph — fills full column width */}
+            <div className="text-base sm:text-lg md:text-xl text-zinc-200 leading-relaxed font-light text-justify">
+              <span className="float-left font-editorial font-bold text-[5.5rem] sm:text-[6.5rem] leading-[0.82] pr-3 pt-1 select-none text-violet-400">
+                {EDITORIAL_PRESIDENCY.dropCap}
+              </span>
+              {EDITORIAL_PRESIDENCY.paragraphs[0].slice(EDITORIAL_PRESIDENCY.dropCap?.length ?? 1)}
+            </div>
+
+            {/* Remaining paragraphs */}
+            <div className="mt-6 space-y-5 text-sm sm:text-base text-zinc-300/80 leading-[1.85] font-light text-justify">
+              {EDITORIAL_PRESIDENCY.paragraphs.slice(1).map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT — SAC group photo, full height, flush to edge */}
+          <div className="relative md:w-1/2 min-h-[360px] md:min-h-full bg-zinc-950 flex-shrink-0 self-stretch">
+            {/* Ghost placeholder */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-bl from-violet-950/50 via-black to-black">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.025]"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.8) 3px,rgba(255,255,255,0.8) 4px)",
+                }}
+              />
+              <div className="flex flex-col items-center gap-4 select-none">
+                <span
+                  className="font-editorial font-black text-white leading-none tracking-tighter"
+                  style={{ fontSize: "clamp(5rem, 12vw, 10rem)", opacity: 0.07 }}
+                  aria-hidden="true"
+                >
+                  SAC
+                </span>
+                <span className="font-mono text-[10px] tracking-[0.3em] text-violet-400/50 uppercase">
+                  Group Photo — Forthcoming
+                </span>
+              </div>
+            </div>
+            {/* Left-edge fade so photo blends into text column */}
+            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black to-transparent" />
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* ========================================================
+          5. SAC OPERATIONAL TEAMS (NO CARD CONTAINERS - PURE EDITORIAL)
+          Sequence:
+          1. Overall Heads
+          2. Bills & Budget
+          3. Website Team (Madhav Vashisht as Lead Web Architect)
+          4. Branding
+          5. Creativity
+          6. Sponsorship Team
+          7. Calling Team (2 Heads + Core -> State Heads -> Members)
+      ======================================================== */}
+      <div id="sac-wings">
+        <SacEditorialSection />
+      </div>
+
+      {/* ========================================================
+          FOOTER CALL TO ACTION
+      ======================================================== */}
+      <section className="relative z-20 mt-12 border-t border-white/[0.08] bg-gradient-to-b from-transparent to-black py-16 px-4 text-center">
         <div className="mx-auto max-w-3xl flex flex-col items-center">
           <div className="liquid-glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-mono text-violet-300 mb-4 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
             <Sparkles size={12} />
@@ -402,7 +355,10 @@ export default function TeamView() {
           </div>
 
           <h3 className="text-2xl sm:text-4xl font-light text-white tracking-tight">
-            Ready to Experience <span className="font-editorial text-violet-300 font-normal">Saviskar 2026?</span>
+            Ready to Experience{" "}
+            <span className="font-editorial text-violet-300 font-normal">
+              Saviskar 2026?
+            </span>
           </h3>
 
           <p className="mt-3 text-sm text-white/60 leading-relaxed max-w-xl mx-auto font-normal">
