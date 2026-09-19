@@ -13,6 +13,7 @@ import {
   ArrowRight,
   AlertCircle,
   Check,
+  ChevronDown,
   Plus,
   QrCode,
   Trash2,
@@ -284,6 +285,20 @@ export default function RegistrationForm() {
       return matchesCategory && matchesSearch;
     });
   }, [eventOptions, eventCategory, eventSearch, registeredEventIds]);
+
+  /*
+   * COMPACT EVENT BROWSER
+   *
+   * By default only the first 3 events are shown. Clicking "View all"
+   * expands the list to all matching events. Whenever filters change,
+   * the list collapses back to the first 3 events.
+   */
+  const [showAllEvents, setShowAllEvents] = useState(false);
+
+  const visibleEvents =
+    showAllEvents
+      ? filteredEvents
+      : filteredEvents.slice(0, 3);
 
 
   /*
@@ -1669,7 +1684,10 @@ export default function RegistrationForm() {
                       <input
                         type="search"
                         value={eventSearch}
-                        onChange={(e) => setEventSearch(e.target.value)}
+                        onChange={(e) => {
+                          setEventSearch(e.target.value);
+                          setShowAllEvents(false);
+                        }}
                         placeholder="Search competitions (e.g. RoboWars, Hackathon, Dance, AI Expo)..."
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 outline-none"
                         aria-label="Search events"
@@ -1678,7 +1696,10 @@ export default function RegistrationForm() {
                       {eventSearch && (
                         <button
                           type="button"
-                          onClick={() => setEventSearch("")}
+                          onClick={() => {
+                            setEventSearch("");
+                            setShowAllEvents(false);
+                          }}
                           className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-white/20 hover:text-white"
                           aria-label="Clear event search"
                         >
@@ -1696,7 +1717,10 @@ export default function RegistrationForm() {
                           <button
                             key={category}
                             type="button"
-                            onClick={() => setEventCategory(category)}
+                            onClick={() => {
+                              setEventCategory(category);
+                              setShowAllEvents(false);
+                            }}
                             className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all ${active
                                 ? "bg-white text-black font-semibold shadow-[0_0_15px_rgba(255,255,255,0.35)]"
                                 : "border border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
@@ -1811,6 +1835,7 @@ export default function RegistrationForm() {
                           onClick={() => {
                             setEventSearch("");
                             setEventCategory("All");
+                            setShowAllEvents(false);
                           }}
                           className="font-mono text-[10px] font-medium text-violet-300 underline-offset-4 hover:underline"
                         >
@@ -1827,101 +1852,139 @@ export default function RegistrationForm() {
                         </p>
                       </div>
                     ) : (
-                      <div className="divide-y divide-white/[0.06]">
-                        {filteredEvents.map((event, index) => {
-                          const selected = selectedEventIds.includes(event.id);
-                          const team = isTeamEvent(event);
-                          const fee =
-                            event.payment_type === "paid"
-                              ? Number(event.registration_fee || 0)
-                              : 0;
+                      <>
+                        <div
+                          id="available-events-list"
+                          className="divide-y divide-white/[0.06]"
+                        >
+                          <AnimatePresence initial={false}>
+                            {visibleEvents.map((event, index) => {
+                              const selected = selectedEventIds.includes(event.id);
+                              const team = isTeamEvent(event);
+                              const fee =
+                                event.payment_type === "paid"
+                                  ? Number(event.registration_fee || 0)
+                                  : 0;
 
-                          return (
-                            <motion.button
-                              layout
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{
-                                duration: 0.2,
-                                delay: Math.min(index * 0.015, 0.15),
-                              }}
-                              key={event.id}
-                              type="button"
-                              onClick={() => toggleEvent(event.id)}
-                              className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${selected
-                                  ? "bg-violet-950/35 border-l-4 border-l-violet-400 hover:bg-violet-950/45 shadow-[inset_0_0_30px_rgba(168,85,247,0.08)]"
-                                  : "border-l-4 border-l-transparent hover:bg-white/[0.04]"
-                                }`}
-                            >
-                              {/* CHECK */}
-                              <div
-                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${selected
-                                    ? "bg-violet-400 text-black shadow-[0_0_12px_#c084fc]"
-                                    : "border border-white/20 text-transparent group-hover:border-white/40"
-                                  }`}
-                              >
-                                <Check size={13} />
-                              </div>
-
-                              {/* NAME */}
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                                  <h4 className="truncate text-[15px] font-medium tracking-tight text-white md:text-base">
-                                    {event.name}
-                                  </h4>
-
-                                  <span
-                                    className={`rounded-full px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border border-white/10 ${selected
-                                        ? "bg-violet-500/20 text-violet-300 border-violet-500/30"
-                                        : "bg-white/[0.04] text-white/50"
+                              return (
+                                <motion.button
+                                  layout
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                                  transition={{
+                                    duration: 0.2,
+                                    delay: Math.min(index * 0.015, 0.15),
+                                  }}
+                                  key={event.id}
+                                  type="button"
+                                  onClick={() => toggleEvent(event.id)}
+                                  className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${selected
+                                      ? "bg-violet-950/35 border-l-4 border-l-violet-400 hover:bg-violet-950/45 shadow-[inset_0_0_30px_rgba(168,85,247,0.08)]"
+                                      : "border-l-4 border-l-transparent hover:bg-white/[0.04]"
+                                    }`}
+                                >
+                                  {/* CHECK */}
+                                  <div
+                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${selected
+                                        ? "bg-violet-400 text-black shadow-[0_0_12px_#c084fc]"
+                                        : "border border-white/20 text-transparent group-hover:border-white/40"
                                       }`}
                                   >
-                                    {event.category}
-                                  </span>
-                                </div>
+                                    <Check size={13} />
+                                  </div>
 
-                                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-white/45">
+                                  {/* NAME */}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                                      <h4 className="truncate text-[15px] font-medium tracking-tight text-white md:text-base">
+                                        {event.name}
+                                      </h4>
+
+                                      <span
+                                        className={`rounded-full px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border border-white/10 ${selected
+                                            ? "bg-violet-500/20 text-violet-300 border-violet-500/30"
+                                            : "bg-white/[0.04] text-white/50"
+                                          }`}
+                                      >
+                                        {event.category}
+                                      </span>
+                                    </div>
+
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-white/45">
+                                      <span>
+                                        {team ? "Team Event" : "Individual Event"}
+                                      </span>
+
+                                      {team &&
+                                        event.min_team_size &&
+                                        event.max_team_size && (
+                                          <>
+                                            <span>•</span>
+                                            <span>
+                                              {event.min_team_size}–
+                                              {event.max_team_size} members
+                                            </span>
+                                          </>
+                                        )}
+                                    </div>
+                                  </div>
+
+                                  {/* PRICE */}
+                                  <div className="hidden shrink-0 text-right sm:block font-mono">
+                                    <p className="text-[9px] uppercase tracking-wider text-white/40">
+                                      Fee
+                                    </p>
+                                    <p className={`mt-0.5 text-xs font-semibold ${fee > 0 ? "text-white" : "text-emerald-400"}`}>
+                                      {fee > 0
+                                        ? `₹${fee.toLocaleString("en-IN")}`
+                                        : "FREE"}
+                                    </p>
+                                  </div>
+
+                                  <ArrowRight
+                                    size={14}
+                                    className={`shrink-0 transition-transform ${selected
+                                        ? "text-violet-300"
+                                        : "text-white/20 group-hover:translate-x-1 group-hover:text-white/60"
+                                      }`}
+                                  />
+                                </motion.button>
+                              );
+                            })}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* VIEW ALL / SHOW LESS — when >3 events */}
+                        {filteredEvents.length > 3 && (
+                          <div className="border-t border-white/[0.06]">
+                            <button
+                              type="button"
+                              onClick={() => setShowAllEvents((prev) => !prev)}
+                              aria-expanded={showAllEvents}
+                              aria-controls="available-events-list"
+                              className="group flex w-full items-center justify-center gap-2 px-5 py-3.5 text-sm font-medium text-violet-300 transition-all hover:bg-white/[0.04] hover:text-violet-200"
+                            >
+                              {showAllEvents ? (
+                                <>
+                                  <ChevronDown size={15} className="rotate-180 transition-transform" />
+                                  <span>Show less</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Plus size={14} />
                                   <span>
-                                    {team ? "Team Event" : "Individual Event"}
+                                    View all {filteredEvents.length}{" "}
+                                    {filteredEvents.length === 1
+                                      ? "competition"
+                                      : "competitions"}
                                   </span>
-
-                                  {team &&
-                                    event.min_team_size &&
-                                    event.max_team_size && (
-                                      <>
-                                        <span>•</span>
-                                        <span>
-                                          {event.min_team_size}–
-                                          {event.max_team_size} members
-                                        </span>
-                                      </>
-                                    )}
-                                </div>
-                              </div>
-
-                              {/* PRICE */}
-                              <div className="hidden shrink-0 text-right sm:block font-mono">
-                                <p className="text-[9px] uppercase tracking-wider text-white/40">
-                                  Fee
-                                </p>
-                                <p className={`mt-0.5 text-xs font-semibold ${fee > 0 ? "text-white" : "text-emerald-400"}`}>
-                                  {fee > 0
-                                    ? `₹${fee.toLocaleString("en-IN")}`
-                                    : "FREE"}
-                                </p>
-                              </div>
-
-                              <ArrowRight
-                                size={14}
-                                className={`shrink-0 transition-transform ${selected
-                                    ? "text-violet-300"
-                                    : "text-white/20 group-hover:translate-x-1 group-hover:text-white/60"
-                                  }`}
-                              />
-                            </motion.button>
-                          );
-                        })}
-                      </div>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </>

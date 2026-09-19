@@ -6,8 +6,10 @@ import {
   ArrowLeft,
   CalendarDays,
   Check,
+  ChevronDown,
   Clock3,
   Edit3,
+  Filter,
   MapPin,
   Plus,
   RefreshCw,
@@ -109,8 +111,82 @@ function formatFee(event: EventRecord) {
 
 function categoryLabel(category: string | null) {
   return (category ?? "other")
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/[-_]/g, " ")
+    .toUpperCase();
+}
+
+type DateFilterValue = "all" | "today" | "tomorrow" | "this-week" | "this-month" | "custom";
+type PaymentFilterValue = "all" | "free" | "paid";
+
+function isEventFree(event: EventRecord) {
+  const fee = Number(event.registration_fee ?? 0);
+  return fee === 0 || event.payment_unit === "free";
+}
+
+/**
+ * Returns the start of today in local time as a Date.
+ */
+function todayStart() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function matchesDateFilter(
+  eventDate: string | null,
+  filter: DateFilterValue,
+  customFrom: string,
+  customTo: string
+): boolean {
+  if (filter === "all") return true;
+
+  // Specific date filter: events without a set date do not match
+  if (!eventDate) return false;
+
+  const d = new Date(`${eventDate}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return false;
+
+  const today = todayStart();
+
+  switch (filter) {
+    case "today":
+      return d.getTime() === today.getTime();
+    case "tomorrow": {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return d.getTime() === tomorrow.getTime();
+    }
+    case "this-week": {
+      // Current week: Monday to Sunday
+      const dayOfWeek = today.getDay();
+      const diffToMonday = (dayOfWeek + 6) % 7;
+      const weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() - diffToMonday);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+      return d >= weekStart && d <= weekEnd;
+    }
+    case "this-month": {
+      return (
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear()
+      );
+    }
+    case "custom": {
+      if (customFrom) {
+        const from = new Date(`${customFrom}T00:00:00`);
+        if (!Number.isNaN(from.getTime()) && d < from) return false;
+      }
+      if (customTo) {
+        const to = new Date(`${customTo}T00:00:00`);
+        if (!Number.isNaN(to.getTime()) && d > to) return false;
+      }
+      return true;
+    }
+    default:
+      return true;
+  }
 }
 
 export default function EventsAdminPage() {
@@ -123,7 +199,15 @@ export default function EventsAdminPage() {
   const [editing, setEditing] = useState<EventForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-const [role, setRole] = useState<"master" | "admin" | null>(null);
+  const [role, setRole] = useState<"master" | "admin" | null>(null);
+
+  /* ── New filter state ────────────────────────────────────── */
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState<DateFilterValue>("all");
+  const [customDateFrom, setCustomDateFrom] = useState("");
+  const [customDateTo, setCustomDateTo] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilterValue>("all");
+
   const loadEvents = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
@@ -140,10 +224,10 @@ const [role, setRole] = useState<"master" | "admin" | null>(null);
       }
 
       const payload = (await response.json()) as {
-  events?: EventRecord[];
-  role?: "master" | "admin";
-  error?: string;
-};
+        events?: EventRecord[];
+        role?: "master" | "admin";
+        error?: string;
+      };
       if (!response.ok) {
         throw new Error(payload.error ?? "Could not load events.");
       }
@@ -187,28 +271,100 @@ const [role, setRole] = useState<"master" | "admin" | null>(null);
     };
   }, [loadEvents]);
 
+  /* ── Categories derived from data ────────────────────────── */
+  const eventCategories = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const e of events) {
+      const raw = e.category?.trim();
+      if (raw) {
+        const lower = raw.toLowerCase();
+        if (!map.has(lower)) {
+          map.set(lower, raw);
+        }
+      }
+    }
+    const cats = Array.from(map.values()).sort((a, b) =>
+      categoryLabel(a).localeCompare(categoryLabel(b))
+    );
+    return ["All", ...cats];
+  }, [events]);
+
+  /* ── Category counts ─────────────────────────────────────── */
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: events.length,
+      All: events.length,
+    };
+    for (const e of events) {
+      const key = (e.category?.trim() || "other").toLowerCase();
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  }, [events]);
+
+  /* ── Has any filter active? ──────────────────────────────── */
+  const hasActiveFilters =
+    search.trim().length > 0 ||
+    categoryFilter !== "All" ||
+    dateFilter !== "all" ||
+    customDateFrom !== "" ||
+    customDateTo !== "" ||
+    paymentFilter !== "all";
+
+  function clearAllFilters() {
+    setSearch("");
+    setCategoryFilter("All");
+    setDateFilter("all");
+    setCustomDateFrom("");
+    setCustomDateTo("");
+    setPaymentFilter("all");
+  }
+
+  /* ── Combined filter pipeline ────────────────────────────── */
   const filteredEvents = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return events;
 
-    return events.filter((event) =>
-      [
-        event.name,
-        event.slug,
-        event.category,
-        event.venue,
-        event.description,
-      ].some((value) =>
-        value?.toLowerCase().includes(query)
-      )
-    );
-  }, [events, search]);
+    return events.filter((event) => {
+      // Search
+      if (query) {
+        const matches = [
+          event.name,
+          event.slug,
+          event.category,
+          event.venue,
+          event.description,
+        ].some((value) => value?.toLowerCase().includes(query));
+        if (!matches) return false;
+      }
+
+      // Category
+      if (
+        categoryFilter !== "All" &&
+        event.category?.trim().toLowerCase() !== categoryFilter.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Date
+      if (!matchesDateFilter(event.event_date, dateFilter, customDateFrom, customDateTo)) {
+        return false;
+      }
+
+      // Payment
+      if (paymentFilter === "free" && !isEventFree(event)) return false;
+      if (paymentFilter === "paid" && isEventFree(event)) return false;
+
+      return true;
+    });
+  }, [events, search, categoryFilter, dateFilter, customDateFrom, customDateTo, paymentFilter]);
 
   const stats = useMemo(
     () => ({
       total: events.length,
       active: events.filter((event) => event.active).length,
       open: events.filter((event) => event.registration_open).length,
+      free: events.filter((event) => isEventFree(event)).length,
+      paid: events.filter((event) => !isEventFree(event)).length,
     }),
     [events]
   );
@@ -419,21 +575,158 @@ const [role, setRole] = useState<"master" | "admin" | null>(null);
           </div>
         )}
 
-        <section className="mb-8 grid gap-4 md:grid-cols-3">
+        {/* ── STAT CARDS ────────────────────────────────────── */}
+        <section className="mb-8 grid gap-4 grid-cols-2 md:grid-cols-5">
           <StatCard label="Total events" value={stats.total} dark />
           <StatCard label="Active events" value={stats.active} />
           <StatCard label="Registration open" value={stats.open} />
+          <StatCard label="Free events" value={stats.free} />
+          <StatCard label="Paid events" value={stats.paid} />
         </section>
 
-        <section className="mb-8 flex items-center gap-3 rounded-[24px] bg-white p-4 shadow-[0_20px_80px_rgba(0,0,0,0.04)]">
-          <Search size={18} className="text-black/35" />
+        {/* ── SEARCH BAR WITH CLEAR BUTTON ─────────────────── */}
+        <section className="mb-5 flex items-center gap-3 rounded-[24px] bg-white p-4 shadow-[0_20px_80px_rgba(0,0,0,0.04)]">
+          <Search size={18} className="shrink-0 text-black/35" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search events, category, venue..."
-            className="w-full bg-transparent py-2 text-sm outline-none"
+            className="min-w-0 w-full bg-transparent py-2 text-sm outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-black/50 transition hover:bg-black/10 hover:text-black"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
         </section>
+
+        {/* ── FILTER CONTROLS ──────────────────────────────── */}
+        <section className="mb-5 space-y-4 rounded-[24px] bg-white p-4 shadow-[0_20px_80px_rgba(0,0,0,0.04)]">
+          {/* Category pills */}
+          <div className="flex flex-wrap gap-2">
+            {eventCategories.map((cat) => {
+              const active = categoryFilter === cat;
+              const count = categoryCounts[cat.toLowerCase()] ?? categoryCounts[cat] ?? 0;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all ${
+                    active
+                      ? "bg-black text-white"
+                      : "border border-black/10 bg-transparent text-black/60 hover:border-black/25 hover:text-black"
+                  }`}
+                >
+                  {categoryLabel(cat)} {count}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Date + Payment row */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Date filter */}
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => {
+                  const val = e.target.value as DateFilterValue;
+                  setDateFilter(val);
+                  if (val !== "custom") {
+                    setCustomDateFrom("");
+                    setCustomDateTo("");
+                  }
+                }}
+                className="appearance-none rounded-full border border-black/10 bg-white py-2 pl-4 pr-9 text-xs font-medium text-black/70 outline-none transition hover:border-black/25 focus:border-black/35"
+              >
+                <option value="all">All dates</option>
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="this-week">This week</option>
+                <option value="this-month">This month</option>
+                <option value="custom">Custom range</option>
+              </select>
+              <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/35" />
+            </div>
+
+            {/* Custom date inputs */}
+            {dateFilter === "custom" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-black/40">From</span>
+                <input
+                  type="date"
+                  value={customDateFrom}
+                  onChange={(e) => setCustomDateFrom(e.target.value)}
+                  className="rounded-full border border-black/10 bg-white px-3 py-2 text-xs outline-none transition focus:border-black/35"
+                  aria-label="From date"
+                />
+                <span className="text-xs text-black/40">To</span>
+                <input
+                  type="date"
+                  value={customDateTo}
+                  onChange={(e) => setCustomDateTo(e.target.value)}
+                  className="rounded-full border border-black/10 bg-white px-3 py-2 text-xs outline-none transition focus:border-black/35"
+                  aria-label="To date"
+                />
+                {(customDateFrom || customDateTo) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomDateFrom("");
+                      setCustomDateTo("");
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-black/[0.06] text-black/50 transition hover:bg-black/10 hover:text-black"
+                    title="Clear date range"
+                    aria-label="Clear date range"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Payment filter */}
+            <div className="relative">
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value as PaymentFilterValue)}
+                className="appearance-none rounded-full border border-black/10 bg-white py-2 pl-4 pr-9 text-xs font-medium text-black/70 outline-none transition hover:border-black/25 focus:border-black/35"
+              >
+                <option value="all">All pricing</option>
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+              </select>
+              <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/35" />
+            </div>
+
+            {/* Clear all filters */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="ml-auto flex items-center gap-1.5 rounded-full border border-black/10 px-4 py-2 text-xs font-medium text-black/50 transition hover:border-black/25 hover:text-black"
+              >
+                <X size={13} />
+                Clear all filters
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* ── FILTER STATUS BAR ────────────────────────────── */}
+        <div className="mb-5 flex items-center justify-between px-1">
+          <p className="text-xs font-medium text-black/40">
+            {hasActiveFilters
+              ? `Showing ${filteredEvents.length} of ${events.length} event${events.length === 1 ? "" : "s"}`
+              : `${events.length} event${events.length === 1 ? "" : "s"}`}
+          </p>
+        </div>
 
         {loading ? (
           <div className="rounded-[28px] bg-white py-20 text-center text-sm text-black/40">
@@ -443,17 +736,25 @@ const [role, setRole] = useState<"master" | "admin" | null>(null);
           <div className="rounded-[28px] bg-white py-20 text-center">
             <CalendarDays className="mx-auto text-black/20" size={38} />
             <p className="mt-4 text-sm text-black/45">
-              {search ? "No events match your search." : "No events found."}
+              No events found.
             </p>
-            {!search && (
-              role === "master" && (
+            {hasActiveFilters ? (
               <button
                 type="button"
-                onClick={startCreate}
-                className="mt-5 rounded-full bg-black px-5 py-3 text-sm text-white"
+                onClick={clearAllFilters}
+                className="mt-5 rounded-full border border-black/10 px-5 py-3 text-sm transition hover:bg-black/[0.04]"
               >
-                Create your first event
+                Clear filters
               </button>
+            ) : (
+              role === "master" && (
+                <button
+                  type="button"
+                  onClick={startCreate}
+                  className="mt-5 rounded-full bg-black px-5 py-3 text-sm text-white"
+                >
+                  Create your first event
+                </button>
               )
             )}
           </div>

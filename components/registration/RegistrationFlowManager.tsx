@@ -1,0 +1,38 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import RegistrationAuthGate from "./RegistrationAuthGate";
+import RegistrationForm from "./RegistrationForm";
+
+interface RegistrationFlowManagerProps {
+  initialAuthenticated: boolean;
+  initialEmail?: string;
+}
+
+export default function RegistrationFlowManager({
+  initialAuthenticated,
+  initialEmail = "",
+}: RegistrationFlowManagerProps) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(initialAuthenticated);
+  const [verifiedEmail, setVerifiedEmail] = useState(initialEmail);
+
+  const handleAuthenticated = (email: string) => {
+    setVerifiedEmail(email);
+    setIsAuthenticated(true);
+    // Refresh server state to recognize the newly set session cookie
+    router.refresh();
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <RegistrationAuthGate
+        initialEmail={verifiedEmail}
+        onAuthenticated={handleAuthenticated}
+      />
+    );
+  }
+
+  return <RegistrationForm />;
+}

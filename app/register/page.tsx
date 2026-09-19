@@ -4,7 +4,9 @@ import Image from "next/image";
 import { Suspense } from "react";
 import { ArrowLeft, ArrowUpRight, Mail, Phone, Sparkles } from "lucide-react";
 import MouseSpotlight from "@/components/ui/MouseSpotlight";
-import RegistrationForm from "@/components/registration/RegistrationForm";
+import RegistrationFlowManager from "@/components/registration/RegistrationFlowManager";
+import { getRegistrationSession } from "@/lib/auth/session";
+import Footer from "@/components/ui/Footer";
 
 export const metadata: Metadata = {
   title: "Official Registration Portal",
@@ -35,6 +37,7 @@ export default async function RegisterPage({
 }) {
   const params = await searchParams;
   const fromAdmin = params.from === "admin";
+  const session = await getRegistrationSession();
 
   return (
     <main className="relative min-h-screen w-full bg-black text-white selection:bg-white selection:text-black">
@@ -137,10 +140,13 @@ export default async function RegisterPage({
         </div>
       </section>
 
-      {/* Form Area */}
+      {/* Form & Auth Flow Area */}
       <div className="relative z-10">
         <Suspense fallback={<RegistrationFormLoading />}>
-          <RegistrationForm />
+          <RegistrationFlowManager
+            initialAuthenticated={session.authenticated}
+            initialEmail={session.email || ""}
+          />
         </Suspense>
       </div>
 
@@ -186,6 +192,9 @@ export default async function RegisterPage({
           </div>
         </div>
       </section>
+
+      {/* Verified CGC University Mohali Footer */}
+      <Footer />
     </main>
   );
 }
