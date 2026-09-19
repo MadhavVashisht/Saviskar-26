@@ -22,6 +22,7 @@ import { supabase } from "@/lib/supabase";
 
 type EventRecord = {
   id: string;
+  created_at?: string | null;
   slug: string;
   name: string;
   category: string | null;
@@ -117,6 +118,7 @@ function categoryLabel(category: string | null) {
 
 type DateFilterValue = "all" | "today" | "tomorrow" | "this-week" | "this-month" | "custom";
 type PaymentFilterValue = "all" | "free" | "paid";
+type SortOption = "default" | "recently-added";
 
 function isEventFree(event: EventRecord) {
   const fee = Number(event.registration_fee ?? 0);
@@ -207,6 +209,7 @@ export default function EventsAdminPage() {
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilterValue>("all");
+  const [sortOrder, setSortOrder] = useState<SortOption>("default");
 
   const loadEvents = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
@@ -309,7 +312,8 @@ export default function EventsAdminPage() {
     dateFilter !== "all" ||
     customDateFrom !== "" ||
     customDateTo !== "" ||
-    paymentFilter !== "all";
+    paymentFilter !== "all" ||
+    sortOrder !== "default";
 
   function clearAllFilters() {
     setSearch("");
@@ -318,13 +322,14 @@ export default function EventsAdminPage() {
     setCustomDateFrom("");
     setCustomDateTo("");
     setPaymentFilter("all");
+    setSortOrder("default");
   }
 
   /* ── Combined filter pipeline ────────────────────────────── */
   const filteredEvents = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return events.filter((event) => {
+    const result = events.filter((event) => {
       // Search
       if (query) {
         const matches = [
@@ -356,7 +361,29 @@ export default function EventsAdminPage() {
 
       return true;
     });
-  }, [events, search, categoryFilter, dateFilter, customDateFrom, customDateTo, paymentFilter]);
+
+    if (sortOrder === "recently-added") {
+      return [...result].sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : NaN;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : NaN;
+        const validA = !Number.isNaN(timeA);
+        const validB = !Number.isNaN(timeB);
+
+        // If both timestamps are valid, newest first (descending)
+        if (validA && validB) {
+          if (timeB !== timeA) return timeB - timeA;
+          return (a.name ?? "").localeCompare(b.name ?? "");
+        }
+
+        // Records with missing/null created_at go safely at the end
+        if (validA && !validB) return -1;
+        if (!validA && validB) return 1;
+        return (a.name ?? "").localeCompare(b.name ?? "");
+      });
+    }
+
+    return result;
+  }, [events, search, categoryFilter, dateFilter, customDateFrom, customDateTo, paymentFilter, sortOrder]);
 
   const stats = useMemo(
     () => ({
@@ -629,8 +656,22 @@ export default function EventsAdminPage() {
             })}
           </div>
 
-          {/* Date + Payment row */}
+          {/* Filter & Sort row */}
           <div className="flex flex-wrap items-center gap-3">
+            {/* Sort filter */}
+            <div className="relative">
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as SortOption)}
+                aria-label="Sort events"
+                className="appearance-none rounded-full border border-black/10 bg-white py-2 pl-4 pr-9 text-xs font-medium text-black/70 outline-none transition hover:border-black/25 focus:border-black/35"
+              >
+                <option value="default">Sort: Default</option>
+                <option value="recently-added">Sort: Recently added</option>
+              </select>
+              <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/35" />
+            </div>
+
             {/* Date filter */}
             <div className="relative">
               <select
@@ -759,126 +800,158 @@ export default function EventsAdminPage() {
             )}
           </div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             {filteredEvents.map((event) => (
               <article
                 key={event.id}
-                className="rounded-[28px] bg-white p-6 shadow-[0_20px_80px_rgba(0,0,0,0.04)]"
+                className="flex flex-col justify-between rounded-[22px] bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.035)] transition-all hover:shadow-[0_16px_50px_rgba(0,0,0,0.06)] sm:p-5"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-black/35">
-                      {categoryLabel(event.category)}
-                    </p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">
-                      {event.name}
-                    </h2>
-                    <p className="mt-1 text-xs text-black/35">
-                      /{event.slug}
-                    </p>
+                {/* Top section: Header, Description, Metadata, Badges */}
+                <div className="min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-black/35">
+                        {categoryLabel(event.category)}
+                      </p>
+                      <h2
+                        className="mt-1 text-base font-semibold tracking-[-0.03em] leading-snug line-clamp-2"
+                        title={event.name}
+                      >
+                        {event.name}
+                      </h2>
+                      <p className="mt-0.5 truncate text-[11px] text-black/35">
+                        /{event.slug}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+                        event.active
+                          ? "bg-emerald-500"
+                          : "bg-black/15"
+                      }`}
+                      title={event.active ? "Active" : "Inactive"}
+                    />
                   </div>
 
-                  <span
-                    className={`mt-1 h-3 w-3 rounded-full ${
-                      event.active
-                        ? "bg-emerald-500"
-                        : "bg-black/15"
-                    }`}
-                    title={event.active ? "Active" : "Inactive"}
-                  />
-                </div>
-
-                {event.description && (
-                  <p className="mt-4 text-sm leading-6 text-black/50">
-                    {event.description}
-                  </p>
-                )}
-
-                <div className="mt-6 grid gap-3 text-xs text-black/55 sm:grid-cols-2">
-                  <Info icon={<CalendarDays size={14} />} value={formatDate(event.event_date)} />
-                  <Info
-                    icon={<Clock3 size={14} />}
-                    value={event.start_time || "Time TBA"}
-                  />
-                  <Info
-                    icon={<MapPin size={14} />}
-                    value={event.venue || "Venue TBA"}
-                  />
-                  <Info
-                    icon={<Users size={14} />}
-                    value={
-                      event.registration_type === "team"
-                        ? `${event.min_team_size ?? "?"}–${event.max_team_size ?? "?"} members`
-                        : "Individual"
-                    }
-                  />
-                </div>
-
-                <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[10px] font-medium text-emerald-700">
-                    {event.registration_open
-                      ? "Registration open"
-                      : "Registration closed"}
-                  </span>
-                  <span className="rounded-full bg-black px-3 py-1.5 text-[10px] text-white">
-                    {event.active ? "Active" : "Inactive"}
-                  </span>
-                  <span className="rounded-full bg-black/[0.04] px-3 py-1.5 text-[10px] text-black/50">
-                    {formatFee(event)}
-                  </span>
-                  <span className="ml-auto text-[10px] uppercase tracking-[0.12em] text-black/30">
-                    {event.registration_count} registration
-                    {event.registration_count === 1 ? "" : "s"}
-                  </span>
-                </div>
-
-                <div className="mt-6 grid gap-2 border-t border-black/10 pt-5 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(
-                        `/admin/events/${event.id}/registrations`
-                      )
-                    }
-                    className="flex items-center justify-center gap-2 rounded-full bg-black px-4 py-3 text-xs font-medium text-white transition hover:bg-black/80"
-                  >
-                    <Users size={14} />
-                    Registrations
-                  </button>
-                  {role === "master" && (
-                  <button
-                    type="button"
-                    onClick={() => startEdit(event)}
-                    className="flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-3 text-xs font-medium transition hover:bg-black/[0.04]"
-                  >
-                    <Edit3 size={14} />
-                    Edit
-                  </button>
+                  {event.description && (
+                    <p
+                      className="mt-2 text-xs leading-relaxed text-black/50 line-clamp-2"
+                      title={event.description}
+                    >
+                      {event.description}
+                    </p>
                   )}
+
+                  <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs text-black/55">
+                    <Info icon={<CalendarDays size={13} />} value={formatDate(event.event_date)} />
+                    <Info
+                      icon={<Clock3 size={13} />}
+                      value={event.start_time || "Time TBA"}
+                    />
+                    <Info
+                      icon={<MapPin size={13} />}
+                      value={event.venue || "Venue TBA"}
+                    />
+                    <Info
+                      icon={<Users size={13} />}
+                      value={
+                        event.registration_type === "team"
+                          ? `${event.min_team_size ?? "?"}–${event.max_team_size ?? "?"} members`
+                          : "Individual"
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-1">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                        event.registration_open
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-black/[0.04] text-black/50"
+                      }`}
+                    >
+                      {event.registration_open
+                        ? "Registration open"
+                        : "Registration closed"}
+                    </span>
+                    <span className="rounded-full bg-black px-2.5 py-0.5 text-[10px] text-white">
+                      {event.active ? "Active" : "Inactive"}
+                    </span>
+                    <span className="rounded-full bg-black/[0.04] px-2.5 py-0.5 text-[10px] text-black/50">
+                      {formatFee(event)}
+                    </span>
+                    <span className="ml-auto text-[10px] uppercase tracking-[0.08em] text-black/35 font-medium">
+                      {event.registration_count} registration
+                      {event.registration_count === 1 ? "" : "s"}
+                    </span>
+                  </div>
                 </div>
-{role === "master" && (
-                <button
-                  type="button"
-                  onClick={() => void deleteEvent(event)}
-                  disabled={
-                    deletingId === event.id ||
-                    event.registration_count > 0
-                  }
-                  title={
-                    event.registration_count > 0
-                      ? "Events with registrations cannot be deleted."
-                      : "Delete event"
-                  }
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-red-100 px-4 py-3 text-xs text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {deletingId === event.id ? (
-                    <RefreshCw size={14} className="animate-spin" />
+
+                {/* Bottom section: Action buttons */}
+                <div className="mt-4 border-t border-black/10 pt-3">
+                  {role === "master" ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/admin/events/${event.id}/registrations`
+                          )
+                        }
+                        className="flex items-center justify-center gap-1.5 rounded-full bg-black px-3 py-2 text-xs font-medium text-white transition hover:bg-black/80"
+                      >
+                        <Users size={13} className="shrink-0" />
+                        <span className="truncate">Registrations</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(event)}
+                        className="flex items-center justify-center gap-1.5 rounded-full border border-black/10 px-3 py-2 text-xs font-medium transition hover:bg-black/[0.04]"
+                      >
+                        <Edit3 size={13} className="shrink-0" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
                   ) : (
-                    <Trash2 size={14} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/admin/events/${event.id}/registrations`
+                        )
+                      }
+                      className="flex w-full items-center justify-center gap-1.5 rounded-full bg-black px-3 py-2 text-xs font-medium text-white transition hover:bg-black/80"
+                    >
+                      <Users size={13} className="shrink-0" />
+                      <span>Registrations</span>
+                    </button>
                   )}
-                  Delete event
-                </button>
-)}
+
+                  {role === "master" && (
+                    <button
+                      type="button"
+                      onClick={() => void deleteEvent(event)}
+                      disabled={
+                        deletingId === event.id ||
+                        event.registration_count > 0
+                      }
+                      title={
+                        event.registration_count > 0
+                          ? "Events with registrations cannot be deleted."
+                          : "Delete event"
+                      }
+                      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-red-100 px-3 py-1.5 text-xs text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {deletingId === event.id ? (
+                        <RefreshCw size={13} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={13} />
+                      )}
+                      Delete event
+                    </button>
+                  )}
+                </div>
               </article>
             ))}
           </div>
@@ -1271,8 +1344,8 @@ function Info({
   value: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <span className="shrink-0 text-black/30">{icon}</span>
+    <div className="flex min-w-0 items-center gap-1.5" title={value}>
+      <span className="shrink-0 text-black/35">{icon}</span>
       <span className="truncate">{value}</span>
     </div>
   );

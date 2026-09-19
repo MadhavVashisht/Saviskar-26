@@ -260,7 +260,7 @@ export async function GET() {
   } = await client
     .from("events")
     .select(
-      "id, slug, name, category, description, event_date, start_time, venue, active, registration_open, registration_type, min_team_size, max_team_size, registration_fee, payment_type, payment_unit"
+      "id, created_at, slug, name, category, description, event_date, start_time, venue, active, registration_open, registration_type, min_team_size, max_team_size, registration_fee, payment_type, payment_unit"
     )
     .order("event_date", {
       ascending: true,
@@ -411,7 +411,7 @@ export async function POST(
       .from("events")
       .insert(payload)
       .select(
-        "id, slug, name, category, description, event_date, start_time, venue, active, registration_open, registration_type, min_team_size, max_team_size, registration_fee, payment_type, payment_unit"
+        "id, created_at, slug, name, category, description, event_date, start_time, venue, active, registration_open, registration_type, min_team_size, max_team_size, registration_fee, payment_type, payment_unit"
       )
       .single();
 
@@ -542,7 +542,7 @@ export async function PATCH(
       .update(payload)
       .eq("id", id)
       .select(
-        "id, slug, name, category, description, event_date, start_time, venue, active, registration_open, registration_type, min_team_size, max_team_size, registration_fee, payment_type, payment_unit"
+        "id, created_at, slug, name, category, description, event_date, start_time, venue, active, registration_open, registration_type, min_team_size, max_team_size, registration_fee, payment_type, payment_unit"
       )
       .maybeSingle();
 

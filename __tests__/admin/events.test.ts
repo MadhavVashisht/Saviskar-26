@@ -7,6 +7,7 @@ process.env.SUPABASE_SECRET_KEY = "test-secret-key";
 
 interface MockEvent {
   id: string;
+  created_at?: string;
   slug: string;
   name: string;
   category: string;
