@@ -179,7 +179,17 @@ export async function POST(
       .select("id")
       .maybeSingle();
 
-    if (claimError || !eventClaim) {
+    // Explicitly check for Postgres error code 23505 (unique_violation)
+    const isDuplicate =
+      claimError?.code === "23505" ||
+      (!claimError && !eventClaim);
+
+    if (claimError && !isDuplicate) {
+      console.error("Webhook DB error claiming payment event:", claimError);
+      return new Response("Database error recording payment claim", { status: 500 });
+    }
+
+    if (isDuplicate) {
       console.log(
         `[WEBHOOK IDEMPOTENCY] Event already processed for payment ${event.gatewayPaymentId}. Skipping duplicate execution.`
       );

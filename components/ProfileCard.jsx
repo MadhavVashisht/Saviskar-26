@@ -17,9 +17,9 @@ const round = (v, precision = 3) => parseFloat(v.toFixed(precision));
 const adjust = (v, fMin, fMax, tMin, tMax) => round(tMin + ((tMax - tMin) * (v - fMin)) / (fMax - fMin));
 
 const ProfileCardComponent = ({
-  avatarUrl = '<Placeholder for avatar URL>',
-  iconUrl = '<Placeholder for icon URL>',
-  grainUrl = '<Placeholder for grain URL>',
+  avatarUrl = '',
+  iconUrl = '',
+  grainUrl = '',
   innerGradient = DEFAULT_INNER_GRADIENT,
   behindGlowEnabled = true,
   behindGlowColor = 'rgba(125, 190, 255, 0.67)',

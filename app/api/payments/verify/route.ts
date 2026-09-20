@@ -370,7 +370,17 @@ export async function POST(
     .select("id")
     .maybeSingle();
 
-  if (claimError || !eventClaim) {
+  // Explicitly check for Postgres error code 23505 (unique_violation)
+  const isDuplicate =
+    claimError?.code === "23505" ||
+    (!claimError && !eventClaim);
+
+  if (claimError && !isDuplicate) {
+    console.error("Database error claiming payment event:", claimError);
+    return errorResponse("Database error recording payment claim.", 500);
+  }
+
+  if (isDuplicate) {
     console.log(
       `[PAYMENT IDEMPOTENCY] Event already processed for payment ${gatewayPaymentId}. Skipping duplicate execution.`
     );

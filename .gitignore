@@ -17,3 +17,7 @@ scratch/
 
 # Uncompressed local asset archive
 public/images/originals/
+
+# Test artifacts
+test-results/
+playwright-report/

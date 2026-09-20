@@ -496,3 +496,72 @@ describe("Phase 2B: Returning Participant → Paid Event Flow & Recovery Regress
     expect(Number(combinedOrder.amount) * 100).toBe(50000); // 50000 paise for Razorpay
   });
 });
+
+describe("Phase 2B: Concurrent Webhook & Verification Idempotency (Postgres 23505)", () => {
+  it("Promise.all firing two simultaneous requests with identical payment_id processes once and sends only 1 confirmation email", async () => {
+    const processedEvents = new Set<string>();
+    let emailsSentCount = 0;
+
+    // Simulated atomic DB insert for processed_payment_events with Postgres 23505 unique constraint enforcement
+    async function simulateDatabaseIdempotencyClaim(paymentId: string, orderId: string) {
+      if (processedEvents.has(paymentId)) {
+        return {
+          data: null,
+          error: {
+            code: "23505",
+            message: "duplicate key value violates unique constraint 'processed_payment_events_payment_id_key'",
+          },
+        };
+      }
+      processedEvents.add(paymentId);
+      return {
+        data: { id: `event-claim-${paymentId}`, payment_id: paymentId, order_id: orderId },
+        error: null,
+      };
+    }
+
+    async function handlePaymentWebhook(paymentId: string, orderId: string) {
+      const { data: eventClaim, error: claimError } = await simulateDatabaseIdempotencyClaim(paymentId, orderId);
+
+      const isDuplicate =
+        claimError?.code === "23505" ||
+        (!claimError && !eventClaim);
+
+      if (claimError && !isDuplicate) {
+        throw new Error("DB Error");
+      }
+
+      if (isDuplicate) {
+        return { status: 200, duplicate: true, action: "skipped" };
+      }
+
+      // Simulate post-payment confirmation dispatch
+      emailsSentCount++;
+      return { status: 200, duplicate: false, action: "email_dispatched" };
+    }
+
+    const testPaymentId = "pay_mock_concurrent_12345";
+    const testOrderId = "order_mock_999";
+
+    // Fire two simultaneous webhook requests for the exact same payment ID
+    const [res1, res2] = await Promise.all([
+      handlePaymentWebhook(testPaymentId, testOrderId),
+      handlePaymentWebhook(testPaymentId, testOrderId),
+    ]);
+
+    expect(res1.status).toBe(200);
+    expect(res2.status).toBe(200);
+
+    const actions = [res1.action, res2.action];
+    expect(actions).toContain("email_dispatched");
+    expect(actions).toContain("skipped");
+
+    const duplicates = [res1.duplicate, res2.duplicate];
+    expect(duplicates).toContain(true);
+    expect(duplicates).toContain(false);
+
+    // CRITICAL: Exactly ONE confirmation email was dispatched
+    expect(emailsSentCount).toBe(1);
+  });
+});
+

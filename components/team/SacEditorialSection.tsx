@@ -113,7 +113,6 @@ function SacProfileCard({ member, tier }: SacCardProps) {
         behindGlowEnabled={true}
         behindGlowColor={conf.behindGlowColor}
         behindGlowSize={conf.behindGlowSize}
-        iconUrl="/assets/demo/iconpattern.png"
         innerGradient={conf.innerGradient}
       />
     </div>
