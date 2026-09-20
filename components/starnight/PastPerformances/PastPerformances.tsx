@@ -14,43 +14,43 @@ import { artists } from "@/data/starnightArtists";
 */
 const starNightPhotos = [
   {
-    src: "/gallery/star 1.jpg",
+    src: "/gallery/star 1.webp",
     alt: "Star Night performance",
     className:
       "left-[2%] top-[4%] h-[310px] w-[205px] -rotate-[3deg] md:h-[390px] md:w-[255px]",
   },
   {
-    src: "/gallery/star 2.jpg",
+    src: "/gallery/star 2.webp",
     alt: "Star Night performance",
     className:
       "left-[28%] top-[0%] h-[245px] w-[410px] rotate-[2deg] md:h-[300px] md:w-[500px]",
   },
   {
-    src: "/gallery/star 3.jpg",
+    src: "/gallery/star 3.webp",
     alt: "Star Night performance",
     className:
       "right-[1%] top-[6%] h-[310px] w-[205px] rotate-[3deg] md:h-[390px] md:w-[255px]",
   },
   {
-    src: "/gallery/star 4.jpg",
+    src: "/gallery/star 4.webp",
     alt: "Star Night performance",
     className:
       "left-[22%] top-[39%] h-[245px] w-[410px] -rotate-[2deg] md:h-[300px] md:w-[500px]",
   },
   {
-    src: "/gallery/star 5.jpg",
+    src: "/gallery/star 5.webp",
     alt: "Star Night performance",
     className:
       "right-[2%] top-[43%] h-[310px] w-[205px] -rotate-[3deg] md:h-[390px] md:w-[255px]",
   },
   {
-    src: "/gallery/concert.jpg",
+    src: "/gallery/concert.webp",
     alt: "Star Night concert",
     className:
       "left-[1%] bottom-[2%] h-[245px] w-[410px] rotate-[2deg] md:h-[300px] md:w-[500px]",
   },
   {
-    src: "/gallery/hero.jpg",
+    src: "/gallery/hero.webp",
     alt: "Star Night stage",
     className:
       "right-[28%] bottom-[0%] h-[245px] w-[410px] -rotate-[2deg] md:h-[300px] md:w-[500px]",

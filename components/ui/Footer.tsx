@@ -20,12 +20,10 @@ export default function Footer() {
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="relative h-full w-full">
           <Image
-            src="/images/scene-finale-celebration.jpg"
+            src="/images/scene-finale-celebration.webp"
             alt="Saviskar 2026 Concert Stadium Celebration Continuation"
             fill
             sizes="100vw"
-            priority
-            loading="eager"
             className="object-cover object-bottom opacity-35"
           />
         </div>
@@ -121,13 +119,13 @@ export default function Footer() {
               <ArrowUpRight size={13} />
             </a>
 
-            <a
+            <Link
               href="/events"
               className="flex items-center gap-1 text-violet-300 hover:text-white"
             >
               Rulebooks
               <ArrowUpRight size={13} />
-            </a>
+            </Link>
           </div>
         </div>
 

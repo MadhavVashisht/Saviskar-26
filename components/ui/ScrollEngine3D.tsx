@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-// 5 interrelated sequential moments of the SAME stadium venue with progressive fireworks
+// 5 interrelated sequential moments of the SAME stadium venue with progressive fireworks (optimized WebP)
 const TEXTURE_PATHS = [
-  "/images/concert-stadium.jpg",             // 0. Hero stadium scene (opening crowd & stage lights)
-  "/images/firework-launch.jpg",             // 1. Fireworks rocket launch sequence over stage roof
-  "/images/scene-realms-stage.jpg",          // 2. Fireworks blooming in magenta & purple above the stage
-  "/images/scene-starnight-show.jpg",        // 3. Concert lasers and golden/purple fireworks canopy
-  "/images/scene-finale-celebration.jpg",    // 4. Grand pyrotechnic golden cascade finale
+  "/images/concert-stadium.webp",             // 0. Hero stadium scene (opening crowd & stage lights)
+  "/images/firework-launch.webp",             // 1. Fireworks rocket launch sequence over stage roof
+  "/images/scene-realms-stage.webp",          // 2. Fireworks blooming in magenta & purple above the stage
+  "/images/scene-starnight-show.webp",        // 3. Concert lasers and golden/purple fireworks canopy
+  "/images/scene-finale-celebration.webp",    // 4. Grand pyrotechnic golden cascade finale
 ];
 
 const vertexShader = `
@@ -141,8 +141,24 @@ const fragmentShader = `
   }
 `;
 
+function checkWebGLSupport(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext("webgl") ||
+        canvas.getContext("experimental-webgl") ||
+        canvas.getContext("webgl2"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function ScrollEngine3D() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [hasWebGLError, setHasWebGLError] = useState(() => !checkWebGLSupport());
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -151,52 +167,50 @@ export default function ScrollEngine3D() {
     let animationFrameId: number;
     let isDisposed = false;
 
-    // Guard WebGL2 texImage3D/texSubImage3D against WebGL spec violation:
-    // UNPACK_FLIP_Y_WEBGL and UNPACK_PREMULTIPLY_ALPHA_WEBGL must be false when uploading 3D textures.
-    const gl2 = canvas.getContext("webgl2") as WebGL2RenderingContext | null;
-    if (gl2) {
-      gl2.pixelStorei(gl2.UNPACK_FLIP_Y_WEBGL, false);
-      gl2.pixelStorei(gl2.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    // Detect device performance tier
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const isLowPower =
+      isMobile ||
+      (typeof navigator !== "undefined" &&
+        navigator.hardwareConcurrency != null &&
+        navigator.hardwareConcurrency <= 4);
 
-      const proto = Object.getPrototypeOf(gl2) as WebGL2RenderingContext;
-      if (proto && !("__texImage3DGuarded" in proto)) {
-        (proto as unknown as Record<string, unknown>).__texImage3DGuarded = true;
-        const origTexImage3D = proto.texImage3D;
-        proto.texImage3D = function (this: WebGL2RenderingContext, ...args: unknown[]) {
-          const flip = this.getParameter(this.UNPACK_FLIP_Y_WEBGL);
-          const premult = this.getParameter(this.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-          if (flip) this.pixelStorei(this.UNPACK_FLIP_Y_WEBGL, false);
-          if (premult) this.pixelStorei(this.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-          // @ts-expect-error WebGL2 overloaded arguments
-          const result = origTexImage3D.apply(this, args);
-          if (flip) this.pixelStorei(this.UNPACK_FLIP_Y_WEBGL, flip);
-          if (premult) this.pixelStorei(this.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premult);
-          return result;
-        } as typeof proto.texImage3D;
-
-        const origTexSubImage3D = proto.texSubImage3D;
-        proto.texSubImage3D = function (this: WebGL2RenderingContext, ...args: unknown[]) {
-          const flip = this.getParameter(this.UNPACK_FLIP_Y_WEBGL);
-          const premult = this.getParameter(this.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-          if (flip) this.pixelStorei(this.UNPACK_FLIP_Y_WEBGL, false);
-          if (premult) this.pixelStorei(this.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-          // @ts-expect-error WebGL2 overloaded arguments
-          const result = origTexSubImage3D.apply(this, args);
-          if (flip) this.pixelStorei(this.UNPACK_FLIP_Y_WEBGL, flip);
-          if (premult) this.pixelStorei(this.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premult);
-          return result;
-        } as typeof proto.texSubImage3D;
-      }
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: !isLowPower,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
+    } catch (e) {
+      console.warn("WebGL initialization failed, falling back to atmospheric poster background:", e);
+      requestAnimationFrame(() => {
+        setHasWebGLError(true);
+      });
+      return;
     }
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const gl = renderer.getContext();
+    if (!gl) {
+      requestAnimationFrame(() => {
+        setHasWebGLError(true);
+      });
+      return;
+    }
+
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      cancelAnimationFrame(animationFrameId);
+    };
+    const handleContextRestored = () => {
+      // Context restored
+    };
+    canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
+
+    const maxPixelRatio = isLowPower ? 1.25 : 2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.08;
@@ -216,7 +230,7 @@ export default function ScrollEngine3D() {
 
     // Texture Loader with Anisotropic Filtering
     const textureLoader = new THREE.TextureLoader();
-    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+    const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), isLowPower ? 2 : 8);
 
     const textures: THREE.Texture[] = TEXTURE_PATHS.map((path) => {
       const tex = textureLoader.load(path);
@@ -275,7 +289,7 @@ export default function ScrollEngine3D() {
     scene.add(stadiumMesh);
 
     // 3D Floating Embers & Stage Dust Motes in Depth
-    const particleCount = 1000;
+    const particleCount = isLowPower ? 300 : 750;
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleOriginals = new Float32Array(particleCount * 3);
@@ -497,6 +511,8 @@ export default function ScrollEngine3D() {
     return () => {
       isDisposed = true;
       cancelAnimationFrame(animationFrameId);
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
@@ -512,15 +528,6 @@ export default function ScrollEngine3D() {
       laserLines.forEach((l) => l.geometry.dispose());
       laserMaterial1.dispose();
       laserMaterial2.dispose();
-      try {
-        const gl = renderer.getContext() as WebGL2RenderingContext | null;
-        if (gl) {
-          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        }
-      } catch {
-        // ignore if context already lost
-      }
       renderer.dispose();
     };
   }, []);
@@ -530,10 +537,17 @@ export default function ScrollEngine3D() {
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none bg-black"
     >
-      <canvas
-        ref={canvasRef}
-        className="h-full w-full object-cover"
-      />
+      {hasWebGLError ? (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+          style={{ backgroundImage: "url('/images/concert-stadium.webp')" }}
+        />
+      ) : (
+        <canvas
+          ref={canvasRef}
+          className="h-full w-full object-cover"
+        />
+      )}
 
       {/* Subtle atmospheric vignette and stage contrast */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/35" />

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -11,6 +12,40 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+
+export const revalidate = 300;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string; event: string }>;
+}): Promise<Metadata> {
+  const { category, event } = await params;
+  const { data } = await supabase
+    .from("events")
+    .select("name, description, category")
+    .eq("category", category)
+    .eq("slug", event)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (!data) {
+    return {
+      title: "Event Details | Saviskar 2026",
+    };
+  }
+
+  return {
+    title: `${data.name} — ${data.category?.toUpperCase() || "EVENT"} Realm | Saviskar 2026`,
+    description:
+      data.description ||
+      `Compete in ${data.name} at Saviskar 2026: Aevorian Reverie, CGC University Mohali.`,
+    openGraph: {
+      title: `${data.name} | Saviskar 2026`,
+      description: data.description || undefined,
+    },
+  };
+}
 
 export default async function EventPage({
   params,

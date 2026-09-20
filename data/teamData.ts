@@ -160,7 +160,7 @@ export const FACULTY_LEADERSHIP: FacultyMember[] = [
     tier: "tier1",
     bio: "Chief Patron & Executive Director steering institutional vision, student leadership, and holistic university welfare across national platforms.",
     badges: ["Apex Leadership", "Patron-in-Chief", "Student Welfare", "CGC Directorate"],
-    image: "/images/faculty/bismin-dhaliwal.png",
+    image: "/images/faculty/bismin-dhaliwal.webp",
   },
 ];
 
@@ -177,7 +177,7 @@ export const FACULTY_DIRECTORATE: FacultyMember[] = [
     tier: "tier2",
     bio: "Distinguished Academician and Dean supervising council governance, national youth engagement, and festival execution protocols.",
     badges: ["Dean Leadership", "Council Governance", "Academic Patron"],
-    image: "/images/faculty/sachin-sharma.png",
+    image: "/images/faculty/sachin-sharma.webp",
   },
   {
     id: "ad-vaibhav-kelay",
@@ -188,7 +188,7 @@ export const FACULTY_DIRECTORATE: FacultyMember[] = [
     tier: "tier2",
     bio: "Head curator of cultural showcases, national fine arts competitions, and headline stadium concert production.",
     badges: ["Cultural Command", "Production Lead", "Stage Director"],
-    image: "/images/faculty/vaibhav-kelay.png",
+    image: "/images/faculty/vaibhav-kelay.webp",
   },
   {
     id: "mgr-monika-dhaliwal",
@@ -199,7 +199,7 @@ export const FACULTY_DIRECTORATE: FacultyMember[] = [
     tier: "tier2",
     bio: "Directing multi-genre artistic curation, theatrical productions, and national festival fine arts pavilions.",
     badges: ["Arts & Culture", "Curatorial Lead", "Creative Direction"],
-    image: "/images/faculty/monika-dhaliwal.png",
+    image: "/images/faculty/monika-dhaliwal.webp",
   },
   {
     id: "ops-anand-kumar",
@@ -221,7 +221,7 @@ export const FACULTY_DIRECTORATE: FacultyMember[] = [
     tier: "tier2",
     bio: "Lead stage presenter, protocol anchor, and student delegate liaison across flagship festival events.",
     badges: ["Stage Anchor", "Youth Engagement", "Protocol"],
-    image: "",
+    image: "/images/faculty/aditya.webp",
   },
 ];
 

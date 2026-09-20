@@ -15,7 +15,7 @@ export const headliners2026: Artist[] = [
     genre: "Bollywood • Sufi • Live Orchestra",
     attendance: "Expected 45,000+",
     tagline: "Anthems that define generations under one sky.",
-    image: "/images/concert-mission-centerstage.jpg",
+    image: "/images/concert-mission-centerstage.webp",
     featured: true,
   },
   {
@@ -24,7 +24,7 @@ export const headliners2026: Artist[] = [
     genre: "Punjabi Folk • Contemporary Pop",
     attendance: "Expected 45,000+",
     tagline: "Unmatched Punjabi folk energy lighting up the stage.",
-    image: "/images/concert-cultural-stage.jpg",
+    image: "/images/concert-cultural-stage.webp",
     featured: true,
   },
   {
@@ -33,7 +33,7 @@ export const headliners2026: Artist[] = [
     genre: "Indie Rock • Acoustic Singer-Songwriter",
     attendance: "Expected 45,000+",
     tagline: "Intimate melodies echoing across thousands of voices.",
-    image: "/images/concert-solution-panoramic.jpg",
+    image: "/images/concert-solution-panoramic.webp",
     featured: true,
   },
 ];
@@ -45,7 +45,7 @@ export const artists: Artist[] = [
     genre: "Bollywood Symphony • Punjabi Folk • Indie Rock",
     attendance: "25,000+",
     tagline: "The legendary headline trio that illuminated Saviskar '25.",
-    image: "/images/gallery-1.jpg",
+    image: "/images/gallery-1.webp",
   },
   {
     year: "2024",
@@ -53,7 +53,7 @@ export const artists: Artist[] = [
     genre: "Punjabi Hip-Hop & Folk",
     attendance: "20,000+",
     tagline: "Every voice in the stadium sang in unison.",
-    image: "/images/gallery-2.jpg",
+    image: "/images/gallery-2.webp",
   },
   {
     year: "2023",
@@ -61,6 +61,6 @@ export const artists: Artist[] = [
     genre: "Punjabi Pop",
     attendance: "18,000+",
     tagline: "The crowd sang every word.",
-    image: "/images/gallery-3.jpg",
+    image: "/images/gallery-3.webp",
   },
 ];

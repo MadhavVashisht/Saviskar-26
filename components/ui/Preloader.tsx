@@ -9,13 +9,10 @@ interface PreloaderProps {
   minDurationSeconds?: number;
 }
 
+// Critical early assets strictly capped under 500 KB total
 const CRITICAL_IMAGES = [
-  "/images/concert-stadium.jpg",
-  "/images/hero.jpg",
-  "/images/concert.jpg",
-  "/images/technical.jpg",
-  "/images/cultural.jpg",
-  "/images/sports.jpg",
+  "/images/concert-stadium.webp",
+  "/images/hero.webp",
 ];
 
 const STATUS_STEPS = [
@@ -47,7 +44,7 @@ export default function Preloader({
   const [statusText, setStatusText] = useState(STATUS_STEPS[0].text);
   const [isExiting, setIsExiting] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 8 });
+  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 4 });
   const [timecode, setTimecode] = useState("00:00:00:00");
   const [windowSize, setWindowSize] = useState({ w: 1440, h: 900 });
 
@@ -145,7 +142,6 @@ export default function Preloader({
 
     const totalAssets = assetPromises.length;
     let completedCount = 0;
-    setAssetCount({ loaded: 0, total: totalAssets });
 
     assetPromises.forEach((promise) => {
       Promise.resolve(promise).finally(() => {
@@ -159,13 +155,13 @@ export default function Preloader({
       });
     });
 
-    // Hard fallback safety: assets considered ready after 2.4s max regardless of network
+    // 3-second hard timeout protection: preloader never hangs regardless of network conditions
     const hardSafetyTimer = setTimeout(() => {
       if (isMounted) {
         assetsReadyRef.current = true;
         setAssetsLoaded(true);
       }
-    }, 2400);
+    }, 3000);
 
     return () => {
       isMounted = false;

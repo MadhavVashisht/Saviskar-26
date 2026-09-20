@@ -21,7 +21,7 @@ export default function HeroBackground() {
         className="absolute inset-0"
       >
         <Image
-          src="/images/concert.jpg"
+          src="/images/concert.webp"
           alt="Star Night"
           fill
           priority

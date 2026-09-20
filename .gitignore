@@ -14,3 +14,6 @@ supabase/.temp/
 # Scratch & logs
 scratch/
 *.log
+
+# Uncompressed local asset archive
+public/images/originals/

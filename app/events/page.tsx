@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import EventsView from "@/components/events/EventsView";
 
-export const dynamic = "force-static";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "50+ Competitive Realms — Technical, Non-Technical, Cultural & AIvishkar",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "50+ Competitive Realms | Saviskar 2026: Aevorian Reverie",
     description:
       "Technical hackathons & RoboWars, Cultural dance & music mainstage, Non-Technical strategy, and AIvishkar: An AI Tech Expo at CGC University, Mohali.",
-    images: ["/images/realms-page-bg.jpg"],
+    images: ["/images/realms-page-bg.webp"],
   },
 };
 

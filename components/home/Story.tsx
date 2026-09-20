@@ -74,7 +74,7 @@ export default function Story() {
             className="absolute inset-0"
           >
             <Image
-              src="/images/concert-mission-centerstage.jpg"
+              src="/images/concert-mission-centerstage.webp"
               alt="Artist centerstage under brilliant spotlights at Saviskar concert"
               fill
               priority

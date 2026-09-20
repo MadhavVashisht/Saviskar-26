@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useGesture } from '@use-gesture/react';
 import './DomeGallery.css';
 
@@ -30,14 +31,14 @@ export interface DomeGalleryProps {
 }
 
 const DEFAULT_IMAGES: DomeGalleryImage[] = [
-  { src: '/gallery/crowd.jpg', alt: 'Saviskar Stadium Concert' },
-  { src: '/gallery/cultural.jpg', alt: 'Choreography & Cultural Realm' },
-  { src: '/gallery/technical.jpg', alt: 'Robotics & Hackathon Realm' },
-  { src: '/gallery/star 1.jpg', alt: 'Star Night Performance' },
-  { src: '/gallery/car.jpg', alt: 'Automotive & Design Expo' },
-  { src: '/gallery/gallery-3.jpg', alt: 'Midnight Stadium Lights' },
-  { src: '/gallery/dance.jpg', alt: 'Dance & Stage Showcase' },
-  { src: '/gallery/sports.jpg', alt: 'National Sports Arena' },
+  { src: '/gallery/crowd.webp', alt: 'Saviskar Stadium Concert' },
+  { src: '/gallery/cultural.webp', alt: 'Choreography & Cultural Realm' },
+  { src: '/gallery/technical.webp', alt: 'Robotics & Hackathon Realm' },
+  { src: '/gallery/star 1.webp', alt: 'Star Night Performance' },
+  { src: '/gallery/car.webp', alt: 'Automotive & Design Expo' },
+  { src: '/gallery/gallery-3.webp', alt: 'Midnight Stadium Lights' },
+  { src: '/gallery/dance.webp', alt: 'Dance & Stage Showcase' },
+  { src: '/gallery/sports.webp', alt: 'National Sports Arena' },
 ];
 
 const DEFAULTS = {
@@ -172,12 +173,39 @@ export default function DomeGallery({
 
   const items = useMemo(() => buildItems(images, segments), [images, segments]);
 
-  const applyTransform = (xDeg: number, yDeg: number) => {
+  const applyTransform = useCallback((xDeg: number, yDeg: number) => {
     const el = sphereRef.current;
     if (el) {
       el.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(${xDeg}deg) rotateY(${yDeg}deg)`;
+
+      // Virtualize tiles: cull back-facing tiles to free GPU memory
+      const children = el.children;
+      const rotYStep = 360 / (segments || 35) / 2;
+      for (let i = 0; i < children.length; i++) {
+        const itemEl = children[i] as HTMLElement;
+        const offsetX = getDataNumber(itemEl, "offset-x", 0);
+        const itemAngle = rotYStep * offsetX;
+        const diff = wrapAngleSigned(itemAngle + yDeg);
+        const isFacingCamera = Math.abs(diff) <= 95;
+        if (isFacingCamera) {
+          if (itemEl.style.visibility === "hidden") {
+            itemEl.style.visibility = "visible";
+            const img = itemEl.querySelector("img");
+            if (img && !img.getAttribute("src")) {
+              const src = itemEl.dataset.src;
+              if (src) img.src = src;
+            }
+          }
+        } else {
+          if (itemEl.style.visibility !== "hidden") {
+            itemEl.style.visibility = "hidden";
+            const img = itemEl.querySelector("img");
+            if (img) img.removeAttribute("src");
+          }
+        }
+      }
     }
-  };
+  }, [segments]);
 
   const lockedRadiusRef = useRef<number | null>(null);
 
@@ -266,12 +294,14 @@ export default function DomeGallery({
     imageBorderRadius,
     openedImageBorderRadius,
     openedImageWidth,
-    openedImageHeight
+    openedImageHeight,
+    segments,
+    applyTransform
   ]);
 
   useEffect(() => {
     applyTransform(rotationRef.current.x, rotationRef.current.y);
-  }, []);
+  }, [applyTransform]);
 
   const stopInertia = useCallback(() => {
     if (inertiaRAF.current) {
@@ -310,7 +340,7 @@ export default function DomeGallery({
       stopInertia();
       inertiaRAF.current = requestAnimationFrame(step);
     },
-    [dragDampening, maxVerticalRotationDeg, stopInertia]
+    [applyTransform, dragDampening, maxVerticalRotationDeg, stopInertia]
   );
 
   useGesture(
@@ -623,6 +653,16 @@ export default function DomeGallery({
         ['--image-filter' as string]: grayscale ? 'grayscale(1)' : 'none'
       } as React.CSSProperties}
     >
+      {/* Keyboard and screen-reader accessible entry point to full photo gallery */}
+      <div className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-4 focus-within:left-4 focus-within:z-50 focus-within:rounded-lg focus-within:bg-black/95 focus-within:px-4 focus-within:py-2 focus-within:text-white focus-within:ring-2 focus-within:ring-violet-400">
+        <Link
+          href="/gallery"
+          className="text-xs font-mono font-medium text-violet-300 underline underline-offset-4 hover:text-white"
+        >
+          View Accessible Full Festival Gallery
+        </Link>
+      </div>
+
       <main ref={mainRef} className="sphere-main">
         <div className="stage">
           <div ref={sphereRef} className="sphere">
