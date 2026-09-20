@@ -19,8 +19,10 @@ function Counter({
 
   useEffect(() => {
     if (!inView) {
-      setCount(0);
-      return;
+      const resetFrame = requestAnimationFrame(() => {
+        setCount(0);
+      });
+      return () => cancelAnimationFrame(resetFrame);
     }
 
     let startTime: number | null = null;

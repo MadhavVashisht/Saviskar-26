@@ -62,15 +62,7 @@ export default function AdminManagementPage() {
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
 
   const loadAdmins = useCallback(
-    async (refresh = false) => {
-      if (refresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      setError("");
-
+    async () => {
       try {
         const response =
           await fetch(
@@ -129,9 +121,57 @@ export default function AdminManagementPage() {
     [router]
   );
 
-  useEffect(() => {
-    void loadAdmins();
+  const refreshAdmins = useCallback(async () => {
+    setRefreshing(true);
+    setError("");
+    await loadAdmins();
   }, [loadAdmins]);
+
+  useEffect(() => {
+    let ignore = false;
+    async function init() {
+      try {
+        const response = await fetch("/api/admin/admins", { cache: "no-store" });
+        if (response.status === 401) {
+          router.replace("/admin/login");
+          return;
+        }
+        if (response.status === 403) {
+          router.replace("/admin");
+          return;
+        }
+        const payload = (await response.json()) as {
+          admins?: AdminRecord[];
+          isSuperMaster?: boolean;
+          error?: string;
+        };
+        if (!response.ok) {
+          throw new Error(payload.error ?? "Could not load administrators.");
+        }
+        if (!ignore) {
+          setAdmins(payload.admins ?? []);
+          setIsSuperMaster(payload.isSuperMaster ?? false);
+        }
+      } catch (loadError) {
+        if (!ignore) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Could not load administrators."
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    }
+    void init();
+    return () => {
+      ignore = true;
+    };
+  }, [router]);
 
   async function addAdmin(
     event: FormEvent<HTMLFormElement>
@@ -190,7 +230,7 @@ export default function AdminManagementPage() {
       setEmail("");
       setRole("admin");
 
-      await loadAdmins(true);
+      await refreshAdmins();
     } catch (addError) {
       console.error(
         "ADMIN ADD ERROR:",
@@ -273,7 +313,7 @@ export default function AdminManagementPage() {
          * Sync with the database after removing
          * the stale UI entry.
          */
-        await loadAdmins(true);
+        await refreshAdmins();
 
         return;
       }
@@ -306,7 +346,7 @@ export default function AdminManagementPage() {
        * Then refresh from the database to make
        * sure the UI and database are synchronized.
        */
-      await loadAdmins(true);
+      await refreshAdmins();
     } catch (removeError) {
       console.error(
         "ADMIN REMOVE ERROR:",
@@ -351,7 +391,7 @@ export default function AdminManagementPage() {
       }
 
       setMessage(payload.message ?? `Administrator ${actionStr.toLowerCase()}d successfully.`);
-      await loadAdmins(true);
+      await refreshAdmins();
     } catch (err) {
       console.error(`ADMIN ${actionStr.toUpperCase()} ERROR:`, err);
       setError(err instanceof Error ? err.message : `Could not ${actionStr.toLowerCase()} administrator.`);
@@ -407,7 +447,7 @@ export default function AdminManagementPage() {
           <button
             type="button"
             onClick={() =>
-              void loadAdmins(true)
+              void refreshAdmins()
             }
             disabled={refreshing}
             className="flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3 text-sm text-black/70 transition hover:bg-black/[0.03] disabled:opacity-50"

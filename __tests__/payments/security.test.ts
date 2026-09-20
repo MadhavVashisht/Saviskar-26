@@ -110,8 +110,12 @@ let mockFetchPaymentError: Error | null;
 function buildMockGateway() {
   return {
     name: "razorpay",
-    verifyPayment: vi.fn(async (_params?: any) => mockVerifyResult),
-    fetchPaymentDetails: vi.fn(async (_paymentId?: string) => {
+    verifyPayment: vi.fn(async (params?: unknown) => {
+      void params;
+      return mockVerifyResult;
+    }),
+    fetchPaymentDetails: vi.fn(async (paymentId?: string) => {
+      void paymentId;
       if (mockFetchPaymentError) {
         throw mockFetchPaymentError;
       }

@@ -40,9 +40,52 @@ type ResumeOrderData = {
   code?: string;
 };
 
+type RazorpayResponse = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayFailureResponse = {
+  error?: {
+    description?: string;
+  };
+};
+
+type RazorpayCheckoutOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  theme?: {
+    color?: string;
+  };
+  handler: (response: RazorpayResponse) => void;
+  modal?: {
+    ondismiss?: () => void;
+    escape?: boolean;
+    confirm_close?: boolean;
+  };
+};
+
+type RazorpayCheckoutInstance = {
+  open: () => void;
+  on: (event: string, handler: (resp: RazorpayFailureResponse) => void) => void;
+};
+
+type RazorpayCheckoutConstructor = new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
+
 function loadRazorpayScript(timeoutMs = 6000): Promise<boolean> {
   return new Promise((resolve) => {
-    if (typeof window !== "undefined" && (window as any).Razorpay) {
+    const win = typeof window !== "undefined" ? (window as unknown as { Razorpay?: RazorpayCheckoutConstructor }) : null;
+    if (win?.Razorpay) {
       resolve(true);
       return;
     }
@@ -126,7 +169,7 @@ function PaymentResumeContent() {
             setQrCodeUrl(qr);
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         setErrorMessage(
           err instanceof Error
             ? err.message
@@ -238,8 +281,12 @@ function PaymentResumeContent() {
         };
 
         try {
-          const rzp = new (window as any).Razorpay(options);
-          rzp.on("payment.failed", (resp: any) => {
+          const win = window as unknown as { Razorpay?: RazorpayCheckoutConstructor };
+          if (!win.Razorpay) {
+            throw new Error("Razorpay SDK not loaded.");
+          }
+          const rzp = new win.Razorpay(options);
+          rzp.on("payment.failed", (resp: RazorpayFailureResponse) => {
             setErrorMessage(
               resp.error?.description || "Payment failed. Please try again."
             );
@@ -250,7 +297,7 @@ function PaymentResumeContent() {
           reject(rzpErr);
         }
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Resume checkout error:", err);
       setErrorMessage(
         err instanceof Error

@@ -32,16 +32,9 @@ function getMemberAvatar(member: SacMember): string {
   if (member.image && member.image.trim().length > 0) {
     return encodeURI(decodeURI(member.image));
   }
-  const femaleKeywords = [
-    "lakshita", "prajval", "prabneet", "bhavya", "khushi",
-    "sneha", "tanisha", "ananya", "simran", "kritika", "muskan",
-    "jasmeen", "harmanpreet", "diya", "riya", "kaur",
-    "chahat", "avneet", "muskaan", "ayushi", "prianshi",
-    "harshita", "vani", "megha", "ekta",
-  ];
-  const nameLower = member.name.toLowerCase();
-  const isFemale = femaleKeywords.some((k) => nameLower.includes(k));
-  return isFemale ? "/images/team/avatar-female.jpg" : "/images/team/avatar-male.jpg";
+  return member.avatarVariant === "female"
+    ? "/images/team/avatar-female.jpg"
+    : "/images/team/avatar-male.jpg";
 }
 
 // ============================================================

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
 describe("Milestone 7: Fee Calculation & Registration Workflow Invariants", () => {
   describe("1. Fee Calculation Engine", () => {

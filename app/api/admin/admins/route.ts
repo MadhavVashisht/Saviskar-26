@@ -1,4 +1,4 @@
-import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseAdminClient, SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
   requireMasterAdmin,
@@ -26,7 +26,7 @@ function getIpFromRequest(request: Request): string {
 }
 
 async function isTargetPrimaryMaster(
-  _adminClient: any,
+  _adminClient: SupabaseClient,
   targetUserId: string
 ): Promise<boolean> {
   const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
@@ -38,11 +38,11 @@ async function isTargetPrimaryMaster(
 }
 
 async function logAudit(
-  adminClient: any,
+  adminClient: SupabaseClient,
   adminId: string,
   actionType: string,
   targetId: string,
-  details: any
+  details: Record<string, unknown>
 ) {
   try {
     await adminClient.from("admin_audit_logs").insert({
@@ -138,7 +138,7 @@ export async function GET() {
   if (userIds.length > 0) {
     const userLookups = await Promise.all(
       userIds.map((id) =>
-        adminClient.auth.admin.getUserById(id).then((res: any) => ({
+        adminClient.auth.admin.getUserById(id).then((res) => ({
           id,
           user: res.data?.user || null,
         }))
@@ -391,7 +391,7 @@ export async function POST(request: Request) {
   }
 
   const existingUser = userList.users.find(
-    (user: any) =>
+    (user) =>
       user.email?.toLowerCase() === email
   );
 
@@ -407,7 +407,7 @@ export async function POST(request: Request) {
   if (existingUser) {
     const alreadyAdmin =
       (existingAdmins ?? []).find(
-        (admin: any) =>
+        (admin: { user_id?: string; role?: string }) =>
           admin.user_id === existingUser.id
       );
 

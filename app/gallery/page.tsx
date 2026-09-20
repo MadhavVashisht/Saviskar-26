@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -133,17 +133,19 @@ export default function FullGalleryPage() {
 
   const selected = selectedIndex !== null ? filteredImages[selectedIndex] : null;
 
-  const next = () => {
-    if (selectedIndex === null) return;
-    setSelectedIndex((selectedIndex + 1) % filteredImages.length);
-  };
+  const next = useCallback(() => {
+    setSelectedIndex((prevIdx) => {
+      if (prevIdx === null) return null;
+      return (prevIdx + 1) % filteredImages.length;
+    });
+  }, [filteredImages.length]);
 
-  const prev = () => {
-    if (selectedIndex === null) return;
-    setSelectedIndex(
-      (selectedIndex - 1 + filteredImages.length) % filteredImages.length
-    );
-  };
+  const prev = useCallback(() => {
+    setSelectedIndex((prevIdx) => {
+      if (prevIdx === null) return null;
+      return (prevIdx - 1 + filteredImages.length) % filteredImages.length;
+    });
+  }, [filteredImages.length]);
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -154,7 +156,7 @@ export default function FullGalleryPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, filteredImages.length]);
+  }, [selectedIndex, next, prev]);
 
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black">

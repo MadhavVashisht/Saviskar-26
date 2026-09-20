@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 
 type Participant = {
+  id?: string;
   participantId: string;
+  participant_id?: string;
   name: string;
   college: string;
   email: string;
@@ -30,6 +32,7 @@ type ParticipantEvent = {
   eventName: string;
   registrationStatus: string | null;
   paymentStatus: string | null;
+  paymentAmount: number | null;
   teamName: string | null;
   checkedIn: boolean;
   checkedInAt: string | null;
@@ -49,7 +52,7 @@ export default function ScannerPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function checkAdmin() {
+  const checkAdmin = useCallback(async () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -57,7 +60,7 @@ export default function ScannerPage() {
     if (!session) {
       router.replace("/admin/login");
     }
-  }
+  }, [router]);
 
   async function startScanner() {
     setError("");
@@ -124,12 +127,12 @@ export default function ScannerPage() {
   }
 
   useEffect(() => {
-    checkAdmin();
+    void checkAdmin();
 
     return () => {
-      stopScanner();
+      void stopScanner();
     };
-  }, []);
+  }, [checkAdmin]);
 
   async function findRegistration(scannedValue: string) {
     setLoading(true);

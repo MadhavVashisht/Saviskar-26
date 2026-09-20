@@ -35,6 +35,7 @@ export interface SacMember {
   department: string;
   year?: string;
   image?: string;
+  avatarVariant?: "male" | "female";
   initials?: string;
   memberType?: "lead" | "core" | "member" | "office_bearer";
   personDetail?: string;

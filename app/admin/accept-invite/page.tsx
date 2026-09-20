@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -18,7 +19,13 @@ export function validatePassword(password: string, confirmPassword: string) {
 
 import { parseAuthHash } from "@/lib/utils/auth";
 
-export function getMfaAction(factors: { all: any[], totp: any[] }) {
+export type MfaFactor = {
+  id: string;
+  factor_type?: string;
+  status: string;
+};
+
+export function getMfaAction(factors: { all: MfaFactor[]; totp: MfaFactor[] }) {
   const verifiedTotp = factors.totp.find((f) => f.status === "verified");
   if (verifiedTotp) {
     return { action: "verify" as const, factorId: verifiedTotp.id };
@@ -323,7 +330,14 @@ export default function AcceptInvitePage() {
             
             {step === "mfa-setup" && qrCode && (
               <div className="mb-6 flex justify-center">
-                <img src={qrCode} alt="QR Code" className="h-48 w-48" />
+                <Image
+                  src={qrCode}
+                  alt="QR Code"
+                  width={192}
+                  height={192}
+                  className="h-48 w-48"
+                  unoptimized
+                />
               </div>
             )}
 

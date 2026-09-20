@@ -20,7 +20,6 @@ const HEX_CHARS = "0123456789ABCDEF!@#$%&*<>[]{}";
 export default function TerminalPlaceholder({
   moduleCode,
   moduleName,
-  category,
   classification,
   estimatedRelease,
   summary,

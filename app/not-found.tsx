@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Compass, CalendarDays, Home } from "lucide-react";
+import { Compass, CalendarDays, Home } from "lucide-react";
 
 export default function NotFound() {
   return (

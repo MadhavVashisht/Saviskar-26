@@ -57,13 +57,13 @@ function createMockAdminClient() {
     from: (table: string) => {
       if (table === "participant_events") {
         lastAppliedFilter = {};
-        const builder: any = {
-          select: (_cols: string, _opts: any) => builder,
+        const builder = {
+          select: () => builder,
           eq: (col: string, val: string) => {
             if (col === "event_id") lastAppliedFilter.event_id = val;
             return builder;
           },
-          order: (_col: string, _opts: any) => builder,
+          order: () => builder,
           range: (from: number, to: number) => {
             let filtered = mockRegistrationsDb;
             if (lastAppliedFilter.event_id) {
@@ -129,12 +129,12 @@ describe("P1-02: Admin Registrations Event Filtering & Pagination", () => {
     vi.clearAllMocks();
     lastAppliedFilter = {};
     vi.spyOn(serverLib, "requireAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id: "admin-uuid", email: "admin@example.com" } as any,
+      supabase: {},
+      user: { id: "admin-uuid", email: "admin@example.com" },
       role: "admin",
       error: null,
       status: 200,
-    });
+    } as unknown as Awaited<ReturnType<typeof serverLib.requireAdmin>>);
   });
 
   it("A. When eventId is provided, filters registrations by event_id at the DB level", async () => {
@@ -146,7 +146,7 @@ describe("P1-02: Admin Registrations Event Filtering & Pagination", () => {
     expect(lastAppliedFilter.event_id).toBe("evt-robotics");
     expect(data.total).toBe(2);
     expect(data.registrations).toHaveLength(2);
-    expect(data.registrations.every((r: any) => r.registration.event_id === "evt-robotics")).toBe(true);
+    expect(data.registrations.every((r: { registration: { event_id: string } }) => r.registration.event_id === "evt-robotics")).toBe(true);
   });
 
   it("B. When eventId is not provided, returns all registrations with global total", async () => {

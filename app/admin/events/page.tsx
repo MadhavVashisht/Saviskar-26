@@ -9,7 +9,6 @@ import {
   ChevronDown,
   Clock3,
   Edit3,
-  Filter,
   MapPin,
   Plus,
   RefreshCw,
@@ -212,9 +211,10 @@ export default function EventsAdminPage() {
   const [sortOrder, setSortOrder] = useState<SortOption>("default");
 
   const loadEvents = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true);
-    else setLoading(true);
-    setError("");
+    if (refresh) {
+      setRefreshing(true);
+      setError("");
+    }
 
     try {
       const response = await fetch("/api/admin/events", {
@@ -254,7 +254,52 @@ export default function EventsAdminPage() {
   }, [router]);
 
   useEffect(() => {
-    void loadEvents();
+    let ignore = false;
+    async function init() {
+      try {
+        const response = await fetch("/api/admin/events", {
+          cache: "no-store",
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          router.replace("/admin/login");
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          events?: EventRecord[];
+          role?: "master" | "admin";
+          error?: string;
+        };
+        if (!response.ok) {
+          throw new Error(payload.error ?? "Could not load events.");
+        }
+
+        if (!ignore) {
+          setEvents(payload.events ?? []);
+          setRole(payload.role ?? null);
+          if (payload.role === "admin") {
+            router.replace("/admin");
+            return;
+          }
+        }
+      } catch (loadError) {
+        if (!ignore) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Could not load events."
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    }
+
+    void init();
 
     const channel = supabase
       .channel("admin-event-management")
@@ -270,9 +315,10 @@ export default function EventsAdminPage() {
       .subscribe();
 
     return () => {
+      ignore = true;
       void supabase.removeChannel(channel);
     };
-  }, [loadEvents]);
+  }, [loadEvents, router]);
 
   /* ── Categories derived from data ────────────────────────── */
   const eventCategories = useMemo(() => {

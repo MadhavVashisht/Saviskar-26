@@ -18,8 +18,6 @@ import {
   ArrowUpRight,
   Crown,
   Layers,
-  Users,
-  ChevronRight,
 } from "lucide-react";
 
 export default function TeamView() {

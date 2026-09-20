@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Search,
   RefreshCw,
@@ -224,11 +225,8 @@ export default function AdminPage() {
     async (refresh = false) => {
       if (refresh) {
         setRefreshing(true);
-      } else {
-        setLoading(true);
+        setError("");
       }
-
-      setError("");
 
       try {
         const response = await fetch(
@@ -297,7 +295,73 @@ export default function AdminPage() {
   ======================================================= */
 
   useEffect(() => {
-    void loadData();
+    let ignore = false;
+    async function init() {
+      try {
+        const response = await fetch(
+          "/api/admin/registrations?pageSize=100",
+          { cache: "no-store" }
+        );
+
+        if (
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          router.replace("/admin/login");
+          return;
+        }
+
+        const payload =
+          (await response.json()) as {
+            registrations?: Registration[];
+            events?: EventRecord[];
+            role?: AdminRole;
+            total?: number;
+            error?: string;
+          };
+
+        if (!response.ok) {
+          throw new Error(
+            payload.error ??
+            "Could not load registrations."
+          );
+        }
+
+        if (!ignore) {
+          if (typeof payload.total === "number") {
+            setServerTotal(payload.total);
+          }
+          setRegistrations(
+            payload.registrations ?? []
+          );
+          setEvents(
+            payload.events ?? []
+          );
+          if (payload.role) {
+            setRole(payload.role);
+          }
+        }
+      } catch (loadError) {
+        console.error(
+          "ADMIN LOAD ERROR:",
+          loadError
+        );
+        if (!ignore) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Could not load registrations."
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    }
+
+    void init();
 
     const participantChannel =
       supabase
@@ -354,6 +418,7 @@ export default function AdminPage() {
         .subscribe();
 
     return () => {
+      ignore = true;
       void supabase.removeChannel(
         participantChannel
       );
@@ -366,7 +431,7 @@ export default function AdminPage() {
         eventChannel
       );
     };
-  }, [loadData]);
+  }, [loadData, router]);
 
   /* =======================================================
      LOGOUT
@@ -469,6 +534,7 @@ export default function AdminPage() {
       registrations,
       search,
       eventFilter,
+      eventTypeFilter,
       statusFilter,
       paymentFilter,
       archiveFilter,
@@ -511,7 +577,7 @@ export default function AdminPage() {
       pending,
       uniqueParticipants,
     };
-  }, [registrations]);
+  }, [registrations, serverTotal]);
 
   /* =======================================================
      PAYMENT STATS
@@ -1840,12 +1906,15 @@ export default function AdminPage() {
                       <div className="flex min-w-0 items-center gap-3">
 
                         {participant.photo_url ? (
-                          <img
+                          <Image
                             src={
                               participant.photo_url
                             }
                             alt=""
+                            width={40}
+                            height={40}
                             className="h-10 w-10 shrink-0 rounded-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">
@@ -2050,12 +2119,15 @@ export default function AdminPage() {
                 <div className="flex items-center gap-4">
 
                   {selectedParticipant.photo_url ? (
-                    <img
+                    <Image
                       src={
                         selectedParticipant.photo_url
                       }
                       alt=""
+                      width={64}
+                      height={64}
                       className="h-16 w-16 rounded-2xl object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-xl font-semibold text-black">

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowUpRight, Sparkles, X, Compass, Radio } from "lucide-react";
+import { ArrowUpRight, X, Compass } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -79,7 +79,6 @@ export default function Navbar() {
   const [isHovered, setIsHovered] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Monitor scroll for subtle dynamic appearance
   useEffect(() => {

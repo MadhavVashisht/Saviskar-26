@@ -205,11 +205,8 @@ export default function EventRegistrationsPage() {
     async (refresh = false) => {
       if (refresh) {
         setRefreshing(true);
-      } else {
-        setLoading(true);
+        setError("");
       }
-
-      setError("");
 
       try {
         const authenticated = await checkAuth();
@@ -281,7 +278,7 @@ export default function EventRegistrationsPage() {
         setRefreshing(false);
       }
     },
-    [checkAuth, router]
+    [checkAuth, eventID, router]
   );
 
   // ---------------------------------------------------------
@@ -302,7 +299,66 @@ export default function EventRegistrationsPage() {
   // ---------------------------------------------------------
 
   useEffect(() => {
-    void loadData();
+    let ignore = false;
+    async function init() {
+      try {
+        const authenticated = await checkAuth();
+        if (!authenticated || ignore) return;
+
+        const response = await fetch(
+          `/api/admin/registrations?eventId=${encodeURIComponent(eventID)}&pageSize=100`,
+          { cache: "no-store" }
+        );
+
+        if (response.status === 401) {
+          router.replace("/admin/login");
+          return;
+        }
+
+        if (response.status === 403) {
+          router.replace("/admin");
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          registrations?: Registration[];
+          events?: EventRecord[];
+          role?: AdminRole;
+          error?: string;
+        };
+
+        if (!response.ok) {
+          throw new Error(
+            payload.error ?? "Could not load registrations."
+          );
+        }
+
+        if (!ignore) {
+          setAllRegistrations(payload.registrations ?? []);
+          setAllEvents(payload.events ?? []);
+          if (payload.role === "master" || payload.role === "admin") {
+            setRole(payload.role);
+          } else {
+            setRole(null);
+          }
+        }
+      } catch (loadError) {
+        if (!ignore) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Could not load registrations."
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    }
+
+    void init();
 
     const channelInstanceId = `${Date.now()}-${Math.random()
       .toString(36)
@@ -360,6 +416,7 @@ export default function EventRegistrationsPage() {
       .subscribe();
 
     return () => {
+      ignore = true;
       void supabase.removeChannel(
         participantChannel
       );
@@ -372,7 +429,7 @@ export default function EventRegistrationsPage() {
         eventChannel
       );
     };
-  }, [loadData]);
+  }, [checkAuth, eventID, loadData, router]);
 
   // ---------------------------------------------------------
   // LOGOUT

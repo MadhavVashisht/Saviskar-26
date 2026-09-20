@@ -1,14 +1,15 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "loading" | "setup" | "verify" | "error";
 
 export default function AdminMfaPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [mode, setMode] = useState<Mode>("loading");
   const [factorId, setFactorId] = useState("");
@@ -135,7 +136,7 @@ export default function AdminMfaPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router, supabase]);
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -249,10 +250,13 @@ export default function AdminMfaPage() {
 
             {qrCode && (
               <div className="mt-6 flex justify-center rounded-xl bg-white p-4">
-                <img
+                <Image
                   src={qrCode}
                   alt="Google Authenticator setup QR code"
+                  width={224}
+                  height={224}
                   className="h-56 w-56"
+                  unoptimized
                 />
               </div>
             )}
@@ -260,7 +264,7 @@ export default function AdminMfaPage() {
             {secret && (
               <div className="mt-5">
                 <p className="text-xs text-black/60">
-                  Can't scan the QR code? Enter this setup key manually:
+                  Can&apos;t scan the QR code? Enter this setup key manually:
                 </p>
 
                 <code className="mt-2 block break-all rounded-lg border p-3 text-xs text-black">

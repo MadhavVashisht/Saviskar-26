@@ -250,9 +250,20 @@ export class RazorpayGateway implements PaymentGateway {
     }
 
     // Parse the payload
-    let payload: any;
+    type RazorpayWebhookPayload = {
+      event?: string;
+      payload?: {
+        payment?: {
+          entity?: {
+            id?: string;
+            order_id?: string;
+          };
+        };
+      };
+    };
+    let payload: RazorpayWebhookPayload;
     try {
-      payload = JSON.parse(params.body);
+      payload = JSON.parse(params.body) as RazorpayWebhookPayload;
     } catch {
       return {
         valid: false,

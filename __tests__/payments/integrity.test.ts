@@ -104,7 +104,12 @@ describe("Phase 2B: Permanent Deletion & Financial Record Safety", () => {
       ["po-2", { id: "po-2", status: "pending", amount: 300 }],
     ]);
 
-    const paymentOrderItems = [
+    const paymentOrderItems: Array<{
+      id: string;
+      payment_order_id: string;
+      participant_event_id: string | null;
+      amount: number;
+    }> = [
       { id: "item-1", payment_order_id: "po-1", participant_event_id: "pe-paid-1", amount: 500 },
       { id: "item-2", payment_order_id: "po-2", participant_event_id: "pe-unpaid-1", amount: 300 },
     ];
@@ -118,7 +123,7 @@ describe("Phase 2B: Permanent Deletion & Financial Record Safety", () => {
 
       if (parentOrder?.status === "paid") {
         // Paid: decouple item participant_event_id to null, KEEP item and order
-        item.participant_event_id = null as any;
+        item.participant_event_id = null;
       } else {
         // Unpaid/test: remove item and delete order if empty
         paymentOrderItems.splice(itemIdx, 1);
@@ -146,14 +151,19 @@ describe("Phase 2B: Permanent Deletion & Financial Record Safety", () => {
       ["po-shared", { id: "po-shared", status: "paid", amount: 800 }],
     ]);
 
-    const paymentOrderItems = [
+    const paymentOrderItems: Array<{
+      id: string;
+      payment_order_id: string;
+      participant_event_id: string | null;
+      amount: number;
+    }> = [
       { id: "item-1", payment_order_id: "po-shared", participant_event_id: "pe-1", amount: 500 },
       { id: "item-2", payment_order_id: "po-shared", participant_event_id: "pe-2", amount: 300 },
     ];
 
     // Delete one registration from shared order
     const item1 = paymentOrderItems.find((i) => i.participant_event_id === "pe-1")!;
-    item1.participant_event_id = null as any;
+    item1.participant_event_id = null;
 
     expect(paymentOrders.has("po-shared")).toBe(true);
     expect(paymentOrderItems.find((i) => i.id === "item-2")?.participant_event_id).toBe("pe-2");
@@ -222,13 +232,13 @@ describe("Phase 2B: Public Participant Lookup Security & Rate Limiting", () => {
       })),
     };
 
-    expect((sanitized.participant as any).id).toBeUndefined();
-    expect((sanitized.participant as any).created_at).toBeUndefined();
+    expect((sanitized.participant as unknown as Record<string, unknown>).id).toBeUndefined();
+    expect((sanitized.participant as unknown as Record<string, unknown>).created_at).toBeUndefined();
     expect(sanitized.participant.participantId).toBe("SVK26-ABCDEF12");
     expect(sanitized.events[0].participantEventId).toBe("pe-uuid-1");
     expect(sanitized.events[0].paymentAmount).toBe(300);
-    expect((sanitized.events[0] as any).teamName).toBeUndefined();
-    expect((sanitized.events[0] as any).registrationStatus).toBeUndefined();
+    expect((sanitized.events[0] as unknown as Record<string, unknown>).teamName).toBeUndefined();
+    expect((sanitized.events[0] as unknown as Record<string, unknown>).registrationStatus).toBeUndefined();
     expect(sanitized.events[0].eventId).toBe("evt-uuid-1");
     expect(sanitized.events[0].eventName).toBe("Hackathon");
     expect(sanitized.events[0].paymentStatus).toBe("pending");

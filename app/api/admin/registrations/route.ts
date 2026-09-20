@@ -55,6 +55,42 @@ type Member = {
   } | null;
 };
 
+type RawMember = {
+  id: string;
+  participant_event_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  is_team_leader: boolean | null;
+  participant_id: string | null;
+  participants:
+    | {
+        participant_id?: string | null;
+        college?: string | null;
+      }
+    | {
+        participant_id?: string | null;
+        college?: string | null;
+      }[]
+    | null;
+};
+
+type PaymentOrderData = {
+  id: string;
+  order_id: string;
+  status: string;
+  amount: number;
+  currency: string;
+  receipt: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type RawPaymentOrderItem = {
+  participant_event_id: string | null;
+  payment_orders: PaymentOrderData | PaymentOrderData[] | null;
+};
+
 function getSupabaseAdmin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
@@ -220,7 +256,7 @@ export async function GET(request: Request) {
     (eventsResult.data ?? []) as EventRecord[];
 
   const rawMembers =
-    (membersResult.data ?? []) as any[];
+    (membersResult.data ?? []) as unknown as RawMember[];
 
   const members = rawMembers.map(
     (member) => {
@@ -256,7 +292,7 @@ export async function GET(request: Request) {
     }
   ) as Member[];
 
-  const paymentItems = [...(paymentOrdersResult.data ?? [])] as any[];
+  const paymentItems = [...(paymentOrdersResult.data ?? [])] as unknown as RawPaymentOrderItem[];
   
   // Sort to prioritize successful/paid orders if multiple exist
   paymentItems.sort((a, b) => {
@@ -267,7 +303,7 @@ export async function GET(request: Request) {
     return new Date(bOrder?.updated_at || 0).getTime() - new Date(aOrder?.updated_at || 0).getTime();
   });
 
-  const paymentOrdersByRegistration = new Map<string, any>();
+  const paymentOrdersByRegistration = new Map<string, PaymentOrderData>();
   for (const item of paymentItems) {
     if (!item.participant_event_id || !item.payment_orders) continue;
     const order = Array.isArray(item.payment_orders) ? item.payment_orders[0] : item.payment_orders;
@@ -358,7 +394,7 @@ export async function GET(request: Request) {
       },
     }
   );
-  } catch (err: any) {
+  } catch (err) {
     console.error("UNHANDLED GET ERROR:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -453,7 +489,7 @@ export async function PATCH(
   return NextResponse.json({
     registration: data,
   });
-  } catch (err: any) {
+  } catch (err) {
     console.error("UNHANDLED PATCH ERROR:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -553,7 +589,7 @@ export async function DELETE(
   return NextResponse.json({
     success: true,
   });
-  } catch (err: any) {
+  } catch (err) {
     console.error("UNHANDLED DELETE ERROR:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -647,7 +683,7 @@ export async function POST(
   return NextResponse.json({
     success: true,
   });
-  } catch (err: any) {
+  } catch (err) {
     console.error("UNHANDLED POST ERROR:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

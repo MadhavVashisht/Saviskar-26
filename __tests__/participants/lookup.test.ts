@@ -7,7 +7,7 @@ import { resetRateLimitStore } from "@/lib/rate-limit";
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
 process.env.SUPABASE_SECRET_KEY = "test-secret-key";
 
-const mockDbParticipants: Record<string, any> = {
+const mockDbParticipants: Record<string, Record<string, unknown>> = {
   "SVK26-12345678": {
     participant_id: "SVK26-12345678",
     name: "Aarav Sharma",
@@ -28,8 +28,8 @@ const mockDbParticipants: Record<string, any> = {
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
-    from: (table: string) => ({
-      select: (_cols: string) => ({
+    from: () => ({
+      select: () => ({
         eq: (_col: string, val: string) => ({
           maybeSingle: async () => {
             const p = mockDbParticipants[val];

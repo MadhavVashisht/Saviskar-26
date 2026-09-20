@@ -11,7 +11,7 @@ type AuditLog = {
   admin_email: string;
   action_type: string;
   target_id: string;
-  details: any;
+  details: Record<string, unknown> | null;
   created_at: string;
 };
 

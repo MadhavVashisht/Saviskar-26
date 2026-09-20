@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { AlertCircle, RefreshCw, ArrowLeft, Trophy } from "lucide-react";
+import { AlertCircle, RefreshCw, Trophy } from "lucide-react";
 
 export default function EventDetailError({
   error,

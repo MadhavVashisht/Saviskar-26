@@ -72,7 +72,9 @@ export default function SmoothScrollProvider({ children }: SmoothScrollProviderP
     });
 
     lenisRef.current = lenis;
-    setLenisInstance(lenis);
+    const rafId = requestAnimationFrame(() => {
+      setLenisInstance(lenis);
+    });
 
     // Make lenis globally accessible for debugging or third-party hooks
     if (typeof window !== "undefined") {
@@ -96,6 +98,7 @@ export default function SmoothScrollProvider({ children }: SmoothScrollProviderP
 
     // Clean up on unmount
     return () => {
+      cancelAnimationFrame(rafId);
       observer.disconnect();
       lenis.destroy();
       lenisRef.current = null;

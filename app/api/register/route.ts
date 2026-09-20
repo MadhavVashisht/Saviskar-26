@@ -719,10 +719,66 @@ export async function POST(
   // 12. NORMALIZE RPC RESPONSE
   // =====================================================
 
-  const results =
+  type RpcEventResult = {
+    participant_id?: string;
+    participant_event_id?: string;
+    event_id?: string;
+    event_name?: string;
+    status?: string;
+    message?: string;
+  };
+
+  type ParticipantEventJoinedRow = {
+    id: string;
+    participant_id: string;
+    event_id: string;
+    registration_status: string | null;
+    payment_status: string | null;
+    payment_amount: number | null;
+    payment_id: string | null;
+    team_name: string | null;
+    checked_in: boolean | null;
+    checked_in_at: string | null;
+    events:
+      | {
+          id?: string;
+          name?: string;
+          category?: string | null;
+          registration_type?: string | null;
+          registration_fee?: number | null;
+          payment_type?: string | null;
+          payment_unit?: string | null;
+        }
+      | {
+          id?: string;
+          name?: string;
+          category?: string | null;
+          registration_type?: string | null;
+          registration_fee?: number | null;
+          payment_type?: string | null;
+          payment_unit?: string | null;
+        }[]
+      | null;
+  };
+
+  type TeamMemberJoinedRow = {
+    participant_event_id: string;
+    participant_id: string | null;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    is_team_leader: boolean | null;
+    participants: {
+      participant_id?: string | null;
+      college?: string | null;
+    } | null;
+  };
+
+  const results = (
     Array.isArray(rpcData)
       ? rpcData
-      : [];
+      : []
+  ) as unknown as RpcEventResult[];
 
   if (
     results.length === 0
@@ -852,7 +908,7 @@ export async function POST(
 
   const eventResults =
     results.map(
-      (result: any) => ({
+      (result) => ({
         participantEventId:
           result.participant_event_id,
 
@@ -875,12 +931,12 @@ export async function POST(
     new Set(
       results
         .filter(
-          (result: any) =>
+          (result) =>
             result.status ===
             "added"
         )
         .map(
-          (result: any) =>
+          (result) =>
             String(
               result.event_id
             )
@@ -889,15 +945,16 @@ export async function POST(
 
   let totalAmount = 0;
 
-  const paymentEvents =
+  const paymentEvents = (
     Array.isArray(
       participantEventRows
     )
       ? participantEventRows
-      : [];
+      : []
+  ) as unknown as ParticipantEventJoinedRow[];
 
   for (
-    const row of paymentEvents as any[]
+    const row of paymentEvents
   ) {
     if (
       addedEventIds.has(
@@ -916,23 +973,23 @@ export async function POST(
   // 15.1 RETRIEVE ATOMICALLY CREATED PAYMENT ORDER
   // =====================================================
 
-  let paymentOrder: {
+  type PaymentOrderInfo = {
     id: string;
     order_reference: string;
     amount: number;
     currency: string;
     status: string;
-  } | null = null;
+  };
+
+  let paymentOrder: PaymentOrderInfo | null = null;
 
   if (
     totalAmount > 0 &&
     participant?.id &&
     addedEventIds.size > 0
   ) {
-    const newPaidEvents = (
-      paymentEvents as any[]
-    ).filter(
-      (row: any) =>
+    const newPaidEvents = paymentEvents.filter(
+      (row) =>
         addedEventIds.has(
           String(row.event_id)
         ) &&
@@ -965,7 +1022,7 @@ export async function POST(
       const rawOrder = itemRow?.payment_orders;
       const orderData = Array.isArray(rawOrder) ? rawOrder[0] : rawOrder;
       if (orderData) {
-        paymentOrder = orderData as any;
+        paymentOrder = orderData as unknown as PaymentOrderInfo;
         console.log(
           "Atomic payment order retrieved:",
           {
@@ -989,19 +1046,20 @@ export async function POST(
    *
    * Errors are logged but never block the user response.
    */
-  const peRows =
+  const peRows = (
     Array.isArray(
       participantEventRows
     )
-      ? (participantEventRows as any[])
-      : [];
+      ? participantEventRows
+      : []
+  ) as unknown as ParticipantEventJoinedRow[];
 
   const addedParticipantEventIds =
     peRows
-      .filter((row: any) =>
+      .filter((row) =>
         addedEventIds.has(String(row.event_id))
       )
-      .map((row: any) => row.id)
+      .map((row) => row.id)
       .filter(Boolean);
 
   const {
@@ -1042,7 +1100,7 @@ export async function POST(
   }
 
   after(async () => {
-    for (const result of results as any[]) {
+    for (const result of results) {
       if (result.status !== "added") {
         continue;
       }
@@ -1053,7 +1111,7 @@ export async function POST(
        * joined event metadata.
        */
       const peRow = peRows.find(
-        (row: any) => String(row.event_id) === String(result.event_id)
+        (row) => String(row.event_id) === String(result.event_id)
       );
 
       if (!peRow) {
@@ -1064,7 +1122,8 @@ export async function POST(
         continue;
       }
 
-      const eventMeta = peRow.events ?? {};
+      const rawEventMeta = Array.isArray(peRow.events) ? peRow.events[0] : peRow.events;
+      const eventMeta = rawEventMeta ?? {};
 
       // DO NOT dispatch Entry QR email for events requiring payment that are not yet paid
       if (eventMeta.payment_type === "paid" && peRow.payment_status !== "paid") {
@@ -1085,11 +1144,12 @@ export async function POST(
       );
 
       try {
-        const teamRowsForEvent = (Array.isArray(teamMemberRows)
-          ? (teamMemberRows as any[])
+        const teamRows = (Array.isArray(teamMemberRows)
+          ? (teamMemberRows as unknown as TeamMemberJoinedRow[])
           : []
-        ).filter(
-          (row: any) => String(row.participant_event_id) === String(peRow.id)
+        );
+        const teamRowsForEvent = teamRows.filter(
+          (row) => String(row.participant_event_id) === String(peRow.id)
         );
 
         const mainParticipantId = returnedParticipantId;
@@ -1097,10 +1157,10 @@ export async function POST(
         const emailMembers = isTeam
           ? teamRowsForEvent
             .filter(
-              (row: any) =>
+              (row) =>
                 String(row.participant_id) !== String(participant?.id ?? "")
             )
-            .map((row: any) => ({
+            .map((row) => ({
               participantId: String(row.participants?.participant_id ?? ""),
               name: String(row.name ?? ""),
               college: String(row.participants?.college ?? ""),
@@ -1242,8 +1302,8 @@ export async function POST(
 
       teamMembers:
         Array.isArray(teamMemberRows)
-          ? (teamMemberRows as any[]).map(
-            (row: any) => ({
+          ? (teamMemberRows as unknown as TeamMemberJoinedRow[]).map(
+            (row) => ({
               participantId:
                 row.participants?.participant_id ??
                 null,

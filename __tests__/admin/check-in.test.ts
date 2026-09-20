@@ -174,14 +174,16 @@ describe("P0-02: Check-In API Payment Gate Enforcement", () => {
       },
     };
 
+    type AdminAuthResult = Awaited<ReturnType<typeof serverLib.requireAdmin>>;
+
     // Default: Authenticated Admin
     vi.spyOn(serverLib, "requireAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id: "admin-uuid", email: "admin@example.com" } as any,
+      supabase: {},
+      user: { id: "admin-uuid", email: "admin@example.com" },
       role: "admin",
       error: null,
       status: 200,
-    });
+    } as unknown as AdminAuthResult);
   });
 
   it("A. Free event -> check-in allowed", async () => {
@@ -282,12 +284,12 @@ describe("P0-02: Check-In API Payment Gate Enforcement", () => {
 
   it("J. Unauthorized user -> denied with 401", async () => {
     vi.spyOn(serverLib, "requireAdmin").mockResolvedValueOnce({
-      supabase: {} as any,
+      supabase: {},
       user: null,
       role: null,
-      error: "Unauthorized" as const,
+      error: "Unauthorized",
       status: 401,
-    });
+    } as unknown as Awaited<ReturnType<typeof serverLib.requireAdmin>>);
 
     const res = await POST(makeRequest({ participantEventId: "pe-paid-ok", action: "check_in" }));
     expect(res.status).toBe(401);

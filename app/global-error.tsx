@@ -98,8 +98,12 @@ export default function GlobalError({
             >
               Restart Engine
             </button>
-            <a
-              href="/"
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/";
+                }
+              }}
               style={{
                 background: "rgba(255, 255, 255, 0.08)",
                 color: "#ffffff",
@@ -108,13 +112,13 @@ export default function GlobalError({
                 padding: "12px 24px",
                 fontSize: "14px",
                 fontWeight: 500,
-                textDecoration: "none",
+                cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
               }}
             >
               Mainstage
-            </a>
+            </button>
           </div>
         </div>
       </body>

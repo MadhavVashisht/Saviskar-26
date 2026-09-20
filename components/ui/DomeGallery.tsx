@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useGesture } from '@use-gesture/react';
 import './DomeGallery.css';
 
@@ -691,12 +692,13 @@ export default function DomeGallery({
                   onClick={onTileClick}
                   onPointerUp={onTilePointerUp}
                 >
-                  <img
+                  <Image
                     src={it.src}
-                    loading="lazy"
-                    decoding="async"
+                    alt={it.alt || 'Festival moment'}
+                    width={160}
+                    height={160}
+                    unoptimized
                     draggable={false}
-                    alt={it.alt}
                   />
                 </div>
               </div>

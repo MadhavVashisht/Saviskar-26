@@ -126,7 +126,22 @@ export async function ensurePaymentConfirmationSent(paymentOrderId: string) {
       throw new Error(`No payment order items found: ${itemsError?.message}`);
     }
 
-    const receiptItems = orderItems.map((item: any) => {
+    type OrderItemRow = {
+      amount: number | string;
+      participant_event_id?: string;
+      events:
+        | { name?: string; category?: string | null; registration_type?: string }
+        | { name?: string; category?: string | null; registration_type?: string }[]
+        | null;
+      participant_events:
+        | { id?: string; team_name?: string | null }
+        | { id?: string; team_name?: string | null }[]
+        | null;
+    };
+
+    const typedItems = orderItems as unknown as OrderItemRow[];
+
+    const receiptItems = typedItems.map((item) => {
       const eventData = Array.isArray(item.events) ? item.events[0] : item.events;
       const peData = Array.isArray(item.participant_events) ? item.participant_events[0] : item.participant_events;
       return {
@@ -138,7 +153,7 @@ export async function ensurePaymentConfirmationSent(paymentOrderId: string) {
       };
     });
 
-    const primaryItem = orderItems[0];
+    const primaryItem = typedItems[0];
     const primaryEvent = Array.isArray(primaryItem.events) ? primaryItem.events[0] : primaryItem.events;
     const primaryPe = Array.isArray(primaryItem.participant_events) ? primaryItem.participant_events[0] : primaryItem.participant_events;
 

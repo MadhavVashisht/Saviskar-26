@@ -2,13 +2,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST, DELETE, PATCH } from "@/app/api/admin/admins/route";
 import { GET as getEvents } from "@/app/api/admin/events/route";
 import * as serverLib from "@/lib/supabase/server";
-import { resetRateLimitStore } from "@/lib/rate-limit";
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
 process.env.SUPABASE_SECRET_KEY = "test-secret-key";
 
-const mockBuilder: any = {
+type QueryBuilderMock = {
+  select: ReturnType<typeof vi.fn>;
+  insert: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  eq: ReturnType<typeof vi.fn>;
+  order: ReturnType<typeof vi.fn>;
+  limit: ReturnType<typeof vi.fn>;
+  maybeSingle: ReturnType<typeof vi.fn>;
+  then?: (resolve: (value: { data: unknown; error: unknown }) => void) => void;
+  [key: string]: unknown;
+};
+
+const mockBuilder: QueryBuilderMock = {
   select: vi.fn().mockReturnThis(),
   insert: vi.fn().mockReturnThis(),
   delete: vi.fn().mockReturnThis(),
@@ -19,7 +31,7 @@ const mockBuilder: any = {
   maybeSingle: vi.fn().mockReturnThis(),
 };
 
-mockBuilder.then = function (resolve: any) {
+mockBuilder.then = function (resolve: (value: { data: unknown; error: unknown }) => void) {
   resolve({ data: null, error: null });
 };
 
@@ -47,7 +59,10 @@ vi.mock("next/headers", () => ({
   cookies: vi.fn().mockResolvedValue({ getAll: vi.fn(), setAll: vi.fn() }),
 }));
 
-const mockFrom = vi.fn((_table: string) => mockBuilder);
+const mockFrom = vi.fn((table?: string) => {
+  void table;
+  return mockBuilder;
+});
 
 const mockGetUserById = vi.fn().mockResolvedValue({
   data: { user: { id: "target-user", email: "test@example.com" } },
@@ -77,17 +92,17 @@ vi.mock("@supabase/supabase-js", () => {
   };
 });
 
-describe("Admin Management API Authorization & Hardened Rules", () => {
+describe("Admin Management API Security & RBAC", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetRateLimitStore();
     delete process.env.PRIMARY_ADMIN_USER_ID;
     delete process.env.PRIMARY_ADMIN_EMAIL;
 
     // Reset default builder behavior
     Object.keys(mockBuilder).forEach((key) => {
-      if (typeof mockBuilder[key].mockClear === "function") {
-        mockBuilder[key].mockClear();
+      const val = mockBuilder[key];
+      if (val && typeof val === "object" && "mockClear" in val && typeof (val as { mockClear: () => void }).mockClear === "function") {
+        (val as { mockClear: () => void }).mockClear();
       }
     });
 
@@ -100,7 +115,7 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
     mockBuilder.order = vi.fn().mockReturnThis();
     mockBuilder.limit = vi.fn().mockReturnThis();
     mockBuilder.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    mockBuilder.then = function (resolve: any) {
+    mockBuilder.then = function (resolve: (value: { data: unknown; error: unknown }) => void) {
       resolve({ data: null, error: null });
     };
 
@@ -111,7 +126,7 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
 
   const createMockRequest = (
     method: string,
-    body?: any,
+    body?: unknown,
     url = "http://localhost/api/admin/admins"
   ) => {
     return {
@@ -122,55 +137,57 @@ describe("Admin Management API Authorization & Hardened Rules", () => {
     } as unknown as Request;
   };
 
+  type MasterAdminAuthResult = Awaited<ReturnType<typeof serverLib.requireMasterAdmin>>;
+
   const mockAsPrimaryMaster = (id = "sm-id", email = "primarymaster@example.com") => {
     process.env.PRIMARY_ADMIN_USER_ID = id;
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id, email } as any,
+      supabase: {},
+      user: { id, email },
       role: "master",
       error: null,
       status: 200,
-    });
+    } as unknown as MasterAdminAuthResult);
   };
 
   const mockAsOtherMaster = (id = "other-master-id", email = "othermaster@example.com") => {
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id, email } as any,
+      supabase: {},
+      user: { id, email },
       role: "master",
       error: null,
       status: 200,
-    });
+    } as unknown as MasterAdminAuthResult);
   };
 
   const mockAsNormalAdmin = (id = "normal-id", email = "normal@example.com") => {
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id, email } as any,
+      supabase: {},
+      user: { id, email },
       role: "admin",
-      error: "Master Admin access required" as const,
+      error: "Master Admin access required",
       status: 403,
-    });
+    } as unknown as MasterAdminAuthResult);
   };
 
   const mockAsUnauthenticated = () => {
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
-      supabase: {} as any,
+      supabase: {},
       user: null,
       role: null,
-      error: "Unauthorized" as const,
+      error: "Unauthorized",
       status: 401,
-    });
+    } as unknown as MasterAdminAuthResult);
   };
 
   const mockAsMfaRequired = (id = "mfa-id", email = "master-no-mfa@example.com") => {
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id, email } as any,
+      supabase: {},
+      user: { id, email },
       role: "master",
-      error: "MFA_REQUIRED" as const,
+      error: "MFA_REQUIRED",
       status: 403,
-    });
+    } as unknown as MasterAdminAuthResult);
   };
 
   /* =========================================================

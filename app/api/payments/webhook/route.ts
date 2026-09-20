@@ -214,7 +214,7 @@ export async function POST(
       orderItems ?? []
     )
       .map(
-        (item: any) =>
+        (item: { participant_event_id?: string | null }) =>
           item.participant_event_id
       )
       .filter(Boolean);

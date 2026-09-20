@@ -11,12 +11,10 @@ import {
   getOtpStore,
   _clearOtpStoreForTesting,
   setOtpStoreOverride,
-  generate6DigitOtp,
   hashOtp,
   MAX_VERIFY_ATTEMPTS,
   IOtpStore,
   OtpRecord,
-  SupabaseOtpStore,
 } from "@/lib/auth/otp";
 import { POST as requestOtpHandler } from "@/app/api/auth/request-otp/route";
 import { POST as verifyOtpHandler } from "@/app/api/auth/verify-otp/route";
@@ -203,7 +201,7 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       // Now switch execution context to Instance B (separate process/container memory)
       // Instance B has its own fresh client connection to shared database
       const instanceBStore: IOtpStore = {
-        async createOtp(data) {
+        async createOtp() {
           throw new Error("Instance B should not be creating in this step");
         },
         async getActiveOtp(e) {
@@ -388,7 +386,7 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
     });
 
     it("Requirement 12: Plaintext OTP is NEVER persisted in database", async () => {
-      let savedPayload: any = null;
+      let savedPayload: Parameters<IOtpStore["createOtp"]>[0] | null = null;
       const mockStore: IOtpStore = {
         async createOtp(data) {
           savedPayload = data;
@@ -417,11 +415,17 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       setOtpStoreOverride(mockStore);
       await requestOtp("security-audit@university.edu", "192.168.1.99");
 
-      expect(savedPayload).toBeDefined();
-      expect(savedPayload.otpHash).toBeDefined();
-      expect(savedPayload.otp).toBeUndefined(); // plaintext OTP MUST NOT exist on record
-      expect(savedPayload.code).toBeUndefined();
-      expect(savedPayload.otpHash).toMatch(/^[a-f0-9]{64}$/); // only salted SHA-256 hash
+      expect(savedPayload).not.toBeNull();
+      const payload = savedPayload as unknown as {
+        email: string;
+        otpHash: string;
+        issuedAt: number;
+        expiresAt: number;
+      };
+      expect(payload.otpHash).toBeDefined();
+      expect((payload as unknown as Record<string, unknown>)?.otp).toBeUndefined(); // plaintext OTP MUST NOT exist on record
+      expect((payload as unknown as Record<string, unknown>)?.code).toBeUndefined();
+      expect(payload.otpHash).toMatch(/^[a-f0-9]{64}$/); // only salted SHA-256 hash
     });
 
     it("Requirement 13: Database migration explicitly enables RLS, revokes public access, and defines atomic attempts RPC", () => {
@@ -468,14 +472,14 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       try {
         setOtpStoreOverride(null);
         // Simulate production without Supabase credentials
-        (process.env as any).NODE_ENV = "production";
+        (process.env as Record<string, string | undefined>).NODE_ENV = "production";
         delete process.env.NEXT_PUBLIC_SUPABASE_URL;
         delete process.env.SUPABASE_SECRET_KEY;
         delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         expect(() => getOtpStore()).toThrowError(/\[AUTH OTP FATAL\]/);
       } finally {
-        (process.env as any).NODE_ENV = originalEnv;
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
         if (originalUrl) process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
         if (originalKey) process.env.SUPABASE_SECRET_KEY = originalKey;
         if (originalServiceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceKey;

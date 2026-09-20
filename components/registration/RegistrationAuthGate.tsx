@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   RefreshCw,
   ArrowLeft,
-  Lock,
 } from "lucide-react";
 
 interface RegistrationAuthGateProps {

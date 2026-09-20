@@ -105,14 +105,13 @@ describe("Phase 2C: Secure Payment Resume Token & Security Model", () => {
       order_reference: "SVK-SVK26-FFE51470-20260830-ABC123",
     };
 
-    let canCheckout = false;
+    const canCheckout = false;
     let statusResponse = "";
 
     if (dbOrder.status === "paid") {
       statusResponse = "already_completed";
-      canCheckout = false;
     } else if (dbOrder.status === "pending") {
-      canCheckout = true;
+      statusResponse = "pending";
     }
 
     expect(statusResponse).toBe("already_completed");
@@ -138,7 +137,12 @@ describe("Phase 2C: Registration & Flow Scenarios", () => {
   const TEST_SECRET = "test-resume-secret-for-cryptographic-testing-32b";
 
   it("TEST 9: FREE event does not create a payment link or payment order", () => {
-    const freeEvent = {
+    const freeEvent: {
+      id: string;
+      name: string;
+      payment_type: string;
+      registration_fee: number;
+    } = {
       id: "evt-hackathon-free",
       name: "Hackathon",
       payment_type: "free",
@@ -146,7 +150,7 @@ describe("Phase 2C: Registration & Flow Scenarios", () => {
     };
 
     let paymentResumeUrl: string | null = null;
-    let paymentOrder: any = null;
+    const paymentOrder = ((): { id: string } | null => null)();
 
     if (freeEvent.payment_type === "paid" && paymentOrder?.id) {
       paymentResumeUrl = generatePaymentResumeUrl({

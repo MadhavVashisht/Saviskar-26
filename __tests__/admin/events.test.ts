@@ -26,15 +26,15 @@ interface MockEvent {
 }
 
 let mockEvents: Record<string, MockEvent> = {};
-let lastUpdatedPayload: any = null;
-let lastInsertedPayload: any = null;
+let lastUpdatedPayload: Record<string, unknown> | null = null;
+let lastInsertedPayload: Record<string, unknown> | null = null;
 
 function createMockClient() {
   return {
     from: (table: string) => {
       if (table === "events") {
         return {
-          insert: (payload: any) => {
+          insert: (payload: Record<string, unknown>) => {
             lastInsertedPayload = payload;
             // Validate PostgreSQL check constraint: events_payment_unit_check
             // (payment_unit IS NULL OR payment_unit = ANY (ARRAY['per_student', 'per_team']))
@@ -58,8 +58,8 @@ function createMockClient() {
             }
 
             const newRecord: MockEvent = {
-              id: payload.id || `evt-${Date.now()}`,
-              ...payload,
+              ...(payload as unknown as MockEvent),
+              id: (payload.id as string) || `evt-${Date.now()}`,
             };
             mockEvents[newRecord.id] = newRecord;
 
@@ -73,7 +73,7 @@ function createMockClient() {
             };
           },
 
-          update: (payload: any) => {
+          update: (payload: Record<string, unknown>) => {
             lastUpdatedPayload = payload;
             let targetId: string | null = null;
 
@@ -84,7 +84,7 @@ function createMockClient() {
               payload.payment_unit !== "per_team"
             ) {
               return {
-                eq: (_col: string, _val: string) => ({
+                eq: () => ({
                   select: () => ({
                     maybeSingle: async () => ({
                       data: null,
@@ -180,12 +180,12 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
 
     // Authenticate as Master Admin
     vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
-      supabase: {} as any,
-      user: { id: "master-uuid", email: "master@example.com" } as any,
+      supabase: {},
+      user: { id: "master-uuid", email: "master@example.com" },
       role: "master",
       error: null,
       status: 200,
-    });
+    } as unknown as Awaited<ReturnType<typeof serverLib.requireMasterAdmin>>);
   });
 
   // 1. PATCH a free event with registration_fee: 0, payment_unit: "free", and a changed name.
@@ -210,7 +210,7 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
     expect(data.event.name).toBe("Hackathon 2026 Updated");
     expect(data.event.payment_unit).toBeNull();
     expect(data.event.payment_type).toBe("free");
-    expect(lastUpdatedPayload.payment_unit).toBeNull();
+    expect(lastUpdatedPayload!.payment_unit).toBeNull();
     expect(mockEvents["evt-hackathon"].payment_unit).toBeNull();
   });
 
@@ -235,7 +235,7 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
     const data = await res.json();
     expect(data.event.payment_unit).toBeNull();
     expect(data.event.payment_type).toBe("free");
-    expect(lastUpdatedPayload.payment_unit).toBeNull();
+    expect(lastUpdatedPayload!.payment_unit).toBeNull();
     expect(mockEvents["evt-hackathon"].payment_unit).toBeNull();
   });
 
@@ -261,7 +261,7 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
     expect(data.event.payment_unit).toBe("per_team");
     expect(data.event.payment_type).toBe("paid");
     expect(data.event.registration_fee).toBe(100);
-    expect(lastUpdatedPayload.payment_unit).toBe("per_team");
+    expect(lastUpdatedPayload!.payment_unit).toBe("per_team");
     expect(mockEvents["evt-robotics"].payment_unit).toBe("per_team");
   });
 
@@ -287,7 +287,7 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
     expect(data.event.payment_unit).toBe("per_student");
     expect(data.event.payment_type).toBe("paid");
     expect(data.event.registration_fee).toBe(100);
-    expect(lastUpdatedPayload.payment_unit).toBe("per_student");
+    expect(lastUpdatedPayload!.payment_unit).toBe("per_student");
     expect(mockEvents["evt-robotics"].payment_unit).toBe("per_student");
   });
 
@@ -337,7 +337,7 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
 
       const data = await res.json();
       expect(data.event.payment_unit).toBeNull();
-      expect(lastUpdatedPayload.payment_unit).toBeNull();
+      expect(lastUpdatedPayload!.payment_unit).toBeNull();
       expect(mockEvents["evt-hackathon"].payment_unit).toBeNull();
     });
   });
@@ -382,8 +382,8 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
     const data = await res.json();
     expect(data.event.name).toBe("Hackathon Championship");
     expect(data.event.payment_unit).toBeNull();
-    expect(lastUpdatedPayload.payment_unit).toBeNull();
-    expect(lastUpdatedPayload.payment_unit).not.toBe("free");
+    expect(lastUpdatedPayload!.payment_unit).toBeNull();
+    expect(lastUpdatedPayload!.payment_unit).not.toBe("free");
     expect(mockEvents["evt-hackathon"].name).toBe("Hackathon Championship");
     expect(mockEvents["evt-hackathon"].payment_unit).toBeNull();
   });
@@ -406,6 +406,6 @@ describe("Admin Events API - events_payment_unit_check constraint & normalizatio
 
     const data = await res.json();
     expect(data.event.payment_unit).toBeNull();
-    expect(lastInsertedPayload.payment_unit).toBeNull();
+    expect(lastInsertedPayload!.payment_unit).toBeNull();
   });
 });

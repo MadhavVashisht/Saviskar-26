@@ -15,7 +15,6 @@ import {
   Cpu,
   Search,
   Trophy,
-  Users,
   ShieldCheck,
   CheckCircle2,
   X,

@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -21,7 +22,6 @@ import {
   X,
   Sparkles,
   ShieldCheck,
-  CheckCircle2,
   Search,
   CreditCard,
 } from "lucide-react";
@@ -632,8 +632,8 @@ export default function RegistrationForm() {
        * Team leader is counted as one participant.
        */
       if (isTeamEvent(event)) {
-        const teamSize =
-          1 + getTeamState(event.id).members.length;
+        const teamMembersCount = eventState[event.id]?.members?.length ?? 0;
+        const teamSize = 1 + teamMembersCount;
 
         return total + fee * teamSize;
       }
@@ -904,7 +904,7 @@ export default function RegistrationForm() {
     return new Promise((resolve) => {
       if (
         typeof window !== "undefined" &&
-        (window as any).Razorpay
+        Boolean((window as unknown as { Razorpay?: unknown }).Razorpay)
       ) {
         resolve(true);
         return;
@@ -1076,13 +1076,32 @@ export default function RegistrationForm() {
         };
 
         try {
-          const razorpay = new (window as any).Razorpay(
-            razorpayOptions
-          );
+          type RazorpayFailedResponse = {
+            error?: {
+              description?: string;
+              code?: string;
+              source?: string;
+              step?: string;
+              reason?: string;
+            };
+          };
+
+          type RazorpayInstance = {
+            on: (event: string, handler: (response: RazorpayFailedResponse) => void) => void;
+            open: () => void;
+          };
+
+          const RazorpayConstructor = (
+            window as unknown as {
+              Razorpay: new (opts: typeof razorpayOptions) => RazorpayInstance;
+            }
+          ).Razorpay;
+
+          const razorpay = new RazorpayConstructor(razorpayOptions);
 
           razorpay.on(
             "payment.failed",
-            (response: any) => {
+            (response: RazorpayFailedResponse) => {
               console.error(
                 "Razorpay payment failed:",
                 response.error
@@ -1352,10 +1371,13 @@ export default function RegistrationForm() {
             {qrCode && (
               <div className="relative z-10 mt-8 flex flex-col items-center">
                 <div className="rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/20">
-                  <img
+                  <Image
                     src={qrCode}
                     alt="Official Entry QR Code"
+                    width={230}
+                    height={230}
                     className="h-[200px] w-[200px] md:h-[230px] md:w-[230px]"
+                    unoptimized
                   />
                 </div>
 
