@@ -6,6 +6,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* Reserve scrollbar gutter permanently to prevent CLS when preloader dismissal
+     toggles body/html overflow (which shows/hides the scrollbar on desktop).
+     scrollbar-gutter: stable keeps layout width constant whether or not a
+     scrollbar is rendered — no content shift on Lenis start/stop. */
+  scrollbar-gutter: stable;
 }
 
 html.lenis,

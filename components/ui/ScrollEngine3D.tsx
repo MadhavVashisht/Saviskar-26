@@ -4,12 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 // 5 interrelated sequential moments of the SAME stadium venue with progressive fireworks (optimized WebP)
-const TEXTURE_PATHS = [
+// Desktop tier: 1920×1072 — full resolution for large screens
+const TEXTURE_PATHS_DESKTOP = [
   "/images/concert-stadium.webp",             // 0. Hero stadium scene (opening crowd & stage lights)
   "/images/firework-launch.webp",             // 1. Fireworks rocket launch sequence over stage roof
   "/images/scene-realms-stage.webp",          // 2. Fireworks blooming in magenta & purple above the stage
   "/images/scene-starnight-show.webp",        // 3. Concert lasers and golden/purple fireworks canopy
   "/images/scene-finale-celebration.webp",    // 4. Grand pyrotechnic golden cascade finale
+];
+// Mobile tier: 1280×715 — 57% smaller payload for viewports < 768 px wide
+const TEXTURE_PATHS_MOBILE = [
+  "/images/mobile/concert-stadium.webp",
+  "/images/mobile/firework-launch.webp",
+  "/images/mobile/scene-realms-stage.webp",
+  "/images/mobile/scene-starnight-show.webp",
+  "/images/mobile/scene-finale-celebration.webp",
 ];
 
 const vertexShader = `
@@ -231,6 +240,9 @@ export default function ScrollEngine3D() {
     // Texture Loader with Anisotropic Filtering
     const textureLoader = new THREE.TextureLoader();
     const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), isLowPower ? 2 : 8);
+
+    // Select texture tier: 720p mobile assets for narrow viewports, full 1080p otherwise
+    const TEXTURE_PATHS = isMobile ? TEXTURE_PATHS_MOBILE : TEXTURE_PATHS_DESKTOP;
 
     const textures: THREE.Texture[] = TEXTURE_PATHS.map((path) => {
       const tex = textureLoader.load(path);

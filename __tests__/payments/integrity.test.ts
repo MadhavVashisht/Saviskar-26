@@ -1,5 +1,22 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { createHmac } from "crypto";
+import { NextRequest } from "next/server";
 import { checkRateLimit, resetRateLimitStore } from "@/lib/rate-limit";
+
+// ── Module-level mocks (hoisted by Vitest before imports) ─────────────────────
+// These affect only this file; existing tests never import these modules directly.
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(),
+}));
+vi.mock("@/lib/payments/post-payment", () => ({
+  ensurePaymentConfirmationSent: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Import mocked symbols – Vitest resolves these to the mocked versions above.
+import { createClient } from "@supabase/supabase-js";
+import { ensurePaymentConfirmationSent } from "@/lib/payments/post-payment";
+// Import the real route handler under test.
+import { POST } from "@/app/api/payments/webhook/route";
 
 describe("Phase 2B: Participant Data Integrity & Email Uniqueness", () => {
   it("A: normalizes email with lower(trim(email))", () => {
@@ -497,71 +514,200 @@ describe("Phase 2B: Returning Participant → Paid Event Flow & Recovery Regress
   });
 });
 
-describe("Phase 2B: Concurrent Webhook & Verification Idempotency (Postgres 23505)", () => {
-  it("Promise.all firing two simultaneous requests with identical payment_id processes once and sends only 1 confirmation email", async () => {
-    const processedEvents = new Set<string>();
-    let emailsSentCount = 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2B: Concurrent Webhook Idempotency – REAL route handler integration test
+//
+// This test imports the actual POST function from
+// app/api/payments/webhook/route.ts and fires two simultaneous requests via
+// Promise.all. The Supabase client is fully mocked: the
+// processed_payment_events insert returns a genuine { code: "23505" } error
+// shape on its second call (simulating a Postgres unique-violation race).
+// ensurePaymentConfirmationSent is a Vitest spy; we assert it is invoked
+// exactly once, proving the real handler's idempotency guard works end-to-end.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Phase 2B: Concurrent Webhook & Verification Idempotency (Postgres 23505 – Real Handler)", () => {
+  // ── Fixture constants ────────────────────────────────────────────────────
+  const TEST_WEBHOOK_SECRET = "test-webhook-secret-for-vitest-concurrent";
+  const GATEWAY_ORDER_ID    = "order_GATEWAY_CONCURRENT_TEST";
+  const GATEWAY_PAYMENT_ID  = "pay_CONCURRENT_REAL_001";
+  const PAYMENT_ORDER_ID    = "po_uuid_concurrent_001";
 
-    // Simulated atomic DB insert for processed_payment_events with Postgres 23505 unique constraint enforcement
-    async function simulateDatabaseIdempotencyClaim(paymentId: string, orderId: string) {
-      if (processedEvents.has(paymentId)) {
-        return {
-          data: null,
-          error: {
-            code: "23505",
-            message: "duplicate key value violates unique constraint 'processed_payment_events_payment_id_key'",
-          },
-        };
-      }
-      processedEvents.add(paymentId);
-      return {
-        data: { id: `event-claim-${paymentId}`, payment_id: paymentId, order_id: orderId },
-        error: null,
+  // ── Helper: create a chainable Supabase-builder stub ──────────────────────
+  //
+  // Any method the route calls that isn't explicitly handled here simply returns
+  // the same chain so the test doesn't crash on unexpected table accesses.
+  // The chain is also thenable so `await chain` resolves immediately without
+  // a terminal method like maybeSingle.
+  function makeThenableChain(
+    maybySingleOverride?: () => Promise<{ data: unknown; error: unknown }>
+  ): Record<string, unknown> {
+    const defaultResolve = () =>
+      Promise.resolve({ data: null, error: null });
+    const terminalFn = maybySingleOverride ?? defaultResolve;
+
+    // `then` makes `await chain` work without calling maybySingle.
+    function then(
+      this: void,
+      onFulfilled: (v: { data: null; error: null }) => unknown
+    ) {
+      return Promise.resolve({ data: null, error: null }).then(onFulfilled);
+    }
+
+    const chain: Record<string, unknown> = {
+      then,
+      catch: () => chain,
+      finally: () => chain,
+      select:      () => chain,
+      eq:          () => chain,
+      in:          () => chain,
+      not:         () => chain,
+      is:          () => chain,
+      or:          () => chain,
+      limit:       () => chain,
+      order:       () => chain,
+      update:      () => chain,
+      insert:      () => chain,
+      upsert:      () => chain,
+      delete:      () => chain,
+      maybeSingle: terminalFn,
+      single:      terminalFn,
+    };
+    return chain;
+  }
+
+  // ── Shared insert-call counter (survives across both concurrent clients) ──
+  let peInsertCallCount = 0;
+
+  // ── Per-test setup / teardown ─────────────────────────────────────────────
+  beforeEach(() => {
+    vi.clearAllMocks();
+    peInsertCallCount = 0;
+
+    // Environment variables required by the real route handler.
+    process.env.RAZORPAY_WEBHOOK_SECRET     = TEST_WEBHOOK_SECRET;
+    process.env.NEXT_PUBLIC_SUPABASE_URL    = "http://127.0.0.1:54321";
+    process.env.SUPABASE_SECRET_KEY         = "test-service-role-key-concurrent";
+
+    // ── Configure the mocked createClient ────────────────────────────────
+    // The route calls `createClient(url, key, opts)` once per POST invocation.
+    // We return a minimal mock that handles every table the route touches.
+    vi.mocked(createClient).mockImplementation(() => {
+      const from = (table: string): Record<string, unknown> => {
+        // ── payment_orders ──────────────────────────────────────────────
+        // .select("...").eq(...).maybeSingle()  →  returns the test order
+        // .update({...}).eq(...)                →  no-op (thenable)
+        if (table === "payment_orders") {
+          return {
+            select: () => makeThenableChain(() =>
+              Promise.resolve({
+                data: {
+                  id:                     PAYMENT_ORDER_ID,
+                  status:                 "pending", // both concurrent calls see 'pending'
+                  payer_participant_id:   null,      // skips the payments-table branch
+                  amount:                299,
+                },
+                error: null,
+              })
+            ),
+            update: () => makeThenableChain(), // awaitable, resolves to { data:null, error:null }
+          };
+        }
+
+        // ── processed_payment_events ────────────────────────────────────
+        // The critical idempotency table.
+        // First concurrent call  → insert succeeds ({ data: { id }, error: null }).
+        // Second concurrent call → insert fails with the real Postgres 23505 shape.
+        if (table === "processed_payment_events") {
+          peInsertCallCount += 1;
+          const thisCallNumber = peInsertCallCount;
+
+          return {
+            insert: () => makeThenableChain(() => {
+              if (thisCallNumber >= 2) {
+                return Promise.resolve({
+                  data: null,
+                  error: {
+                    code:    "23505",
+                    message: "duplicate key value violates unique constraint \"processed_payment_events_payment_id_key\"",
+                  },
+                });
+              }
+              return Promise.resolve({ data: { id: "event-claim-1" }, error: null });
+            }),
+          };
+        }
+
+        // ── all other tables (payment_order_items, participant_events, payments, …)
+        // Return a no-op thenable chain; the route guards against empty results.
+        return makeThenableChain();
       };
-    }
 
-    async function handlePaymentWebhook(paymentId: string, orderId: string) {
-      const { data: eventClaim, error: claimError } = await simulateDatabaseIdempotencyClaim(paymentId, orderId);
-
-      const isDuplicate =
-        claimError?.code === "23505" ||
-        (!claimError && !eventClaim);
-
-      if (claimError && !isDuplicate) {
-        throw new Error("DB Error");
-      }
-
-      if (isDuplicate) {
-        return { status: 200, duplicate: true, action: "skipped" };
-      }
-
-      // Simulate post-payment confirmation dispatch
-      emailsSentCount++;
-      return { status: 200, duplicate: false, action: "email_dispatched" };
-    }
-
-    const testPaymentId = "pay_mock_concurrent_12345";
-    const testOrderId = "order_mock_999";
-
-    // Fire two simultaneous webhook requests for the exact same payment ID
-    const [res1, res2] = await Promise.all([
-      handlePaymentWebhook(testPaymentId, testOrderId),
-      handlePaymentWebhook(testPaymentId, testOrderId),
-    ]);
-
-    expect(res1.status).toBe(200);
-    expect(res2.status).toBe(200);
-
-    const actions = [res1.action, res2.action];
-    expect(actions).toContain("email_dispatched");
-    expect(actions).toContain("skipped");
-
-    const duplicates = [res1.duplicate, res2.duplicate];
-    expect(duplicates).toContain(true);
-    expect(duplicates).toContain(false);
-
-    // CRITICAL: Exactly ONE confirmation email was dispatched
-    expect(emailsSentCount).toBe(1);
+      return { from } as unknown as ReturnType<typeof createClient>;
+    });
   });
+
+  afterEach(() => {
+    delete process.env.RAZORPAY_WEBHOOK_SECRET;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SECRET_KEY;
+  });
+
+  // ── The actual concurrent test ────────────────────────────────────────────
+  it(
+    "fires two simultaneous POST calls against the real route handler; " +
+    "processes exactly once and dispatches exactly 1 confirmation email",
+    async () => {
+      // ── Build a properly HMAC-signed webhook body ─────────────────────
+      // The real RazorpayGateway.validateWebhook() computes and compares this
+      // signature using RAZORPAY_WEBHOOK_SECRET, so it must be correct.
+      const webhookBody = JSON.stringify({
+        event: "payment.captured",
+        payload: {
+          payment: {
+            entity: {
+              id:       GATEWAY_PAYMENT_ID,
+              order_id: GATEWAY_ORDER_ID,
+            },
+          },
+        },
+      });
+      const webhookSig = createHmac("sha256", TEST_WEBHOOK_SECRET)
+        .update(webhookBody)
+        .digest("hex");
+
+      // ── Factory: one NextRequest per concurrent call ──────────────────
+      // Each request must have its own body stream (streams can only be read once).
+      const makeReq = () =>
+        new NextRequest("http://localhost/api/payments/webhook", {
+          method:  "POST",
+          headers: {
+            "x-razorpay-signature": webhookSig,
+            "content-type":         "application/json",
+          },
+          body: webhookBody,
+        });
+
+      // ── Fire two simultaneous requests via Promise.all ─────────────────
+      const [res1, res2] = await Promise.all([
+        POST(makeReq()),
+        POST(makeReq()),
+      ]);
+
+      // ── Assertions ───────────────────────────────────────────────────
+      // Both calls must return HTTP 200 (Razorpay must not retry on either).
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+
+      // The real ensurePaymentConfirmationSent must be called exactly ONCE.
+      // One call succeeded the idempotency claim; the other was rejected with
+      // a Postgres 23505 unique-violation and returned early before calling it.
+      const spy = vi.mocked(ensurePaymentConfirmationSent);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(PAYMENT_ORDER_ID);
+
+      // Sanity: confirm the mock was exercised correctly (both inserts attempted).
+      expect(peInsertCallCount).toBe(2);
+    }
+  );
 });
 
