@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home, Compass } from "lucide-react";
+import { captureException } from "@/lib/monitoring/error-reporter";
 
 export default function RootError({
   error,
@@ -12,7 +13,7 @@ export default function RootError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Root route error captured:", error);
+    captureException(error, { route: "root-error", digest: error.digest });
   }, [error]);
 
   return (

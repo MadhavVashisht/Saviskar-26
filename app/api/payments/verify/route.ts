@@ -26,6 +26,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { captureException } from "@/lib/monitoring/error-reporter";
 import { getPaymentGateway } from "@/lib/payments";
 import { ensurePaymentConfirmationSent } from "@/lib/payments/post-payment";
 
@@ -339,6 +340,12 @@ export async function POST(
   } catch (err) {
     // FAIL CLOSED: any error from fetchPaymentDetails
     // means we cannot verify — do NOT mark paid.
+    captureException(err, {
+      route: "/api/payments/verify",
+      orderId: paymentOrderId,
+      paymentId: gatewayPaymentId,
+      extra: { paymentOrderId, gatewayPaymentId },
+    });
     console.error(
       "Server-side payment verification failed (fail-closed):",
       err instanceof Error

@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Saviskar 2026 — *Aevorian Reverie*
 
-## Getting Started
+Official web platform for North India's premier techno-cultural festival at CGC University, Mohali (October 27–28, 2026).
 
-First, run the development server:
+Built with **Next.js 16.3.4 (App Router)**, **React 19.2.4**, **Supabase PostgreSQL**, **Tailwind CSS v4**, **Three.js / WebGL**, **Motion**, **Resend**, and **Razorpay**.
+
+---
+
+## Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Run automated tests (18 test suites, 251 tests)
+npm run test
+
+# Run ESLint validation (0 errors, 0 warnings)
+npm run lint
+
+# Run TypeScript typecheck
+npx tsc --noEmit
+
+# Build production bundle
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Documentation Links
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)**: Full production operations runbook, environment variable classifications, Supabase migrations, webhook setup, and emergency rollback procedures.
+- **[audit-resolved.md](./audit-resolved.md)**: Comprehensive verification report detailing the resolution of all 17 audit findings (`P0-01` through `P3-17`).
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Gate Day Operations Checklist (October 27–28)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### T-48 Hours (Pre-Fest Readiness)
+- [ ] Verify Supabase database compute allocation is upgraded for peak traffic (minimum 4 vCPU / 8 GB RAM).
+- [ ] Confirm connection pooler is in Transaction mode (`port 6543`).
+- [ ] Verify Resend domain status reads **Verified** for DKIM, SPF, and DMARC on `saviskar.co.in`.
+- [ ] Confirm Razorpay live API credentials and webhook secret are configured in production environment variables.
+- [ ] Run automated health check probe: `curl -I https://saviskar.co.in/api/health` (must return `200 OK`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### T-2 Hours (Gate Setup)
+- [ ] Distribute gate check-in URL (`https://saviskar.co.in/admin/scanner`) to authorized event volunteers.
+- [ ] Ensure volunteer admin accounts have active sessions and MFA setup.
+- [ ] Test scanner with test pass (green valid chime, red invalid buzzer, vibration feedback).
+- [ ] Place printed QR signs directing attendees with unfinished payments to `https://saviskar.co.in/payment/resume`.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Live Festival Hours
+- [ ] Monitor external ping on `/api/health` every 60 seconds.
+- [ ] Check Sentry error stream for any spikes in payment or registration failures.
+- [ ] Monitor Supabase database CPU and connection pool usage from dashboard.
+- [ ] Review `/admin/logs` for suspicious admin activities or repeated gate check-in collisions.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { captureException } from "@/lib/monitoring/error-reporter";
 
 export default function GlobalError({
   error,
@@ -10,7 +11,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Unhandled error:", error);
+    captureException(error, { route: "global-error", digest: error.digest });
   }, [error]);
 
   return (

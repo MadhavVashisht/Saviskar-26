@@ -23,6 +23,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { captureException } from "@/lib/monitoring/error-reporter";
 import { getPaymentGateway } from "@/lib/payments";
 
 function errorResponse(
@@ -238,6 +239,11 @@ export async function POST(
       },
     });
   } catch (err) {
+    captureException(err, {
+      route: "/api/payments/create",
+      orderId: paymentOrder.id,
+      extra: { paymentOrderId: paymentOrder.id },
+    });
     console.error(
       "Gateway order creation failed:",
       err
