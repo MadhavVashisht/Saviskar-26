@@ -160,18 +160,54 @@ export async function POST(request: NextRequest) {
     })
     .eq("id", participantEventId);
 
+  // For check-in, atomically enforce that the pass is not already checked in
+  if (action === "check_in") {
+    updateQuery = updateQuery.eq("checked_in", false);
+  }
+
   // For check-in on paid events, atomically enforce payment_status = 'paid'
   if (action === "check_in" && paymentAmount > 0) {
     updateQuery = updateQuery.eq("payment_status", "paid");
   }
 
   const { data: updatedRecord, error } = await updateQuery
-    .select()
-    .single();
+    .select("id, checked_in, checked_in_at")
+    .maybeSingle();
 
-  if (error || (action === "check_in" && !updatedRecord)) {
+  if (error) {
     console.error("Check-in update failed:", error);
     return response({ success: false, error: "Could not update check-in status." }, 500);
+  }
+
+  if (action === "check_in" && !updatedRecord) {
+    // The conditional update matched 0 rows -> check if already checked in
+    const { data: existingRow } = await supabaseAdmin
+      .from("participant_events")
+      .select("checked_in, checked_in_at")
+      .eq("id", participantEventId)
+      .maybeSingle();
+
+    if (existingRow?.checked_in) {
+      const formattedTime = existingRow.checked_in_at
+        ? new Date(existingRow.checked_in_at).toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        : "earlier";
+
+      return response(
+        {
+          success: false,
+          error: "ALREADY_CHECKED_IN",
+          message: `This pass has already been scanned and checked in (at ${formattedTime}). Gate entry rejected.`,
+          checked_in_at: existingRow.checked_in_at,
+        },
+        409
+      );
+    }
+
+    return response({ success: false, error: "Participant event could not be checked in." }, 400);
   }
 
   return response({

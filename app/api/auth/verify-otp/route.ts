@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOtp } from "@/lib/auth/otp";
 import { setRegistrationSessionCookie } from "@/lib/auth/session";
+import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_PATTERN = /^\d{6}$/;
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    const rateLimit = await checkRateLimitAsync(`auth:verify:ip:${clientIp}`, 20, 600 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many verification attempts from this network. Please wait a moment." },
+        {
+          status: 429,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": String(rateLimit.retryAfter),
+          },
+        }
+      );
+    }
     const body = await req.json().catch(() => null);
 
     if (!body || typeof body.email !== "string" || typeof body.otp !== "string") {

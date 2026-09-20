@@ -31,8 +31,8 @@ function createMockSupabaseAdmin() {
           select: (_columns: string) => {
             mockDbState.lastSelectedColumns = _columns;
             return {
-              eq: (column: string, value: string) => ({
-                single: async () => {
+              eq: (column: string, value: string) => {
+                const getRow = async () => {
                   if (column === "id") {
                     const record = mockDbState.participantEvents[value];
                     if (!record) {
@@ -41,34 +41,47 @@ function createMockSupabaseAdmin() {
                     return { data: record, error: null };
                   }
                   return { data: null, error: { message: "Not found" } };
-                },
-              }),
+                };
+                return {
+                  single: getRow,
+                  maybeSingle: getRow,
+                };
+              },
             };
           },
           update: (updates: { checked_in: boolean; checked_in_at: string | null }) => {
             let targetId: string | null = null;
             let requiredPaymentStatus: string | null = null;
+            let requiredCheckedIn: boolean | null = null;
 
             const chain = {
-              eq: (col: string, val: string) => {
-                if (col === "id") targetId = val;
-                if (col === "payment_status") requiredPaymentStatus = val;
+              eq: (col: string, val: string | boolean) => {
+                if (col === "id") targetId = val as string;
+                if (col === "payment_status") requiredPaymentStatus = val as string;
+                if (col === "checked_in") requiredCheckedIn = val as boolean;
                 return chain;
               },
-              select: () => ({
-                single: async () => {
+              select: () => {
+                const execute = async () => {
                   if (!targetId || !mockDbState.participantEvents[targetId]) {
                     return { data: null, error: { message: "Not found" } };
                   }
                   const rec = mockDbState.participantEvents[targetId];
+                  if (requiredCheckedIn !== null && rec.checked_in !== requiredCheckedIn) {
+                    return { data: null, error: null }; // Condition failed, 0 rows updated
+                  }
                   if (requiredPaymentStatus && rec.payment_status !== requiredPaymentStatus) {
                     return { data: null, error: null }; // Condition failed, 0 rows updated
                   }
                   rec.checked_in = updates.checked_in;
                   rec.checked_in_at = updates.checked_in_at;
                   return { data: rec, error: null };
-                },
-              }),
+                };
+                return {
+                  single: execute,
+                  maybeSingle: execute,
+                };
+              },
             };
             return chain;
           },
@@ -227,15 +240,17 @@ describe("P0-02: Check-In API Payment Gate Enforcement", () => {
     expect(data.error).toBe("Participant event not found.");
   });
 
-  it("G. Already checked-in -> idempotent check-in succeeds", async () => {
+  it("G. Already checked-in -> denied with 409 ALREADY_CHECKED_IN", async () => {
+    const checkedInAt = new Date().toISOString();
     mockDbState.participantEvents["pe-paid-ok"].checked_in = true;
-    mockDbState.participantEvents["pe-paid-ok"].checked_in_at = new Date().toISOString();
+    mockDbState.participantEvents["pe-paid-ok"].checked_in_at = checkedInAt;
 
     const res = await POST(makeRequest({ participantEventId: "pe-paid-ok", action: "check_in" }));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(409);
     const data = await res.json();
-    expect(data.success).toBe(true);
-    expect(data.checked_in).toBe(true);
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("ALREADY_CHECKED_IN");
+    expect(data.checked_in_at).toBe(checkedInAt);
   });
 
   it("H. Check-out action works regardless of payment gate", async () => {

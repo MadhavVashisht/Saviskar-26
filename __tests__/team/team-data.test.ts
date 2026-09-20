@@ -20,13 +20,14 @@ describe("Organising Team Data Structure with Exact Student Roster", () => {
     expect(FACULTY_LEADERSHIP[0].tier).toBe("tier1");
   });
 
-  it("should have exactly 4 Tier 2 Leaders (Dr. Sachin Sharma & Directorate)", () => {
-    expect(FACULTY_DIRECTORATE).toHaveLength(4);
+  it("should have exactly 5 Tier 2 Leaders (Dr. Sachin Sharma & Directorate)", () => {
+    expect(FACULTY_DIRECTORATE).toHaveLength(5);
     expect(FACULTY_DIRECTORATE[0].name).toBe("Dr. Sachin Sharma");
     expect(FACULTY_DIRECTORATE[0].designation).toBe("Dean Student Affairs");
-    expect(FACULTY_DIRECTORATE[1].name).toBe("Mr. Vaibhav Kailey");
+    expect(FACULTY_DIRECTORATE[1].name).toBe("Mr. Vaibhav Kelay");
     expect(FACULTY_DIRECTORATE[2].name).toBe("Mrs. Monika Dhaliwal");
     expect(FACULTY_DIRECTORATE[3].name).toBe("Mr. Anand Kumar");
+    expect(FACULTY_DIRECTORATE[4].name).toBe("Mr. Aditya");
   });
 
   it("should have exactly 2 SAC Office Bearers: Lakshita as President and Aadit Bhardwaj as Vice President", () => {

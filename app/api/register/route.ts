@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendRegistrationEmail } from "@/lib/send-registration-email";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 import { generatePaymentResumeUrl } from "@/lib/payments/resume-token";
 
 type MemberInput = {
@@ -148,8 +148,10 @@ export async function POST(
     getClientIp(request);
 
   const rateLimit =
-    checkRateLimit(
-      `register:${clientIp}`
+    await checkRateLimitAsync(
+      `register:${clientIp}`,
+      20,
+      60 * 1000
     );
 
   if (!rateLimit.allowed) {
@@ -1063,6 +1065,15 @@ export async function POST(
       }
 
       const eventMeta = peRow.events ?? {};
+
+      // DO NOT dispatch Entry QR email for events requiring payment that are not yet paid
+      if (eventMeta.payment_type === "paid" && peRow.payment_status !== "paid") {
+        console.log(
+          `[REGISTER EMAIL] Withholding Entry QR pass for unpaid event ${result.event_id} (payment_status: ${peRow.payment_status}). Pass will be issued upon payment verification.`
+        );
+        continue;
+      }
+
       const isTeam = eventMeta.registration_type === "team";
 
       /*

@@ -1,21 +1,23 @@
 /**
- * In-memory sliding window rate limiter helper.
+ * Distributed sliding-window rate limiter.
  *
- * NOTE ON DISTRIBUTED PRODUCTION LIMITATIONS:
- * This in-memory rate limiter operates per Node.js / serverless container instance.
- * For true distributed multi-region rate limiting on Vercel Edge/Serverless,
- * an external distributed store (e.g. Upstash Redis / Vercel KV) would be required.
- * Within a single instance/container, this provides robust throttling against burst attacks.
+ * Backed by Supabase PostgreSQL `rate_limits` table with an atomic
+ * row-locking `check_rate_limit` RPC function to enforce rate limits
+ * across distributed serverless lambda instances on Vercel.
+ *
+ * Falls back gracefully to an in-memory sliding window cache if
+ * the database is temporarily unreachable or running in test environments.
  */
 
 import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 type RateLimitEntry = {
   count: number;
   resetAt: number;
 };
 
-// Global rate limit store across hot reloads in dev
+// Global rate limit store for in-memory fallback
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 const CLEANUP_INTERVAL_MS = 60 * 1000;
@@ -32,6 +34,10 @@ export function getClientIp(request: NextRequest): string {
   return "127.0.0.1";
 }
 
+/**
+ * Synchronous local sliding-window check (primarily used for unit tests
+ * and instant fallback).
+ */
 export function checkRateLimit(
   key: string,
   maxRequests: number = 20,
@@ -39,7 +45,6 @@ export function checkRateLimit(
 ): { allowed: boolean; retryAfter: number } {
   const now = Date.now();
 
-  // Periodic garbage collection of expired buckets
   if (now - lastCleanup > CLEANUP_INTERVAL_MS) {
     lastCleanup = now;
     for (const [k, entry] of rateLimitStore) {
@@ -68,6 +73,56 @@ export function checkRateLimit(
 
   current.count += 1;
   return { allowed: true, retryAfter: 0 };
+}
+
+/**
+ * Distributed asynchronous rate limit check using Supabase PostgreSQL.
+ * Holds rate limits across serverless lambda containers.
+ */
+export async function checkRateLimitAsync(
+  key: string,
+  maxRequests: number = 20,
+  windowMs: number = 60 * 1000
+): Promise<{ allowed: boolean; retryAfter: number }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+
+  // If Supabase credentials are missing (e.g. unit tests / local mock), use in-memory
+  if (!supabaseUrl || !supabaseSecretKey || process.env.NODE_ENV === "test") {
+    return checkRateLimit(key, maxRequests, windowMs);
+  }
+
+  try {
+    const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+
+    const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
+
+    const { data, error } = await supabaseAdmin.rpc("check_rate_limit", {
+      p_key: key,
+      p_max_requests: maxRequests,
+      p_window_seconds: windowSeconds,
+    });
+
+    if (error || !data || data.length === 0) {
+      console.warn("[RATE LIMIT] Database RPC failed, using in-memory fallback:", error?.message);
+      return checkRateLimit(key, maxRequests, windowMs);
+    }
+
+    const row = data[0];
+    return {
+      allowed: Boolean(row.allowed),
+      retryAfter: Number(row.retry_after) || 0,
+    };
+  } catch (err) {
+    console.warn("[RATE LIMIT] Exception in distributed check, using fallback:", err);
+    return checkRateLimit(key, maxRequests, windowMs);
+  }
 }
 
 export function resetRateLimitStore(): void {

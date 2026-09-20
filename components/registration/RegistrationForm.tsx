@@ -898,9 +898,9 @@ export default function RegistrationForm() {
   }
 
   /*
-   * RAZORPAY SCRIPT LOADER
+   * RAZORPAY SCRIPT LOADER (With 6-second timeout for ad-blockers / firewalls)
    */
-  function loadRazorpayScript(): Promise<boolean> {
+  function loadRazorpayScript(timeoutMs = 6000): Promise<boolean> {
     return new Promise((resolve) => {
       if (
         typeof window !== "undefined" &&
@@ -910,10 +910,32 @@ export default function RegistrationForm() {
         return;
       }
 
+      let finished = false;
+      const timer = setTimeout(() => {
+        if (!finished) {
+          finished = true;
+          console.warn("[RAZORPAY] Script load timed out after", timeoutMs, "ms");
+          resolve(false);
+        }
+      }, timeoutMs);
+
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.async = true;
+      script.onload = () => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          resolve(true);
+        }
+      };
+      script.onerror = () => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
+      };
       document.body.appendChild(script);
     });
   }
@@ -961,7 +983,7 @@ export default function RegistrationForm() {
 
       if (!scriptLoaded) {
         throw new Error(
-          "Could not load the payment gateway. Please refresh and try again."
+          "Payment gateway script could not be loaded. This typically happens if an ad blocker or campus firewall blocks checkout.razorpay.com. Please pause your ad blocker or complete your payment via another network."
         );
       }
 
@@ -1247,6 +1269,13 @@ export default function RegistrationForm() {
                 </p>
                 <p className="break-all font-mono text-sm font-semibold text-violet-300 md:text-base">
                   {participantId}
+                </p>
+                <p className="mt-2 text-[11px] text-zinc-400">
+                  Save this ID. If your network blocks online checkout, support can verify your fee using this ID at{" "}
+                  <a href="mailto:support@saviskar.co.in" className="text-violet-300 underline underline-offset-2">
+                    support@saviskar.co.in
+                  </a>
+                  .
                 </p>
               </div>
             )}

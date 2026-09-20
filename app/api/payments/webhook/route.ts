@@ -168,6 +168,24 @@ export async function POST(
   // ─── Handle Event ──────────────────────────────────────
 
   if (event.status === "paid") {
+    // ─── Database-Enforced Idempotency Claim ─────────────────
+    const { data: eventClaim, error: claimError } = await supabaseAdmin
+      .from("processed_payment_events")
+      .insert({
+        order_id: paymentOrder.id,
+        payment_id: event.gatewayPaymentId,
+        event_type: "payment.captured",
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (claimError || !eventClaim) {
+      console.log(
+        `[WEBHOOK IDEMPOTENCY] Event already processed for payment ${event.gatewayPaymentId}. Skipping duplicate execution.`
+      );
+      return new Response("OK", { status: 200 });
+    }
+
     // Update payment_orders
     await supabaseAdmin
       .from("payment_orders")

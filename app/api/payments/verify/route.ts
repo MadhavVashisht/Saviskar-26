@@ -352,6 +352,46 @@ export async function POST(
     );
   }
 
+  // ─── Database-Enforced Idempotency Claim ─────────────────
+  const { data: eventClaim, error: claimError } = await supabaseAdmin
+    .from("processed_payment_events")
+    .insert({
+      order_id: paymentOrderId,
+      payment_id: gatewayPaymentId,
+      event_type: "payment.captured",
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (claimError || !eventClaim) {
+    console.log(
+      `[PAYMENT IDEMPOTENCY] Event already processed for payment ${gatewayPaymentId}. Skipping duplicate execution.`
+    );
+
+    // Look up participant ID for idempotent response
+    let existingParticipantId = "";
+    if (paymentOrder.payer_participant_id) {
+      const { data: payer } = await supabaseAdmin
+        .from("participants")
+        .select("participant_id")
+        .eq("id", paymentOrder.payer_participant_id)
+        .maybeSingle();
+      existingParticipantId = payer?.participant_id ?? "";
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        verified: true,
+        alreadyPaid: true,
+        participantId: existingParticipantId,
+      },
+      {
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
+  }
+
   // ─── Mark Payment Order as Paid ─────────────────────────
 
   const { error: updateOrderError } =

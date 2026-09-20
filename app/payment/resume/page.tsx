@@ -40,16 +40,38 @@ type ResumeOrderData = {
   code?: string;
 };
 
-function loadRazorpayScript(): Promise<boolean> {
+function loadRazorpayScript(timeoutMs = 6000): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && (window as any).Razorpay) {
       resolve(true);
       return;
     }
+    let finished = false;
+    const timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        console.warn("[RAZORPAY] Script load timed out after", timeoutMs, "ms");
+        resolve(false);
+      }
+    }, timeoutMs);
+
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.async = true;
+    script.onload = () => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        resolve(true);
+      }
+    };
+    script.onerror = () => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        resolve(false);
+      }
+    };
     document.body.appendChild(script);
   });
 }

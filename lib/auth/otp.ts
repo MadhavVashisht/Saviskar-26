@@ -15,7 +15,7 @@
 import { createHmac, randomInt, timingSafeEqual } from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sendOtpEmail } from "./send-otp-email";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 export const OTP_EXPIRATION_MS = 10 * 60 * 1000; // 10 minutes
 export const OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
@@ -341,7 +341,7 @@ export async function requestOtp(
   const now = Date.now();
 
   // 1. IP Rate Limiting (15 requests per 10 minutes)
-  const ipLimit = checkRateLimit(`auth:otp:ip:${clientIp}`, 15, OTP_EXPIRATION_MS);
+  const ipLimit = await checkRateLimitAsync(`auth:otp:ip:${clientIp}`, 15, OTP_EXPIRATION_MS);
   if (!ipLimit.allowed) {
     return {
       success: false,
@@ -351,7 +351,7 @@ export async function requestOtp(
   }
 
   // 2. Email Rate Limiting (4 requests per 10 minutes)
-  const emailLimit = checkRateLimit(
+  const emailLimit = await checkRateLimitAsync(
     `auth:otp:email:${normalizedEmail}`,
     4,
     OTP_EXPIRATION_MS

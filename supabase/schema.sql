@@ -1664,8 +1664,8 @@ GRANT ALL ON FUNCTION "public"."is_admin"() TO "service_role";
 
 
 REVOKE ALL ON FUNCTION "public"."register_participant_events"("p_participant_id" "text", "p_name" "text", "p_college" "text", "p_email" "text", "p_phone" "text", "p_events" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."register_participant_events"("p_participant_id" "text", "p_name" "text", "p_college" "text", "p_email" "text", "p_phone" "text", "p_events" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."register_participant_events"("p_participant_id" "text", "p_name" "text", "p_college" "text", "p_email" "text", "p_phone" "text", "p_events" "jsonb") TO "authenticated";
+REVOKE ALL ON FUNCTION "public"."register_participant_events"("p_participant_id" "text", "p_name" "text", "p_college" "text", "p_email" "text", "p_phone" "text", "p_events" "jsonb") FROM anon;
+REVOKE ALL ON FUNCTION "public"."register_participant_events"("p_participant_id" "text", "p_name" "text", "p_college" "text", "p_email" "text", "p_phone" "text", "p_events" "jsonb") FROM authenticated;
 GRANT ALL ON FUNCTION "public"."register_participant_events"("p_participant_id" "text", "p_name" "text", "p_college" "text", "p_email" "text", "p_phone" "text", "p_events" "jsonb") TO "service_role";
 
 
@@ -1688,6 +1688,131 @@ GRANT ALL ON TABLE "public"."payments" TO "service_role";
 GRANT ALL ON TABLE "public"."registration_members" TO "service_role";
 
 GRANT ALL ON TABLE "public"."registrations" TO "service_role";
+
+-- ============================================================
+-- REGISTRATION OTPS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.registration_otps (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    email text NOT NULL,
+    otp_hash text NOT NULL,
+    issued_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL,
+    attempts integer NOT NULL DEFAULT 0,
+    consumed_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_registration_otps_email ON public.registration_otps (email);
+CREATE INDEX IF NOT EXISTS idx_registration_otps_expires_at ON public.registration_otps (expires_at);
+CREATE INDEX IF NOT EXISTS idx_registration_otps_active ON public.registration_otps (email, consumed_at, expires_at);
+
+ALTER TABLE public.registration_otps ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.registration_otps FROM PUBLIC, anon, authenticated;
+GRANT ALL ON TABLE public.registration_otps TO service_role;
+
+CREATE OR REPLACE FUNCTION public.increment_registration_otp_attempts(p_otp_id uuid)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_attempts integer;
+BEGIN
+    UPDATE public.registration_otps
+    SET attempts = attempts + 1,
+        updated_at = now()
+    WHERE id = p_otp_id
+    RETURNING attempts INTO v_attempts;
+
+    RETURN COALESCE(v_attempts, 0);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.increment_registration_otp_attempts(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_registration_otp_attempts(uuid) TO service_role;
+
+-- ============================================================
+-- PROCESSED PAYMENT EVENTS (IDEMPOTENCY)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.processed_payment_events (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    order_id text NOT NULL,
+    payment_id text NOT NULL,
+    event_type text NOT NULL,
+    processed_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT uq_processed_payment_event UNIQUE (payment_id, event_type)
+);
+
+ALTER TABLE public.processed_payment_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.processed_payment_events FROM PUBLIC, anon, authenticated;
+GRANT ALL ON TABLE public.processed_payment_events TO service_role;
+
+CREATE INDEX IF NOT EXISTS idx_processed_payment_events_order_id ON public.processed_payment_events (order_id);
+CREATE INDEX IF NOT EXISTS idx_processed_payment_events_payment_id ON public.processed_payment_events (payment_id);
+
+-- ============================================================
+-- RATE LIMITS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.rate_limits (
+    key text PRIMARY KEY,
+    count integer NOT NULL DEFAULT 1,
+    reset_at timestamptz NOT NULL
+);
+
+ALTER TABLE public.rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.rate_limits FROM PUBLIC, anon, authenticated;
+GRANT ALL ON TABLE public.rate_limits TO service_role;
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+    p_key text,
+    p_max_requests integer,
+    p_window_seconds integer
+)
+RETURNS TABLE (
+    allowed boolean,
+    current_count integer,
+    retry_after integer
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_now timestamptz := now();
+    v_entry record;
+    v_reset_at timestamptz;
+BEGIN
+    SELECT * INTO v_entry FROM public.rate_limits WHERE key = p_key FOR UPDATE;
+
+    IF v_entry IS NULL OR v_entry.reset_at <= v_now THEN
+        v_reset_at := v_now + (p_window_seconds || ' seconds')::interval;
+        INSERT INTO public.rate_limits (key, count, reset_at)
+        VALUES (p_key, 1, v_reset_at)
+        ON CONFLICT (key) DO UPDATE
+        SET count = 1, reset_at = v_reset_at;
+
+        RETURN QUERY SELECT true, 1, 0;
+    ELSE
+        IF v_entry.count >= p_max_requests THEN
+            RETURN QUERY SELECT false, v_entry.count, EXTRACT(EPOCH FROM (v_entry.reset_at - v_now))::integer;
+        ELSE
+            UPDATE public.rate_limits
+            SET count = count + 1
+            WHERE key = p_key;
+
+            RETURN QUERY SELECT true, v_entry.count + 1, 0;
+        END IF;
+    END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_rate_limit(text, integer, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(text, integer, integer) TO service_role;
+
+-- Add expires_at to participant_events
+ALTER TABLE public.participant_events ADD COLUMN IF NOT EXISTS expires_at timestamptz DEFAULT (now() + interval '30 minutes');
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
