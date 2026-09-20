@@ -685,8 +685,9 @@ export default function DomeGallery({
                 <div
                   className="item__image"
                   role="button"
-                  tabIndex={0}
-                  aria-label={it.alt || 'Open image'}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  aria-label={it.alt || 'Festival moment'}
                   onClick={onTileClick}
                   onPointerUp={onTilePointerUp}
                 >

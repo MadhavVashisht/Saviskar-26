@@ -385,7 +385,11 @@ export default function ScrollEngine3D() {
     spotCyan.position.set(45, -35, 65);
     scene.add(spotCyan);
 
-    // Tracking state
+    // Tracking state & Accessibility
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     let targetProgress = 0;
     let currentProgress = 0;
     let targetMouseX = 0;
@@ -403,11 +407,16 @@ export default function ScrollEngine3D() {
       const currentY = window.scrollY;
       targetProgress = Math.max(0, Math.min(1, currentY / maxScroll));
 
-      scrollSpeed = (currentY - lastScrollY) * 0.0025;
+      if (prefersReducedMotion) {
+        scrollSpeed = 0;
+      } else {
+        scrollSpeed = (currentY - lastScrollY) * 0.0025;
+      }
       lastScrollY = currentY;
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (prefersReducedMotion) return;
       targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
     };
@@ -445,16 +454,23 @@ export default function ScrollEngine3D() {
       const delta = timer.getDelta();
       const elapsedTime = timer.getElapsed();
 
-      // Smooth LERP Dampening
-      currentProgress += (targetProgress - currentProgress) * 0.085;
-      currentMouseX += (targetMouseX - currentMouseX) * 0.06;
-      currentMouseY += (targetMouseY - currentMouseY) * 0.06;
-      scrollSpeed *= 0.88;
+      // Smooth LERP Dampening (immediate if reduced motion requested)
+      if (prefersReducedMotion) {
+        currentProgress = targetProgress;
+        currentMouseX = 0;
+        currentMouseY = 0;
+        scrollSpeed = 0;
+      } else {
+        currentProgress += (targetProgress - currentProgress) * 0.085;
+        currentMouseX += (targetMouseX - currentMouseX) * 0.06;
+        currentMouseY += (targetMouseY - currentMouseY) * 0.06;
+        scrollSpeed *= 0.88;
+      }
 
       // Update Shader Uniforms
       meshMaterial.uniforms.uProgress.value = currentProgress;
       meshMaterial.uniforms.uScrollSpeed.value = scrollSpeed;
-      meshMaterial.uniforms.uTime.value = elapsedTime;
+      meshMaterial.uniforms.uTime.value = prefersReducedMotion ? 0 : elapsedTime;
       meshMaterial.uniforms.uMouse.value.set(currentMouseX, currentMouseY);
 
       // --- Steady Theatrical Concert-Cam Trajectory (eliminates excessive zoom!) ---

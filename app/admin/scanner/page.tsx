@@ -344,35 +344,35 @@ export default function ScannerPage() {
 
           {/* RESULT */}
           <div className="rounded-[30px] bg-white p-6 shadow-[0_20px_80px_rgba(0,0,0,0.05)] md:p-8">
-            <p className="mb-7 text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
+            <p className="mb-7 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
               Verification
             </p>
 
             {loading && (
-              <div className="flex min-h-[400px] items-center justify-center">
+              <div aria-live="polite" className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
-                  <Loader2 size={28} className="mx-auto mb-4 animate-spin" />
-                  <p className="!text-black/60 text-sm">Verifying registration...</p>
+                  <Loader2 size={28} className="mx-auto mb-4 animate-spin text-zinc-700" />
+                  <p className="text-zinc-600 text-sm font-medium">Verifying registration...</p>
                 </div>
               </div>
             )}
 
             {!loading && !participant && !error && (
               <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-                <ShieldCheck size={38} className="mb-5 text-black/15" />
-                <p className="text-black">Waiting for scan</p>
-                <p className="text-black">Registration details will appear here.</p>
+                <ShieldCheck size={38} className="mb-5 text-zinc-300" />
+                <p className="text-zinc-900 font-medium">Waiting for scan</p>
+                <p className="text-zinc-600 text-sm mt-1">Registration details will appear here.</p>
               </div>
             )}
 
             {error && (
-              <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
+              <div role="alert" aria-live="assertive" className="flex min-h-[400px] flex-col items-center justify-center text-center">
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
                   <XCircle size={26} />
                 </div>
 
-                <p className="font-semibold">Verification failed</p>
-                <p className="mt-2 max-w-xs text-sm leading-6 text-black/45">{error}</p>
+                <p className="font-semibold text-zinc-900">Verification failed</p>
+                <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-600">{error}</p>
 
                 <button
                   onClick={scanAnother}

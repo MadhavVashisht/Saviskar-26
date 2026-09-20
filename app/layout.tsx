@@ -110,7 +110,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} dark h-full antialiased`}
     >
       <body className="min-h-full w-full max-w-[100vw] overflow-x-clip flex flex-col bg-black text-white selection:bg-white selection:text-black">
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-violet-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-xl focus:ring-2 focus:ring-white focus:outline-none"
+        >
+          Skip to main content
+        </a>
+        <SmoothScrollProvider>
+          <div id="main-content" className="flex min-h-full flex-1 flex-col">
+            {children}
+          </div>
+        </SmoothScrollProvider>
       </body>
     </html>
   );
