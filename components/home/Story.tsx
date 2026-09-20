@@ -138,7 +138,7 @@ export default function Story() {
             <div className="flex items-center justify-between border-t border-white/10 pt-4 sm:pt-6 text-[9px] sm:text-[11px] font-mono uppercase tracking-wider sm:tracking-[0.25em] text-white/75">
               <span>CGC UNIVERSITY • MOHALI</span>
               <span className="hidden sm:inline">Theme: Aevorian Reverie</span>
-              <span>24–25 OCT 2026</span>
+              <span>28–29 OCT 2026</span>
             </div>
           </div>
         </motion.div>

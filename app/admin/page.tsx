@@ -1336,11 +1336,11 @@ export default function AdminPage() {
 
           <div className="mt-6 border-t border-black/[0.05] pt-6">
             <div className="flex flex-wrap gap-2 mb-6">
-              {["all", "technical", "non-technical", "cultural", "sports"].map((cat) => (
+              {(["all", "technical", "non-technical", "cultural", "sports"] as const).map((cat) => (
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setPaymentOverviewCategory(cat as any)}
+                  onClick={() => setPaymentOverviewCategory(cat)}
                   className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${paymentOverviewCategory === cat
                     ? "border-black/20 bg-black/[0.03] text-black"
                     : "border-transparent text-black/40 hover:text-black/70"

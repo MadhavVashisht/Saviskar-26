@@ -132,7 +132,7 @@ export async function ensurePaymentConfirmationSent(paymentOrderId: string) {
       return {
         eventName: eventData?.name ?? "Event Registration",
         category: eventData?.category ?? null,
-        registrationType: (eventData?.registration_type as "individual" | "team") ?? "individual",
+        registrationType: eventData?.registration_type === "team" ? ("team" as const) : ("individual" as const),
         teamName: peData?.team_name ?? null,
         amount: Number(item.amount) || 0,
       };
@@ -154,7 +154,7 @@ export async function ensurePaymentConfirmationSent(paymentOrderId: string) {
       items: receiptItems,
       eventName: primaryEvent?.name ?? "Saviskar Event",
       eventCategory: primaryEvent?.category ?? null,
-      registrationType: (primaryEvent?.registration_type as "individual" | "team") ?? "individual",
+      registrationType: primaryEvent?.registration_type === "team" ? ("team" as const) : ("individual" as const),
       teamName: primaryPe?.team_name ?? null,
       amount: order.amount,
       gateway: order.gateway || "Unknown",

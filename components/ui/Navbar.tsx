@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -83,7 +84,7 @@ export default function Navbar() {
   // Monitor scroll for subtle dynamic appearance
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 120);
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -123,37 +124,68 @@ export default function Navbar() {
   return (
     <>
       {/* ─────────────────────────────────────────────────────────────
-          1. FIXED TOP BRAND BADGE (TOP-LEFT)
-          Always gives attendees quick brand context & instant home tap
+          1. FIXED TOP BRAND LOGO (TOP-LEFT)
+          Smoothly glides in when user scrolls past centered hero logo
+          Always visible on non-home routes
       ─────────────────────────────────────────────────────────────── */}
       <div className="fixed left-4 top-4 z-50 md:left-8 md:top-6">
-        <Link
-          href="/"
-          className={`group flex items-center gap-3 rounded-full border px-4 py-2 transition-all duration-300 backdrop-blur-xl ${
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: pathname !== "/" || scrolled ? 1 : 0,
+            y: pathname !== "/" || scrolled ? 0 : -8,
+            scale: pathname !== "/" || scrolled ? 1 : 0.94,
+          }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          style={{ pointerEvents: pathname !== "/" || scrolled ? "auto" : "none" }}
+        >
+          <Link
+            href="/"
+            className={`group flex items-center rounded-full border px-3 py-1.5 md:px-3.5 md:py-1.5 transition-all duration-300 backdrop-blur-xl ${
+              scrolled
+                ? "border-white/15 bg-black/80 shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(168,85,247,0.2)] hover:border-violet-500/40 hover:scale-105"
+                : "border-white/10 bg-black/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:border-violet-500/40 hover:scale-105"
+            }`}
+          >
+            <Image
+              src="/logo.png"
+              alt="Saviskar 2026"
+              width={1448}
+              height={307}
+              unoptimized
+              priority
+              className="h-5 sm:h-6 md:h-6.5 w-auto object-contain transition-transform duration-200"
+            />
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          2. FIXED TOP CENTER PILL BADGE
+          "CGC UNIVERSITY • MOHALI | AEVORIAN REVERIE"
+          Hidden by default at top of home; smoothly pinches to top on scroll
+      ─────────────────────────────────────────────────────────────── */}
+      <div className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: pathname !== "/" || scrolled ? 1 : 0,
+            y: pathname !== "/" || scrolled ? 0 : -10,
+            scale: pathname !== "/" || scrolled ? 1 : 0.92,
+          }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          style={{ pointerEvents: pathname !== "/" || scrolled ? "auto" : "none" }}
+          className={`liquid-glass inline-flex items-center gap-2 sm:gap-2.5 rounded-full px-3.5 py-1.5 sm:px-4 sm:py-2 text-[9px] sm:text-[10px] md:text-[11px] font-semibold uppercase tracking-wider sm:tracking-[0.3em] text-white/85 shadow-[0_0_20px_rgba(168,85,247,0.2)] backdrop-blur-xl transition-all duration-300 max-w-[70vw] sm:max-w-none truncate ${
             scrolled
-              ? "border-white/15 bg-black/75 shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(168,85,247,0.15)]"
-              : "border-white/10 bg-black/40 shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:border-violet-500/40"
+              ? "border-white/15 bg-black/80 shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(168,85,247,0.25)]"
+              : "border-white/10 bg-black/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
           }`}
         >
-          <motion.span
-            animate={{
-              scale: [1, 1.3, 1],
-              boxShadow: [
-                "0 0 6px rgba(168,85,247,0.7)",
-                "0 0 16px rgba(168,85,247,1)",
-                "0 0 6px rgba(168,85,247,0.7)",
-              ],
-            }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            className="h-2 w-2 rounded-full bg-violet-400"
-          />
-          <span className="font-sans text-[13px] font-bold tracking-[0.22em] text-white">
-            SAVISKAR
-          </span>
-          <span className="hidden sm:inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 font-mono text-[8px] tracking-[0.25em] text-violet-300">
-            AEVORIAN REVERIE
-          </span>
-        </Link>
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
+          <span className="truncate">CGC UNIVERSITY • MOHALI</span>
+          <span className="text-white/30">|</span>
+          <span className="text-violet-300 shrink-0">AEVORIAN REVERIE</span>
+        </motion.div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -363,7 +395,7 @@ export default function Navbar() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-violet-300 font-semibold">
-                          {item.category} // {item.id}
+                          {item.category} {"//"} {item.id}
                         </span>
                         <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-transform duration-300 group-hover:scale-110 group-hover:bg-violet-500 group-hover:text-black">
                           <ArrowUpRight size={14} className="text-white group-hover:text-black" />
@@ -419,7 +451,7 @@ export default function Navbar() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-violet-300">
-                          {item.category} // {item.id}
+                          {item.category} {"//"} {item.id}
                         </span>
                         <ArrowUpRight size={14} className="text-white/40 group-hover:text-white" />
                       </div>

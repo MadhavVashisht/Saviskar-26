@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
+import LegacyView from "@/components/legacy/LegacyView";
 
 export const metadata: Metadata = {
-  title: "Festival Legacy — Decryption in Progress",
+  title: "The Legacy | Saviskar 2026 — Aevorian Reverie",
   description:
-    "The historical chronicle of Srijan, Avishkar, and the evolution of Saviskar at CGC University, Mohali.",
+    "The institutional leadership, founders, and Department of Student Affairs powering Saviskar 2026: Aevorian Reverie at CGC University, Mohali.",
+  openGraph: {
+    title: "The Legacy | Saviskar 2026",
+    description:
+      "Honoring the chancellor, leadership, and DSA team behind Saviskar 2026 at CGC University, Mohali.",
+    images: ["/images/concert-stadium.jpg"],
+  },
 };
 
 export default function LegacyPage() {
-  return (
-    <TerminalPlaceholder
-      moduleCode="CHRONICLE.SYS"
-      moduleName="Festival Legacy"
-      category="HISTORICAL ARCHIVE"
-      classification="ORIGINS: SRIJAN × AVISHKAR"
-      estimatedRelease="PHASE 3 ARCHIVE SYNC"
-      summary="From the creative roots of Srijan to the engineering breakthroughs of Avishkar, through the landmark stages of Saviskar '25 to the waking dreams of Aevorian Reverie in 2026. Unearthing the milestones that forged North India's premier national university festival at CGC University, Mohali."
-    />
-  );
+  return <LegacyView />;
 }

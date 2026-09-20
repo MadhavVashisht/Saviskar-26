@@ -11,6 +11,7 @@ import {
   CALLING_TEAM,
   STATE_HEADS_DIRECTORY,
   SacMember,
+  StateHeadEntry,
 } from "@/data/teamData";
 import {
   Crown,
@@ -20,188 +21,289 @@ import {
   BadgeDollarSign,
   PhoneCall,
   MapPin,
-  Layers,
+  Users,
 } from "lucide-react";
-import DeskEditorialSpread from "./DeskEditorialSpread";
+import ProfileCard from "@/components/ProfileCard";
 
 // ============================================================
-// TIER → ACCENT COLOUR
-// Green Leads  → emerald
-// Blue Core    → cyan
-// Standard     → amber
-// Overall Head → amber (gold)
+// AVATAR RESOLVER
 // ============================================================
-const GREEN_LEAD_IDS = new Set([
-  "sac-core-saaransh-sharma",
-  "sac-core-prabneet-kaur",
-  "sac-core-abhay-vishwakarma",
-  "sac-core-nitin-kumar",
-  "sac-core-dhruv-kumar",
-  "sac-core-anmol-agarwal",
-  "sac-core-ayush-choudhary",
-  "sac-core-sukhdeep-singh",
-  "sac-core-kush-dethliya",
-  "sac-core-prajval-kaur",
-]);
-
-const BLUE_CORE_IDS = new Set([
-  "sac-core-jashan-jot-singh",
-  "sac-mem-madhav-vashisht", // Website Team — identical to Jashan
-  "sac-core-vinay-verma",
-  "sac-core-gurkeerat-singh",
-  "sac-core-prajval-kaur",
-  "sac-core-krishna-jaswal",
-  "sac-core-avneet-kour",
-  "sac-core-chahat",
-  "sac-core-goutam-bajaj",
-  "sac-core-prince",
-]);
-
-function getAccent(m: SacMember): "amber" | "cyan" | "violet" | "emerald" {
-  if (m.personDetail === "President" || m.personDetail === "Vice President" || m.personDetail === "Overall Head") {
-    return "violet";
+function getMemberAvatar(member: SacMember): string {
+  if (member.image && member.image.trim().length > 0) {
+    return encodeURI(decodeURI(member.image));
   }
-  if (GREEN_LEAD_IDS.has(m.id)) return "emerald";
-  if (BLUE_CORE_IDS.has(m.id)) return "cyan";
-  return "amber";
-}
-
-// ============================================================
-// BIO GENERATOR
-// Provides a contextual short manifesto paragraph for members
-// who do not have an explicit long bio.
-// ============================================================
-function generateBio(m: SacMember): string[] {
-  const name = m.name.split(" ")[0];
-  const wing = m.wing;
-  const role = m.personDetail || "Member";
-
-  const wingBios: Record<string, string> = {
-    "Overall": `${name} holds the seat of executive oversight at Saviskar 2026. As ${role}, every cross-wing decision, every resource allocation, and every last-mile coordination flows through this command node. The festival's structural coherence is a direct reflection of this leadership.`,
-    "Bills & Budget": `${name} governs the financial architecture of Saviskar 2026. Every vendor invoice, procurement mandate, and resource disbursement passes through this meticulous command, ensuring fiscal discipline across all seven operational wings without exception.`,
-    "Website": `${name} architects the digital face of Saviskar 2026. From responsive infrastructure and registration pipelines to real-time event dashboards, every pixel and API endpoint reflects this engineer's relentless precision. The festival begins online, and it begins here.`,
-    "Branding": `${name} shapes the visual identity and storytelling language of Saviskar 2026. From the motion graphics of the opening ceremony to every printed poster across campus, this creative voice ensures the festival's aesthetic lands with unmistakable power and cohesion.`,
-    "Creativity": `${name} is the imagination engine behind Saviskar 2026's stage craft and experiential design. Art installations, theatrical productions, cultural competitions, and headline performance design all carry the unmistakable imprint of this creative force.`,
-    "Sponsorship": `${name} forges the industry alliances that make Saviskar 2026 financially and operationally formidable. Through persistent pitch decks, corporate negotiations, and brand partnership frameworks, this wing secures the external backing our festival demands.`,
-    "Calling Team": `${name} leads national outreach and delegate relations for Saviskar 2026. Through direct student-to-student engagement across states, this frontline voice brings thousands of participants into the Aevorian Reverie arena — turning ambition into footfall.`,
-    "Office Bearers": `${name} anchors the student executive command of Saviskar 2026. At the intersection of policy, people, and operational rhythm, this leadership presence ensures that the vision of Aevorian Reverie translates faithfully from whiteboard sketches to stadium-scale reality.`,
-  };
-
-  const baseBio = wingBios[wing] || `${name} contributes to the ${wing} operations of Saviskar 2026 with focused intent. Behind every seamless coordination and every detail that makes Aevorian Reverie exceptional, there is a student builder whose dedication keeps the machine running.`;
-
-  // All spreads get a second paragraph for layout consistency
-  const closingLines: string[] = [
-    `Saviskar 2026 is the sum of individuals who chose to build rather than simply attend. ${name} is one of those builders.`,
-    `Every detail that makes Aevorian Reverie extraordinary has a name behind it. Here is one of them.`,
-    `The architecture of a great festival is not visible on stage — it lives in the choices made in the months before curtain rise. ${name} made those choices.`,
-    `Beyond the spotlight and the stadium roar is the quiet, relentless work of people like ${name}. That work is Saviskar.`,
+  const femaleKeywords = [
+    "lakshita", "prajval", "prabneet", "bhavya", "khushi",
+    "sneha", "tanisha", "ananya", "simran", "kritika", "muskan",
+    "jasmeen", "harmanpreet", "diya", "riya", "kaur",
+    "chahat", "avneet", "muskaan", "ayushi", "prianshi",
+    "harshita", "vani", "megha", "ekta",
   ];
-
-  // Pick a deterministic closing line based on the member's name length
-  const closing = closingLines[m.name.length % closingLines.length];
-
-  return [baseBio, closing];
+  const nameLower = member.name.toLowerCase();
+  const isFemale = femaleKeywords.some((k) => nameLower.includes(k));
+  return isFemale ? "/images/team/avatar-female.jpg" : "/images/team/avatar-male.jpg";
 }
 
 // ============================================================
-// MEMBER → EDITORIAL SPREAD PROPS
+// TIER CONFIG
+// Golden/Amber: leads  |  Cyan: core  |  Violet: members
 // ============================================================
-function memberToSpread(m: SacMember, index: number): {
-  titleBadge: string;
-  deskTitle: string;
-  dropCap: string;
-  paragraphs: string[];
-  signeeName: string;
-  signeeRole: string;
-  initials: string;
-  image: string;
-  accent: "amber" | "cyan" | "violet" | "emerald";
-  align: "left" | "right";
-} {
-  const bio = generateBio(m);
-  const accent = getAccent(m);
-  const align: "left" | "right" = index % 2 === 0 ? "left" : "right";
+type Tier = "lead" | "core" | "member";
 
-  // Eyebrow badge text — wing name, no hardcoded strings
-  const titleBadge = `${m.wing.toUpperCase()} // ${(m.personDetail || "MEMBER").toUpperCase()}`;
-
-  // Desk title — member's name in editorial format
-  const deskTitle = m.name.toUpperCase();
-
-  // Drop cap — first letter of the bio
-  const dropCap = bio[0].charAt(0);
-
-  // Paragraphs — first paragraph drops its leading letter (the drop cap renders it separately)
-  const paragraphs = [bio[0].slice(1), ...bio.slice(1)];
-
-  return {
-    titleBadge,
-    deskTitle,
-    dropCap,
-    paragraphs,
-    signeeName: m.name,
-    signeeRole: `${m.personDetail || "Member"} // ${m.wing}`,
-    initials: m.initials || m.name.split(" ").map((n) => n[0]).join("").slice(0, 2),
-    image: m.image || "",
-    accent,
-    align,
-  };
+interface TierConf {
+  className: string;
+  behindGlowColor: string;
+  behindGlowSize: string;
+  innerGradient: string;
+  badgeLabel: string;
 }
 
+const TIER_CONF: Record<Tier, TierConf> = {
+  lead: {
+    className: "pc-lead",
+    // Bright violet/purple — neon stage lead
+    behindGlowColor: "rgba(139, 92, 246, 0.80)",
+    behindGlowSize: "35%",
+    innerGradient:
+      "linear-gradient(145deg, rgba(139,92,246,0.50) 0%, rgba(109,40,217,0.28) 40%, rgba(8,5,20,0.97) 100%)",
+    badgeLabel: "Lead",
+  },
+  core: {
+    className: "pc-core",
+    // Neon cyan/teal — matches global cyan accent
+    behindGlowColor: "rgba(6, 182, 212, 0.65)",
+    behindGlowSize: "30%",
+    innerGradient:
+      "linear-gradient(145deg, rgba(6,182,212,0.45) 0%, rgba(14,116,144,0.26) 40%, rgba(3,12,20,0.97) 100%)",
+    badgeLabel: "Core",
+  },
+  member: {
+    className: "pc-member",
+    // Soft electric blue
+    behindGlowColor: "rgba(59, 130, 246, 0.45)",
+    behindGlowSize: "25%",
+    innerGradient:
+      "linear-gradient(145deg, rgba(59,130,246,0.35) 0%, rgba(37,99,235,0.18) 40%, rgba(5,8,20,0.97) 100%)",
+    badgeLabel: "Member",
+  },
+};
+
 // ============================================================
-// CHAPTER BREAK — full-width typographic section divider
+// SINGLE PROFILE CARD (exact React Bits component)
 // ============================================================
-interface ChapterBreakProps {
-  number: string;
-  title: string;
-  descriptor: string;
-  icon: React.ReactNode;
-  accentClass: string;
-  memberCount: number;
+interface SacCardProps {
+  member: SacMember;
+  tier: Tier;
 }
 
-function ChapterBreak({ number, title, descriptor, icon, accentClass, memberCount }: ChapterBreakProps) {
+function SacProfileCard({ member, tier }: SacCardProps) {
+  const conf = TIER_CONF[tier];
+  const avatar = getMemberAvatar(member);
+  const handle = (member.wing || "sac").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const statusText = member.personDetail || tier.toUpperCase();
+
   return (
-    <div
-      className="relative py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-    >
-      <div className="flex items-end justify-between">
-        <div>
-          <div className={`flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase mb-2 ${accentClass}`}>
-            {icon}
-            <span>{descriptor}</span>
-          </div>
-          <h2 className="font-editorial text-5xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight leading-[1.0]">
-            {title}
-          </h2>
-        </div>
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="font-mono text-[10px] tracking-[0.3em] text-white/15 uppercase mb-1">Chapter</span>
-          <span className="font-editorial text-[5rem] font-black text-white/[0.04] leading-none select-none">
-            {number}
-          </span>
-        </div>
-      </div>
-      <div className="mt-4 flex items-center gap-3">
-        <span className="h-px flex-1 bg-white/[0.06]" />
-        <span className="font-mono text-[9px] tracking-widest text-white/20 uppercase">
-          {memberCount} {memberCount === 1 ? "Member" : "Members"}
-        </span>
-      </div>
+    <div id={`member-${member.id}`} className="flex justify-center flex-shrink-0">
+      <ProfileCard
+        name={member.name}
+        title={member.role || "Student Advisory Council"}
+        handle={handle}
+        status={statusText}
+        contactText={conf.badgeLabel}
+        avatarUrl={avatar}
+        miniAvatarUrl={avatar}
+        className={conf.className}
+        showUserInfo={false}
+        enableTilt={true}
+        enableMobileTilt={false}
+        onContactClick={() => { }}
+        behindGlowEnabled={true}
+        behindGlowColor={conf.behindGlowColor}
+        behindGlowSize={conf.behindGlowSize}
+        iconUrl="/assets/demo/iconpattern.png"
+        innerGradient={conf.innerGradient}
+      />
     </div>
   );
 }
 
 // ============================================================
-// MEMBER SPREAD RENDERER — drives DeskEditorialSpread per member
+// TIER BADGE LABEL
 // ============================================================
-function MemberSpread({ member, index }: { member: SacMember; index: number }) {
-  const props = memberToSpread(member, index);
+function TierBadge({
+  label,
+  count,
+  accent = "amber",
+}: {
+  label: string;
+  count: number;
+  accent?: string;
+}) {
+  const palette: Record<string, string> = {
+    violet: "text-violet-400 border-violet-400/30 bg-violet-500/[0.06]",
+    cyan: "text-cyan-400 border-cyan-400/30 bg-cyan-500/[0.06]",
+    blue: "text-blue-400 border-blue-400/30 bg-blue-500/[0.06]",
+    amber: "text-amber-400 border-amber-400/30 bg-amber-500/[0.06]",
+    emerald: "text-emerald-400 border-emerald-400/30 bg-emerald-500/[0.06]",
+    rose: "text-rose-400 border-rose-400/30 bg-rose-500/[0.06]",
+    white: "text-white/60 border-white/20 bg-white/[0.04]",
+  };
+  const cls = palette[accent] || palette.violet;
+
   return (
-    <div id={`member-${member.id}`}>
-      <DeskEditorialSpread {...props} />
+    <div className="flex items-center gap-3 my-8 max-w-6xl mx-auto px-4">
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-[9.5px] uppercase tracking-[0.25em] font-bold border ${cls}`}
+      >
+        {label}
+      </span>
+      <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+      <span className="font-mono text-[9px] tracking-widest text-white/30 uppercase">
+        {count} {count === 1 ? "person" : "members"}
+      </span>
     </div>
+  );
+}
+
+// ============================================================
+// CARD ROW — flex-wrap centered (starts from center outward)
+// ============================================================
+function CardRow({ members, tier }: { members: SacMember[]; tier: Tier }) {
+  if (!members || members.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-8 md:gap-10 px-4">
+      {members.map((m) => (
+        <SacProfileCard key={m.id} member={m} tier={tier} />
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// CATEGORY SECTION
+// Layout: description header → leads → core → (state dir) → members
+// ============================================================
+interface CategoryDef {
+  id: string;
+  chapter: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  accentClass: string;
+  leads?: SacMember[];
+  core?: SacMember[];
+  members?: SacMember[];
+  leadsLabel?: string;
+  stateDirectory?: StateHeadEntry[];
+}
+
+function CategorySection({ cat }: { cat: CategoryDef }) {
+  const total =
+    (cat.leads?.length || 0) + (cat.core?.length || 0) + (cat.members?.length || 0);
+
+  return (
+    <section
+      id={`wing-${cat.id}`}
+      className="relative py-16"
+      style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+    >
+      {/* ── Description header ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div>
+            <div
+              className={`flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase mb-3 ${cat.accentClass}`}
+            >
+              {cat.icon}
+              <span>{cat.eyebrow}</span>
+            </div>
+            <h2 className="font-editorial text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight leading-[1.0]">
+              {cat.title}
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-zinc-400 font-light leading-relaxed max-w-2xl">
+              {cat.description}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 self-start lg:self-end">
+            <span className="liquid-glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[10.5px] tracking-wider uppercase text-white/80">
+              <Users size={12} className={cat.accentClass} />
+              <span>
+                {total} {total === 1 ? "member" : "members"}
+              </span>
+            </span>
+            <span className="font-mono text-[9px] tracking-[0.3em] text-white/20 uppercase">
+              {cat.chapter}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── LEADS ── */}
+      {cat.leads && cat.leads.length > 0 && (
+        <div className="mb-14">
+          <TierBadge
+            label={cat.leadsLabel || "Team Leads"}
+            count={cat.leads.length}
+            accent="amber"
+          />
+          <CardRow members={cat.leads} tier="lead" />
+        </div>
+      )}
+
+      {/* ── CORE ── */}
+      {cat.core && cat.core.length > 0 && (
+        <div className="mb-14">
+          <TierBadge label="Core Members" count={cat.core.length} accent="cyan" />
+          <CardRow members={cat.core} tier="core" />
+        </div>
+      )}
+
+      {/* ── STATE DIRECTORY (Calling Team only) ── */}
+      {cat.stateDirectory && cat.stateDirectory.length > 0 && (
+        <div className="mb-14 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-6 backdrop-blur-xl">
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-amber-400 mb-2">
+              <MapPin size={11} />
+              <span>Regional Allocation Directory</span>
+            </div>
+            <h4 className="font-editorial text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
+              State Outreach Heads
+            </h4>
+            <p className="text-xs text-zinc-400 font-light mb-6">
+              Direct state-level outreach coordinators leading delegation drives across key regions.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-8">
+              {cat.stateDirectory.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline justify-between gap-3 border-b border-white/[0.04] pb-2"
+                >
+                  <span className="font-mono text-[11px] text-zinc-400 tracking-wide flex-shrink-0">
+                    {item.region}
+                  </span>
+                  <span
+                    className="h-px flex-1 bg-white/[0.05] self-center mx-2"
+                    aria-hidden="true"
+                  />
+                  <span className="font-editorial text-sm font-semibold text-white text-right flex-shrink-0">
+                    {item.heads}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MEMBERS ── */}
+      {cat.members && cat.members.length > 0 && (
+        <div className="mb-10">
+          <TierBadge label="Council Members" count={cat.members.length} accent="blue" />
+          <CardRow members={cat.members} tier="member" />
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -209,169 +311,153 @@ function MemberSpread({ member, index }: { member: SacMember; index: number }) {
 // MAIN EXPORT
 // ============================================================
 export default function SacEditorialSection() {
-  // Running index for alternating layout — shared across ALL sections
-  let idx = 0;
+  const categories: CategoryDef[] = [
+    {
+      id: "overall",
+      chapter: "CHAPTER 01",
+      eyebrow: "Executive Council Apex",
+      title: "Overall Heads",
+      description:
+        "The supreme student executive command of Saviskar 2026. Presiding over the Student Advisory Council, anchoring festival governance, inter-wing strategic synchronization, and institutional liaison with university leadership to unite 25,000+ delegates under Aevorian Reverie.",
+      icon: <Crown size={14} />,
+      accentClass: "text-amber-400",
+      leads: OVERALL_HEADS,
+      core: [],
+      members: [],
+    },
+    {
+      id: "budget",
+      chapter: "CHAPTER 02",
+      eyebrow: "Financial Governance & Audit",
+      title: "Bills & Budget Team",
+      description:
+        "The fiscal stewards of Saviskar 2026. Governing budgetary compliance, procurement transparency, vendor contract reconciliation, and operational resource management to ensure zero-leakage financial discipline across all operational festival wings.",
+      icon: <BadgeDollarSign size={14} />,
+      accentClass: "text-cyan-400",
+      leads: [],
+      core: BILLS_BUDGET_TEAM,
+      members: [],
+    },
+    {
+      // Both Madhav Vashisht & Jashan Jot Singh receive Golden (Lead) cards
+      id: "website",
+      chapter: "CHAPTER 03",
+      eyebrow: "Digital Architecture & Infrastructure",
+      title: "Website Team",
+      description:
+        "The engineering force architecting the digital face of Saviskar 2026. Developing the high-performance responsive web portal, real-time ticket checkout flows, automated registration verification emails, payment gateways, and interactive 3D WebGL scenes across all devices.",
+      icon: <Code2 size={14} />,
+      accentClass: "text-amber-400",
+      leads: WEBSITE_TEAM,
+      leadsLabel: "Lead Architects & Developers",
+      core: [],
+      members: [],
+    },
+    {
+      id: "branding",
+      chapter: "CHAPTER 04",
+      eyebrow: "Visual Identity & Aesthetic Direction",
+      title: "Branding Team",
+      description:
+        "The artistic custodians of the festival's aesthetic voice. Shaping motion teasers, official typography, environmental campus banners, social media narrative, and merchandise aesthetics to evoke the cinematic dreamscape of Aevorian Reverie.",
+      icon: <Palette size={14} />,
+      accentClass: "text-emerald-400",
+      leads: BRANDING_TEAM.leads,
+      core: BRANDING_TEAM.core,
+      members: BRANDING_TEAM.members,
+    },
+    {
+      id: "creativity",
+      chapter: "CHAPTER 05",
+      eyebrow: "Stage Craft & Experiential Design",
+      title: "Creativity Team",
+      description:
+        "The experiential visionaries transforming the university campus into a living dreamscape. Designing theatrical arena sets, stadium lighting atmospheres, fine arts pavilions, cultural contest stages, and headline Star Night visual experiences.",
+      icon: <Lightbulb size={14} />,
+      accentClass: "text-violet-400",
+      leads: CREATIVITY_TEAM.leads,
+      core: CREATIVITY_TEAM.core,
+      members: CREATIVITY_TEAM.members,
+    },
+    {
+      id: "sponsorship",
+      chapter: "CHAPTER 06",
+      eyebrow: "Corporate Alliances & Capital",
+      title: "Sponsorship Team",
+      description:
+        "The alliance builders forging the industry partnerships that make Saviskar 2026 financially and operationally formidable. Through persistent pitch decks, corporate negotiations, and brand partnership frameworks, this wing secures the external backing our festival demands.",
+      icon: <BadgeDollarSign size={14} />,
+      accentClass: "text-amber-400",
+      leads: SPONSORSHIP_TEAM.leads,
+      core: [],
+      members: SPONSORSHIP_TEAM.members,
+    },
+    {
+      id: "calling",
+      chapter: "CHAPTER 07",
+      eyebrow: "National Outreach & Delegate Relations",
+      title: "Calling Team",
+      description:
+        "The frontline voice of Saviskar 2026. Through direct student-to-student engagement across states, this wing brings thousands of participants into the Aevorian Reverie arena — turning ambition into footfall and turning a local festival into a national movement.",
+      icon: <PhoneCall size={14} />,
+      accentClass: "text-cyan-400",
+      leads: CALLING_TEAM.leads,
+      core: CALLING_TEAM.core,
+      members: CALLING_TEAM.members,
+      stateDirectory: STATE_HEADS_DIRECTORY,
+    },
+  ];
 
-  // Wing label / descriptor helpers
-  const chapterConfig = {
-    overall:     { num: "01", title: "Overall Heads",      descriptor: "Executive Council Apex",                  icon: <Crown size={12} />,           accent: "text-amber-400"   },
-    budget:      { num: "02", title: "Bills & Budget",     descriptor: "Financial Audit & Resource Governance",   icon: <BadgeDollarSign size={12} />,  accent: "text-cyan-400"    },
-    website:     { num: "03", title: "Website Team",       descriptor: "Digital Architecture & Infrastructure",   icon: <Code2 size={12} />,            accent: "text-cyan-400"    },
-    branding:    { num: "04", title: "Branding Team",      descriptor: "Visual Identity & Aesthetic Direction",   icon: <Palette size={12} />,          accent: "text-emerald-400" },
-    creativity:  { num: "05", title: "Creativity Team",    descriptor: "Stage Craft, Art & Experiential Design",  icon: <Lightbulb size={12} />,        accent: "text-violet-400"  },
-    sponsorship: { num: "06", title: "Sponsorship Team",   descriptor: "Corporate Partnerships & Alliances",      icon: <BadgeDollarSign size={12} />,  accent: "text-emerald-400" },
-    calling:     { num: "07", title: "Calling Team",       descriptor: "National Outreach & Delegate Relations",  icon: <PhoneCall size={12} />,        accent: "text-cyan-400"    },
-  };
-
-  // Flatten all members in correct sequence for idx counter
-  const allSections = [
-    { key: "overall",     members: OVERALL_HEADS },
-    { key: "budget",      members: BILLS_BUDGET_TEAM },
-    { key: "website",     members: WEBSITE_TEAM },
-    { key: "branding",    members: [...BRANDING_TEAM.leads, ...BRANDING_TEAM.core, ...BRANDING_TEAM.members] },
-    { key: "creativity",  members: [...CREATIVITY_TEAM.leads, ...CREATIVITY_TEAM.core, ...CREATIVITY_TEAM.members] },
-    { key: "sponsorship", members: [...SPONSORSHIP_TEAM.leads, ...SPONSORSHIP_TEAM.members] },
-    { key: "calling",     members: [...CALLING_TEAM.leads, ...CALLING_TEAM.core, ...CALLING_TEAM.members] },
-  ] as const;
+  const totalMembers = categories.reduce(
+    (acc, cat) =>
+      acc + (cat.leads?.length || 0) + (cat.core?.length || 0) + (cat.members?.length || 0),
+    0
+  );
 
   return (
     <div className="relative z-20">
-
       {/* ── Section opener ── */}
-      <div className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-violet-400 mb-4">
+      <div
+        className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+      >
+        <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-violet-400 mb-4 flex items-center gap-2">
+          <span className="h-px w-6 bg-violet-500/40" />
           Operational Wings // Student Architects
         </div>
         <h2 className="font-editorial text-5xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight leading-[1.0]">
           The Council<br />Cadre
         </h2>
         <p className="mt-5 text-base sm:text-lg text-zinc-400 font-light leading-relaxed max-w-2xl">
-          Every person who built Saviskar 2026 — rendered as a full-spread editorial portrait. Seven operational wings. One shared vision.
+          Every person who built Saviskar 2026 — across seven operational wings, under one shared vision. Aevorian Reverie.
         </p>
         <div className="mt-6 flex items-center gap-3">
           <span className="h-px flex-1 bg-white/[0.06]" />
           <span className="font-mono text-[9px] tracking-widest text-white/20 uppercase">
-            {allSections.reduce((acc, s) => acc + s.members.length, 0)} members across 7 wings
+            {totalMembers} members across 7 wings
           </span>
         </div>
-      </div>
-
-      {/* ── 01 OVERALL HEADS ── */}
-      {(() => {
-        const cfg = chapterConfig.overall;
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={OVERALL_HEADS.length} />
-            {OVERALL_HEADS.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── 02 BILLS & BUDGET ── */}
-      {(() => {
-        const cfg = chapterConfig.budget;
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={BILLS_BUDGET_TEAM.length} />
-            {BILLS_BUDGET_TEAM.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── 03 WEBSITE TEAM ── Both members get identical cyan treatment ── */}
-      {(() => {
-        const cfg = chapterConfig.website;
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={WEBSITE_TEAM.length} />
-            {WEBSITE_TEAM.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── 04 BRANDING ── */}
-      {(() => {
-        const cfg = chapterConfig.branding;
-        const members = [...BRANDING_TEAM.leads, ...BRANDING_TEAM.core, ...BRANDING_TEAM.members];
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={members.length} />
-            {members.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── 05 CREATIVITY ── */}
-      {(() => {
-        const cfg = chapterConfig.creativity;
-        const members = [...CREATIVITY_TEAM.leads, ...CREATIVITY_TEAM.core, ...CREATIVITY_TEAM.members];
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={members.length} />
-            {members.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── 06 SPONSORSHIP ── */}
-      {(() => {
-        const cfg = chapterConfig.sponsorship;
-        const members = [...SPONSORSHIP_TEAM.leads, ...SPONSORSHIP_TEAM.members];
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={members.length} />
-            {members.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── 07 CALLING TEAM ── */}
-      {(() => {
-        const cfg = chapterConfig.calling;
-        const leads = CALLING_TEAM.leads;
-        const core = CALLING_TEAM.core;
-        const members = CALLING_TEAM.members;
-        const allMembers = [...leads, ...core, ...members];
-        return (
-          <>
-            <ChapterBreak {...cfg} number={cfg.num} accentClass={cfg.accent} memberCount={allMembers.length} />
-            {allMembers.map((m) => <MemberSpread key={m.id} member={m} index={idx++} />)}
-          </>
-        );
-      })()}
-
-      {/* ── STATE HEADS DIRECTORY — editorial table ── */}
-      <div
-        className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-      >
-        <div className="mb-8">
-          <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-amber-400 mb-2">
-            <MapPin size={11} />
-            <span>Regional Allocation Directory</span>
-          </div>
-          <h3 className="font-editorial text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            State Heads
-          </h3>
-          <p className="mt-2 text-sm text-zinc-500 font-light">
-            State-wise operational leads heading student outreach across India for Saviskar 2026.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-10 max-w-4xl">
-          {STATE_HEADS_DIRECTORY.map((item, i) => (
-            <div key={i} className="flex items-baseline justify-between gap-3">
-              <span className="font-mono text-[11px] text-zinc-400 tracking-wide flex-shrink-0">
-                {item.region}
-              </span>
-              <span className="h-px flex-1 bg-white/[0.05] self-center mx-2" aria-hidden="true" />
-              <span className="font-editorial text-sm font-semibold text-white text-right flex-shrink-0">
-                {item.heads}
-              </span>
-            </div>
+        {/* Tier colour legend */}
+        <div className="mt-8 flex flex-wrap gap-3">
+          {[
+            { label: "Team Lead", cls: "text-violet-400 border-violet-400/30 bg-violet-500/[0.06]" },
+            { label: "Core Member", cls: "text-cyan-400 border-cyan-400/30 bg-cyan-500/[0.06]" },
+            { label: "Council Member", cls: "text-blue-400 border-blue-400/30 bg-blue-500/[0.06]" },
+          ].map((t) => (
+            <span
+              key={t.label}
+              className={`inline-flex items-center rounded-full px-3 py-1 font-mono text-[9px] uppercase tracking-[0.25em] font-bold border ${t.cls}`}
+            >
+              {t.label}
+            </span>
           ))}
         </div>
       </div>
+
+      {/* ── Per-category sections ── */}
+      {categories.map((cat) => (
+        <CategorySection key={cat.id} cat={cat} />
+      ))}
     </div>
   );
 }

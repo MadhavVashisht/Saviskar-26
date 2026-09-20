@@ -527,7 +527,7 @@ export async function DELETE(
 
     if (!error) {
       await supabaseAdmin.from("admin_audit_logs").insert({
-        admin_id: auth.user!.id,
+        admin_id: auth.user.id,
         action_type: "ARCHIVE_REGISTRATION",
         target_id: participantEventId,
         details: { archived_at: new Date().toISOString() },
@@ -622,7 +622,7 @@ export async function POST(
 
   if (!error) {
     await supabaseAdmin.from("admin_audit_logs").insert({
-      admin_id: auth.user!.id,
+      admin_id: auth.user.id,
       action_type: "RESTORE_REGISTRATION",
       target_id: body.participantEventId,
       details: { restored_at: new Date().toISOString() },

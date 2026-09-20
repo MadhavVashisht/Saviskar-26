@@ -1,9 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "motion/react";
 import MouseSpotlight from "@/components/ui/MouseSpotlight";
 import { ArrowDown, ArrowRight } from "lucide-react";
-import SplitText from "@/components/SplitText";
 import { useSmoothScroll } from "@/components/providers/SmoothScrollProvider";
 
 export default function Hero() {
@@ -13,13 +13,13 @@ export default function Hero() {
       {/* Theatrical Concert Atmospheric Overlays (ScrollEngine3D provides the crisp 8K stadium scene) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         {/* Deep Violet Stage Haze Accent */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.14)_0%,rgba(0,0,0,0.3)_60%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.18)_0%,rgba(0,0,0,0.3)_60%,transparent_100%)]" />
 
         {/* Volumetric Stage Smoke Gradient - Seamless transition into Story */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent pointer-events-none" />
 
         {/* Soft Spotlight Rim Lighting from top */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[80vw] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.10)_0%,transparent_70%)] blur-[90px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[80vw] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.12)_0%,transparent_70%)] blur-[90px] pointer-events-none" />
       </div>
 
       {/* Mouse Spotlight */}
@@ -27,15 +27,15 @@ export default function Hero() {
         <MouseSpotlight />
       </div>
 
-      {/* Content Container */}
-      <div className="relative z-30 mx-auto flex w-full max-w-5xl flex-col items-center px-4 sm:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8 text-center justify-center">
-        {/* University Badge */}
+      {/* Content Container - Perfectly Centered */}
+      <div className="relative z-30 mx-auto flex w-full max-w-5xl flex-col items-center px-4 sm:px-6 pt-16 sm:pt-20 pb-8 text-center justify-center">
+        {/* University Badge - Previous Location above Logo */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.2 }}
           transition={{ duration: 0.8 }}
-          className="liquid-glass mb-2.5 sm:mb-3.5 inline-flex items-center gap-2 sm:gap-2.5 rounded-full px-3.5 py-1 sm:px-4 sm:py-1.5 text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider sm:tracking-[0.35em] text-white/80 shadow-[0_0_20px_rgba(168,85,247,0.2)] max-w-[92vw] overflow-hidden"
+          className="liquid-glass mb-2 sm:mb-3 inline-flex items-center gap-2 sm:gap-2.5 rounded-full px-3.5 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-[0.35em] text-white/85 shadow-[0_0_20px_rgba(168,85,247,0.2)] max-w-[92vw] overflow-hidden"
         >
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
           <span className="truncate">CGC UNIVERSITY • MOHALI</span>
@@ -43,65 +43,53 @@ export default function Hero() {
           <span className="text-violet-300 shrink-0">AEVORIAN REVERIE</span>
         </motion.div>
 
-        {/* SAVISKAR Main Festival Title */}
+        {/* Unified Official Fest Logo & Theme Lockup — Centered Viewport Focal Point */}
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.92, y: 25 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
           viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.9 }}
-          className="w-full"
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="relative flex flex-col items-center justify-center w-full max-w-3xl px-2 mt-4 sm:mt-6 mb-2 sm:mb-3"
         >
-          <SplitText
-            text="SAVISKAR"
-            className="text-[clamp(3.2rem,10vw,8.5rem)] font-black tracking-[-0.07em] leading-none text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.25)] select-none"
-            delay={50}
-            duration={1}
-            splitType="chars"
-            from={{ opacity: 0, y: 120 }}
-            to={{ opacity: 1, y: 0 }}
-            onLetterAnimationComplete={undefined}
+          {/* Ambient Glow Aura behind entire logo lockup */}
+          <div className="pointer-events-none absolute inset-0 -inset-x-12 -inset-y-6 bg-gradient-to-r from-violet-600/25 via-fuchsia-500/20 to-cyan-500/20 blur-3xl opacity-65" />
+          
+          <Image
+            src="/logo.png"
+            alt="Saviskar 2026 — Aevorian Reverie"
+            width={1448}
+            height={307}
+            unoptimized
+            priority
+            className="relative z-10 w-full max-w-[360px] sm:max-w-[480px] md:max-w-[580px] lg:max-w-[650px] h-auto object-contain filter drop-shadow-[0_0_35px_rgba(168,85,247,0.45)] select-none"
           />
-        </motion.div>
 
-        {/* Theme Lockup: Aevorian Reverie */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ delay: 0.15, duration: 0.8 }}
-          className="mt-1.5 sm:mt-2 flex flex-col items-center gap-0.5"
-        >
-          <span className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.45em] text-violet-300 font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-            AEVORIAN REVERIE
-          </span>
-          <span className="font-editorial text-xs sm:text-sm text-white/85 tracking-wider font-normal italic drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-            Where Tomorrow Dreams Awake
-          </span>
+          {/* Sub-Lockup: Seamlessly integrated directly into the logo mark */}
+          <div className="relative z-10 -mt-1 sm:-mt-2 flex flex-col items-center gap-0.5 sm:gap-1 text-center select-none">
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              <span className="h-[1px] w-6 sm:w-14 bg-gradient-to-r from-transparent via-violet-400/80 to-violet-300" />
+              <span className="font-mono text-[11px] sm:text-xs md:text-sm uppercase tracking-[0.45em] sm:tracking-[0.55em] text-violet-200 font-bold drop-shadow-[0_0_14px_rgba(168,85,247,0.95)]">
+                AEVORIAN REVERIE
+              </span>
+              <span className="h-[1px] w-6 sm:w-14 bg-gradient-to-l from-transparent via-violet-400/80 to-violet-300" />
+            </div>
+            <span className="font-editorial text-xs sm:text-sm md:text-base text-white/85 tracking-widest font-normal italic drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+              Where Tomorrow Dreams Awake
+            </span>
+          </div>
         </motion.div>
 
         {/* Editorial Punchline Accent */}
         <motion.h2
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.2 }}
           transition={{ delay: 0.25, duration: 0.8 }}
-          className="mt-3 sm:mt-4 text-xl sm:text-2xl md:text-3xl lg:text-[42px] font-light tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]"
+          className="mt-3 sm:mt-4 text-xl sm:text-2xl md:text-3xl lg:text-[38px] font-light tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]"
         >
           A future imagined so vividly, <br />
           <span className="font-editorial text-violet-300 font-normal italic">it begins to exist.</span>
         </motion.h2>
-
-        {/* Festival Description */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ delay: 0.35, duration: 0.8 }}
-          className="mt-2.5 sm:mt-3 max-w-xl text-xs sm:text-sm md:text-base leading-relaxed text-white/90 font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
-        >
-          North India&apos;s most electric collegiate festival at CGC University, Mohali.
-          Where boundary-pushing tech, explosive cultural battles, stadium concerts, and raw campus ambition collide into one luminous dreamscape.
-        </motion.p>
 
         {/* Live Metrics Pill Showcase */}
         <motion.div
@@ -111,7 +99,7 @@ export default function Hero() {
           transition={{ delay: 0.45, duration: 0.8 }}
           className="mt-3.5 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 text-[10px] sm:text-xs tracking-wider uppercase text-white/90 font-medium"
         >
-          {["50+ Realms", "500+ Colleges", "25,000+ Students", "2 Epic Days (Oct 24–25)"].map((item) => (
+          {["50+ Realms", "500+ Colleges", "25,000+ Students", "2 Epic Days (Oct 28–29)"].map((item) => (
             <motion.div
               key={item}
               whileHover={{ scale: 1.08, y: -3, borderColor: "rgba(168,85,247,0.5)" }}

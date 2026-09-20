@@ -6,33 +6,63 @@ import Image from "next/image";
 export interface DeskEditorialSpreadProps {
   deskTitle: string;
   titleBadge?: string;
-  dropCap: string;
   paragraphs: string[];
   signeeName: string;
   signeeRole: string;
   image?: string;
   initials?: string;
-  accent?: "amber" | "cyan" | "violet" | "emerald";
+  /** Visual accent: drives glow color and eyebrow color */
+  accentColor?: "violet" | "cyan" | "emerald" | "amber";
   align?: "left" | "right";
   secondarySignees?: { name: string; role: string; initials?: string }[];
-  /** When true, renders "The Desk of" as a prefix above deskTitle (for faculty spreads).
-   *  When false (default), renders deskTitle as the primary full headline. */
-  showDeskPrefix?: boolean;
 }
+
+const ACCENT_TOKENS_MAP = {
+  violet: {
+    eyebrow: "text-violet-400",
+    glow: "rgba(139, 92, 246, 0.18)",
+    glowRing: "rgba(139,92,246,0.06)",
+    signeeRole: "text-violet-400/70",
+    cornerBorder: "border-violet-500/35",
+    ghostText: "text-violet-300",
+  },
+  cyan: {
+    eyebrow: "text-cyan-400",
+    glow: "rgba(34, 211, 238, 0.14)",
+    glowRing: "rgba(34,211,238,0.05)",
+    signeeRole: "text-cyan-400/70",
+    cornerBorder: "border-cyan-500/35",
+    ghostText: "text-cyan-300",
+  },
+  emerald: {
+    eyebrow: "text-emerald-400",
+    glow: "rgba(52, 211, 153, 0.14)",
+    glowRing: "rgba(52,211,153,0.05)",
+    signeeRole: "text-emerald-400/70",
+    cornerBorder: "border-emerald-500/35",
+    ghostText: "text-emerald-300",
+  },
+  amber: {
+    eyebrow: "text-amber-400",
+    glow: "rgba(245, 158, 11, 0.14)",
+    glowRing: "rgba(245,158,11,0.05)",
+    signeeRole: "text-amber-400/70",
+    cornerBorder: "border-amber-500/35",
+    ghostText: "text-amber-300",
+  },
+};
 
 export default function DeskEditorialSpread({
   deskTitle,
   titleBadge,
-  dropCap,
   paragraphs,
   signeeName,
   signeeRole,
   image,
   initials,
-  accent = "amber",
+  accentColor = "violet",
   align = "left",
   secondarySignees,
-  showDeskPrefix = false,
 }: DeskEditorialSpreadProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -45,69 +75,35 @@ export default function DeskEditorialSpread({
       .map((n) => n[0])
       .join("");
 
-  const accentText = {
-    amber:   "text-amber-300",
-    cyan:    "text-cyan-300",
-    violet:  "text-violet-300",
-    emerald: "text-emerald-300",
-  }[accent];
-
-  const dropCapColor = {
-    amber:   "text-amber-400",
-    cyan:    "text-cyan-400",
-    violet:  "text-violet-400",
-    emerald: "text-emerald-400",
-  }[accent];
-
-  const signeeRoleColor = {
-    amber:   "text-amber-300/70",
-    cyan:    "text-cyan-300/70",
-    violet:  "text-violet-300/70",
-    emerald: "text-emerald-300/70",
-  }[accent];
+  // Per-accent tokens with guaranteed fallback
+  const accentTokens = ACCENT_TOKENS_MAP[accentColor as keyof typeof ACCENT_TOKENS_MAP] || ACCENT_TOKENS_MAP.violet;
 
   const hasValidImage = Boolean(image && image.trim() !== "" && !imageError);
 
-  const firstParagraph = paragraphs[0] || "";
-  const remainingParagraphs = paragraphs.slice(1);
-  const firstLetter = dropCap || firstParagraph.charAt(0);
-  // restOfFirstParagraph: the bio text after the drop cap letter
-  const restOfFirstParagraph = firstParagraph;
-
-  // ── Text column ──────────────────────────────────────────────────
+  // ── Text column ──────────────────────────────────────────────────────────
   const TextContent = (
     <div className="flex flex-col justify-between h-full">
-      <div>
-        {/* Paragraph 1 with drop cap */}
-        <div className="text-base sm:text-lg md:text-xl text-zinc-200 leading-relaxed font-light text-justify">
-          <span
-            className={`float-left font-editorial font-bold text-[5.5rem] sm:text-[6.5rem] leading-[0.82] pr-3 pt-1 select-none ${dropCapColor}`}
+      <div className="space-y-4">
+        {paragraphs.map((para, i) => (
+          <p
+            key={i}
+            className="text-sm sm:text-base text-zinc-300 leading-relaxed text-justify"
           >
-            {firstLetter}
-          </span>
-          {restOfFirstParagraph}
-        </div>
-
-        {/* Subsequent paragraphs */}
-        {remainingParagraphs.length > 0 && (
-          <div className="mt-6 space-y-5 text-sm sm:text-base text-zinc-300/80 leading-[1.85] font-light text-justify">
-            {remainingParagraphs.map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
-          </div>
-        )}
+            {para}
+          </p>
+        ))}
       </div>
 
       {/* Signature block */}
-      <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
         {secondarySignees && secondarySignees.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {secondarySignees.map((sig, i) => (
               <div key={i}>
-                <div className="font-editorial text-lg sm:text-xl font-semibold text-white leading-tight tracking-wide">
+                <div className="text-base sm:text-lg font-semibold text-white leading-tight tracking-wide">
                   {sig.name}
                 </div>
-                <div className={`text-xs font-mono tracking-widest uppercase mt-1 ${signeeRoleColor}`}>
+                <div className={`text-xs font-mono tracking-widest uppercase mt-1 ${accentTokens.signeeRole}`}>
                   {sig.role}
                 </div>
               </div>
@@ -115,10 +111,10 @@ export default function DeskEditorialSpread({
           </div>
         ) : (
           <div>
-            <div className="font-editorial text-2xl sm:text-3xl font-semibold text-white leading-tight tracking-wide">
+            <div className="text-xl sm:text-2xl font-semibold text-white leading-tight tracking-wide">
               {signeeName}
             </div>
-            <div className={`text-xs font-mono tracking-widest uppercase mt-1.5 ${signeeRoleColor}`}>
+            <div className={`text-xs font-mono tracking-widest uppercase mt-1.5 ${accentTokens.signeeRole}`}>
               {signeeRole}
             </div>
           </div>
@@ -127,11 +123,39 @@ export default function DeskEditorialSpread({
     </div>
   );
 
-  // ── Portrait column ───────────────────────────────────────────────
+  // ── Portrait column ───────────────────────────────────────────────────────
   const VisualContent = (
     <div className="relative flex items-stretch justify-center">
+      {/* Ambient glow orb behind portrait */}
+      <div
+        className="pointer-events-none absolute inset-0 -inset-x-8"
+        style={{
+          background: `radial-gradient(circle at center, ${accentTokens.glow} 0%, transparent 70%)`,
+          filter: "blur(40px)",
+        }}
+        aria-hidden="true"
+      />
+
       {hasValidImage ? (
-        <div className="relative w-full h-[480px] sm:h-[560px] overflow-hidden">
+        <div
+          className="relative w-full h-[480px] sm:h-[560px] overflow-hidden"
+          style={{
+            WebkitMaskImage: [
+              "linear-gradient(to bottom, black 40%, transparent 100%)",
+              align === "left"
+                ? "linear-gradient(to right, black 75%, transparent 100%)"
+                : "linear-gradient(to left, black 75%, transparent 100%)",
+            ].join(", "),
+            WebkitMaskComposite: "destination-in",
+            maskImage: [
+              "linear-gradient(to bottom, black 40%, transparent 100%)",
+              align === "left"
+                ? "linear-gradient(to right, black 75%, transparent 100%)"
+                : "linear-gradient(to left, black 75%, transparent 100%)",
+            ].join(", "),
+            maskComposite: "intersect",
+          }}
+        >
           <Image
             src={image!}
             alt={signeeName}
@@ -140,15 +164,13 @@ export default function DeskEditorialSpread({
             className="object-cover object-top"
             onError={() => setImageError(true)}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black to-transparent" />
         </div>
       ) : (
         /* Ghost initials placeholder */
         <div className="flex flex-col items-center justify-center py-20 sm:py-28 w-full">
           <div
-            className={`font-editorial font-black leading-none select-none tracking-tighter ${dropCapColor}`}
-            style={{ fontSize: "clamp(6rem, 18vw, 14rem)", opacity: 0.13 }}
+            className={`font-bold leading-none select-none tracking-tighter ${accentTokens.ghostText}`}
+            style={{ fontSize: "clamp(6rem, 18vw, 14rem)", opacity: 0.10 }}
             aria-hidden="true"
           >
             {displayInitials}
@@ -161,43 +183,54 @@ export default function DeskEditorialSpread({
     </div>
   );
 
-  // ── Header: two modes ─────────────────────────────────────────────
-  // Faculty mode:  eyebrow + "The Desk of" + accentName
-  // Member mode:   eyebrow + big name as headline
-  const Header = showDeskPrefix ? (
-    <div className="text-center mb-12 sm:mb-16">
+  // ── Header — clean tech badge style ──────────────────────────────────────
+  const Header = (
+    <div className="text-center mb-12 sm:mb-16 relative">
+      {/* Subtle radial glow behind header */}
+      <div
+        className="pointer-events-none absolute inset-0 scale-[2]"
+        style={{
+          background: `radial-gradient(ellipse at center, ${accentTokens.glowRing} 0%, transparent 65%)`,
+        }}
+        aria-hidden="true"
+      />
+
       {titleBadge && (
-        <div className={`font-mono text-[10px] uppercase tracking-[0.3em] mb-4 ${accentText}`}>
+        <div className={`relative font-mono text-[10px] uppercase tracking-[0.3em] mb-4 ${accentTokens.eyebrow} flex items-center justify-center gap-2`}>
+          <span className="h-px w-8 bg-current opacity-40" />
           {titleBadge}
+          <span className="h-px w-8 bg-current opacity-40" />
         </div>
       )}
-      <h4 className="font-editorial text-3xl sm:text-4xl md:text-5xl uppercase tracking-[0.15em] text-white/80 font-extralight">
-        The Desk of
-      </h4>
-      <div className="mt-1 flex items-center justify-center gap-4">
-        <span className="h-px w-12 sm:w-24 bg-gradient-to-r from-transparent to-white/20" />
-        <h3 className={`font-editorial text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-widest ${accentText}`}>
-          {deskTitle}
-        </h3>
-        <span className="h-px w-12 sm:w-24 bg-gradient-to-l from-transparent to-white/20" />
-      </div>
-    </div>
-  ) : (
-    /* Member spread header — wing/role eyebrow + name as headline */
-    <div className="mb-10 sm:mb-14" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "2.5rem" }}>
-      {titleBadge && (
-        <div className={`font-mono text-[10px] uppercase tracking-[0.3em] mb-3 ${accentText}`}>
-          {titleBadge}
-        </div>
-      )}
-      <h3 className="font-editorial text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight leading-[1.0]">
+
+      {/* Primary: role/title as bold display headline — NO serif, NO italic */}
+      <h3 className="relative text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.05]">
         {deskTitle}
       </h3>
+
+      {/* Secondary: person's name as mono subtitle */}
+      <p className={`relative mt-3 font-mono text-xs uppercase tracking-[0.2em] ${accentTokens.eyebrow} opacity-80`}>
+        {signeeName}
+      </p>
+
+      {/* Decorative thin rule */}
+      <div className="relative mt-6 flex items-center justify-center gap-3">
+        <span className="h-px w-20 sm:w-32 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ backgroundColor: accentColor === "violet" ? "rgba(139,92,246,0.6)" : accentColor === "cyan" ? "rgba(34,211,238,0.6)" : "rgba(52,211,153,0.6)" }}
+        />
+        <span className="h-px w-20 sm:w-32 bg-gradient-to-l from-transparent via-white/10 to-transparent" />
+      </div>
     </div>
   );
 
   return (
     <section className="relative z-20 py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* Corner bracket accents — top-left */}
+      <div className={`absolute top-8 left-4 sm:left-6 lg:left-8 w-5 h-5 border-t border-l ${accentTokens.cornerBorder}`} />
+      <div className={`absolute top-8 right-4 sm:right-6 lg:right-8 w-5 h-5 border-t border-r ${accentTokens.cornerBorder}`} />
+
       {Header}
 
       {/* Two-column spread */}

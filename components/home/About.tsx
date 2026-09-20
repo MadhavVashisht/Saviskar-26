@@ -99,7 +99,7 @@ function Countdown() {
             The Countdown
           </span>
         </div>
-        <span className="font-mono text-xs font-medium text-violet-300">OCTOBER 28, 2026</span>
+        <span className="font-mono text-xs font-medium text-violet-300">OCTOBER 28–29, 2026</span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

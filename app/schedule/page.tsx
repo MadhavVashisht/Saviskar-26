@@ -123,7 +123,7 @@ export default function SchedulePage() {
                 className="mt-10 max-w-xl text-base leading-7 text-white/50 md:text-lg"
               >
                 48 hours of non-stop competition, innovation, and celebration.
-                From the opening inauguration ceremony to the midnight Star Night finale at CGC University, Mohali (24–25 October 2026).
+                From the opening inauguration ceremony to the midnight Star Night finale at CGC University, Mohali (28–29 October 2026).
               </motion.p>
             </div>
 

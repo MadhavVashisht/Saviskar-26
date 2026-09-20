@@ -32,26 +32,29 @@ export default function PortraitPlaceholder({
       .map((n) => n[0])
       .join("");
 
-  const glowBorder = {
+  const GLOW_BORDER_MAP = {
     amber: "border-amber-400/40 group-hover:border-amber-400/70 shadow-[0_0_25px_rgba(245,158,11,0.15)]",
     violet: "border-violet-400/40 group-hover:border-violet-400/70 shadow-[0_0_25px_rgba(168,85,247,0.15)]",
     cyan: "border-cyan-400/40 group-hover:border-cyan-400/70 shadow-[0_0_25px_rgba(6,182,212,0.15)]",
     emerald: "border-emerald-400/40 group-hover:border-emerald-400/70 shadow-[0_0_25px_rgba(16,185,129,0.15)]",
-  }[glowColor];
+  };
+  const glowBorder = GLOW_BORDER_MAP[glowColor as keyof typeof GLOW_BORDER_MAP] || GLOW_BORDER_MAP.violet;
 
-  const ambientRadial = {
+  const AMBIENT_RADIAL_MAP = {
     amber: "from-amber-500/15 via-purple-900/10 to-transparent",
     violet: "from-violet-500/15 via-fuchsia-900/10 to-transparent",
     cyan: "from-cyan-500/15 via-blue-900/10 to-transparent",
     emerald: "from-emerald-500/15 via-teal-900/10 to-transparent",
-  }[glowColor];
+  };
+  const ambientRadial = AMBIENT_RADIAL_MAP[glowColor as keyof typeof AMBIENT_RADIAL_MAP] || AMBIENT_RADIAL_MAP.violet;
 
-  const badgeTheme = {
+  const BADGE_THEME_MAP = {
     amber: "bg-amber-400/10 border-amber-400/30 text-amber-300",
     violet: "bg-violet-400/10 border-violet-400/30 text-violet-300",
     cyan: "bg-cyan-400/10 border-cyan-400/30 text-cyan-300",
     emerald: "bg-emerald-400/10 border-emerald-400/30 text-emerald-300",
-  }[glowColor];
+  };
+  const badgeTheme = BADGE_THEME_MAP[glowColor as keyof typeof BADGE_THEME_MAP] || BADGE_THEME_MAP.violet;
 
   // Size dimensions
   const getContainerDimensions = () => {
