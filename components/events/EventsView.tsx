@@ -253,7 +253,7 @@ export default function EventsView() {
           initial={{ opacity: 0, y: 35 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="max-w-[1200px] text-[clamp(3.5rem,10vw,9.5rem)] font-light leading-[0.82] tracking-tight text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]"
+          className="max-w-[1200px] text-[clamp(2.5rem,10vw,9.5rem)] font-light leading-[0.82] tracking-tight text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]"
         >
           Choose your <br />
           <span className="font-editorial text-violet-300 font-normal italic drop-shadow-[0_4px_35px_rgba(168,85,247,0.5)]">

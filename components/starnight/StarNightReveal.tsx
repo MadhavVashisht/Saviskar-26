@@ -64,7 +64,7 @@ export default function StarNightReveal() {
             THE MOMENT AFTER THE LIGHTS GO OUT
           </div>
 
-          <h2 className="mt-4 text-[clamp(3.8rem,9vw,9rem)] font-light leading-[0.8] tracking-tight text-white">
+          <h2 className="mt-4 text-[clamp(2.5rem,9vw,9rem)] font-light leading-[0.8] tracking-tight text-white">
             AND THEN... <br />
             <span className="font-editorial text-violet-300 font-normal">THE STAGE IGNITES.</span>
           </h2>
@@ -82,7 +82,7 @@ export default function StarNightReveal() {
             SAVISKAR 2026 OFFICIAL LINEUP
           </p>
 
-          <div className="mt-2 font-mono text-[clamp(5rem,15vw,13rem)] font-extrabold leading-[0.75] tracking-tight text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.25)]">
+          <div className="mt-2 font-mono text-[clamp(3rem,15vw,13rem)] font-extrabold leading-[0.75] tracking-tight text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.25)]">
             2026
           </div>
 

@@ -57,7 +57,7 @@ export default function LightsOut() {
           THE MOMENT BEFORE EVERYTHING CHANGES
         </motion.p>
 
-        <h2 className="font-serif text-[clamp(4rem,10vw,9rem)] font-medium leading-[0.78] tracking-[-0.06em]">
+        <h2 className="font-serif text-[clamp(2.5rem,10vw,9rem)] font-medium leading-[0.78] tracking-[-0.06em]">
           THE LIGHTS
           <br />
           <span className="text-purple-200">GO OUT.</span>

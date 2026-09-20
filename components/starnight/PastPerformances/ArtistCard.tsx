@@ -82,7 +82,7 @@ export default function ArtistCard({
             STAR NIGHT {year}
           </p>
 
-          <h2 className="text-[clamp(4rem,8vw,8rem)] font-semibold leading-[0.9] tracking-[-0.05em]">
+          <h2 className="text-[clamp(2.5rem,8vw,8rem)] font-semibold leading-[0.9] tracking-[-0.05em]">
             {artist}
           </h2>
 

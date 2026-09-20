@@ -86,7 +86,7 @@ export default function PastPerformances() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="max-w-[610px] text-[clamp(3.2rem,5.2vw,6.5rem)] font-semibold leading-[0.86] tracking-[-0.055em]"
+              className="max-w-[610px] text-[clamp(2.5rem,5.2vw,6.5rem)] font-semibold leading-[0.86] tracking-[-0.055em]"
             >
               THE STAGE HAS
               <br />

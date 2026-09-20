@@ -1,7 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,7 +71,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/concert-stadium.jpg",
+        url: "/images/concert-stadium.webp",
         width: 1920,
         height: 1080,
         alt: "Saviskar 2026 Aevorian Reverie Mainstage Stadium Realm at CGC University, Mohali",
@@ -76,7 +83,7 @@ export const metadata: Metadata = {
     title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
     description:
       "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali.",
-    images: ["/images/concert-stadium.jpg"],
+    images: ["/images/concert-stadium.webp"],
   },
   robots: {
     index: true,
@@ -102,7 +109,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-black text-white selection:bg-white selection:text-black">
+      <body className="min-h-full w-full max-w-[100vw] overflow-x-clip flex flex-col bg-black text-white selection:bg-white selection:text-black">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
     </html>

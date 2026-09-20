@@ -51,7 +51,7 @@ export default function HeroContent() {
           ease: [0.16,1,.3,1],
         }}
         className="
-        text-[clamp(5rem,15vw,13rem)]
+        text-[clamp(3rem,15vw,13rem)]
         leading-[0.82]
         tracking-[-0.08em]
         font-semibold

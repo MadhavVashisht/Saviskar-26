@@ -74,9 +74,10 @@ export default function ScannerPage() {
         { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: {
-            width: 250,
-            height: 250,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrEdge = Math.max(180, Math.floor(minEdge * 0.72));
+            return { width: qrEdge, height: qrEdge };
           },
         },
         async (decodedText) => {
@@ -314,7 +315,10 @@ export default function ScannerPage() {
               </div>
             </div>
 
-            <div id="qr-reader" className="overflow-hidden rounded-[22px] bg-white" />
+            <div
+              id="qr-reader"
+              className="w-full max-w-full overflow-hidden rounded-[22px] bg-black [&_video]:w-full [&_video]:max-w-full [&_video]:rounded-[22px] [&_video]:object-cover [&_canvas]:max-w-full"
+            />
 
             {!scannerStarted && !participant && (
               <div className="flex min-h-[330px] flex-col items-center justify-center text-center">
