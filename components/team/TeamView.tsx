@@ -236,7 +236,7 @@ export default function TeamView() {
             initials={(faculty.name ?? "??").split(" ").filter((n) => !["Dr.", "Mrs.", "Mr.", "Ms."].includes(n)).slice(0, 2).map((n) => n[0]).join("")}
             image={faculty.image ?? ""}
             accentColor={idx % 2 === 0 ? "violet" : "cyan"}
-            align={idx % 2 === 0 ? "right" : "left"}
+            align={idx % 2 === 0 ? "left" : "right"}
           />
         ))}
       </div>

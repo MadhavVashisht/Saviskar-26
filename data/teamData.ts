@@ -194,9 +194,9 @@ export const FACULTY_DIRECTORATE: FacultyMember[] = [
   {
     id: "mgr-monika-dhaliwal",
     name: "Mrs. Monika Dhaliwal",
-    honorific: "MANAGER ART & CULTURE",
-    designation: "Manager Art & Culture",
-    department: "Centre for Performing Arts, CGC University",
+    honorific: "SENIOR MANAGER DSA",
+    designation: "Senior Manager DSA",
+    department: "Department of Student Affairs, CGC University",
     tier: "tier2",
     bio: "Directing multi-genre artistic curation, theatrical productions, and national festival fine arts pavilions.",
     badges: ["Arts & Culture", "Curatorial Lead", "Creative Direction"],
@@ -211,7 +211,7 @@ export const FACULTY_DIRECTORATE: FacultyMember[] = [
     tier: "tier2",
     bio: "Chief coordinator for arena infrastructure, technical staging, electrical grids, and security protocols.",
     badges: ["Operations Lead", "Arena Command", "Infrastructure"],
-    image: "",
+    image: "/images/faculty/anand-kumar.avif",
   },
   {
     id: "ops-aditya",
