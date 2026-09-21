@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import "./globals.css";
 
+
 export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",

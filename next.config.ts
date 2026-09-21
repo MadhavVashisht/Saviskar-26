@@ -59,7 +59,30 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Long-lived immutable cache for public image directories.
+      // Next.js handles /_next/static/ automatically; these patterns cover
+      // /public/images/ and /public/gallery/ which have no cache headers by default.
+      // max-age=31536000 (1 year) + immutable: browser never revalidates for hashed assets.
+      {
+        source: "/images/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/gallery/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
     ];
+
   },
 };
 
