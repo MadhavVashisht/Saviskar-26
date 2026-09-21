@@ -57,7 +57,7 @@ async function setupAndAuthenticateRegistration(page: Page, email: string) {
     });
   });
 
-  await page.goto("/register", { waitUntil: "domcontentloaded" });
+  await page.goto("/register", { waitUntil: "networkidle" });
 
   // If on Auth Gate, complete OTP flow
   const emailInput = page.locator('input[type="email"]').first();
@@ -65,6 +65,14 @@ async function setupAndAuthenticateRegistration(page: Page, email: string) {
   await emailInput.fill(email);
 
   const continueBtn = page.locator('button[type="submit"]:has-text("Continue")').first();
+  try {
+    await expect(continueBtn).toBeEnabled({ timeout: 3000 });
+  } catch {
+    // If input was filled before hydration attached handlers, re-fill to trigger React onChange
+    await emailInput.click();
+    await emailInput.fill(email);
+    await expect(continueBtn).toBeEnabled({ timeout: 10000 });
+  }
   await continueBtn.click();
 
   // Wait for OTP input boxes and type 6 digits
@@ -346,7 +354,7 @@ test.describe("Registration & Payment E2E Workflows", () => {
     await payBtn.click();
 
     // Verify script blocking message appears on screen
-    await expect(page.getByText(/Payment gateway script could not be loaded/i)).toBeVisible({
+    await expect(page.getByText(/Payment gateway script could not be loaded/i).first()).toBeVisible({
       timeout: 15000,
     });
   });
