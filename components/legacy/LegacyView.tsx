@@ -2,7 +2,16 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Award,
+  GraduationCap,
+  Heart,
+  Mail,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import DeskEditorialSpread from "@/components/team/DeskEditorialSpread";
 
 // ============================================================
@@ -56,6 +65,7 @@ const DIGNITARIES = [
     initials: "BD",
     accent: "emerald" as const,
     align: "left" as const,
+    image: "/images/faculty/bismin-dhaliwal.webp",
   },
   {
     id: "vc-vinay-goyal",
@@ -99,6 +109,57 @@ const DSA_BIO = [
   "From coordinating national outreach campaigns across 11 states to managing the operational choreography of a 25,000-strong festival, Team DSA operates with a precision that is rarely visible and always essential. They are the unseen architecture of Aevorian Reverie.",
   "Saviskar 2026 is a student festival, built by students. But it stands on the institutional foundation that Team DSA pours every year — with expertise, commitment, and an extraordinary belief in what young people can achieve when given the right stage.",
 ];
+
+// ============================================================
+// ALUMNI DIGNITARIES DATA (DeskEditorialSpread format)
+// ============================================================
+const ALUMNI_DIGNITARIES = [
+  {
+    id: "alumni-abrar-nazir",
+    titleBadge: "EXECUTIVE STEWARD // DSA ALUMNUS & MENTOR",
+    deskTitle: "MR. ABRAR NAZIR",
+    paragraphs: [
+      "Behind every grand festival is an unseen operational anchor who transforms complex logistics into flawless execution. Mr. Abrar Nazir, Ex-Assistant Manager, Department of Student Affairs, was that foundational force during the formative editions of Saviskar at CGC University, Mohali.",
+      "His operational stewardship and calm resolve under the intense pressure of multi-day festival schedules provided a steady rudder for successive student organising bodies. From coordinating late-night stage technical setups and multi-contingent university hospitality to unblocking urgent on-ground roadblocks, his dedication to the student community set the benchmark for collegiate festival management.",
+      "Mr. Nazir's legacy is etched into the very DNA of Saviskar's ground operations. The protocols he established, the student leaders he mentored, and the institutional standards he championed continue to guide and inspire Team DSA as Saviskar 2026 scales to national heights.",
+    ],
+    signeeName: "Mr. Abrar Nazir",
+    signeeRole: "Ex-Assistant Manager // Department of Student Affairs (DSA)",
+    initials: "AN",
+    accent: "amber" as const,
+    align: "left" as const,
+  },
+  {
+    id: "alumni-sac-2024-2025",
+    titleBadge: "COUNCIL ARCHITECTS // GRADUATING BATCH 2024–2025",
+    deskTitle: "PASSED OUT STUDENTS OF SAC (2024–2025)",
+    paragraphs: [
+      "A generation of student leaders whose audacity redefined the limits of what a university festival could achieve. The passed-out council members of the Student Advisory Council (SAC 2024–2025) inherited a growing tradition and transformed it into a stadium-scale national powerhouse.",
+      "Under their leadership, Saviskar expanded across 11 states, drawing thousands of incoming delegates, integrating cutting-edge combat robotics arenas, and staging unforgettable Star Night headliners that shook the Mohali grounds. Their relentless hustle in securing brand sponsorships, curating multi-genre realms, and managing backstage choreography proved that student leadership can rival any professional event production.",
+      "To the graduating cohort of SAC 2024–2025: your passion, late-night war room sessions, and unbreakable bond of camaraderie built the immediate runway from which Saviskar 2026: Aevorian Reverie now takes flight. We salute your enduring contribution.",
+    ],
+    signeeName: "Passed Out Students of SAC (2024–2025)",
+    signeeRole: "Graduating Core Leads & Council Members // Student Advisory Council",
+    initials: "SAC",
+    accent: "violet" as const,
+    align: "right" as const,
+  },
+  {
+    id: "alumni-sac-2023-2024",
+    titleBadge: "INAUGURAL TRAILBLAZERS // FOUNDING BATCH 2023–2024",
+    deskTitle: "PASSED OUT STUDENTS OF SAC (2023–2024)",
+    paragraphs: [
+      "Every grand legacy starts with the courageous few who dare to build where nothing stood before. The passed-out students of the Student Advisory Council (SAC 2023–2024) were the pioneers who laid the very cornerstone of the Saviskar phenomenon at CGC University.",
+      "With no existing blueprint and unprecedented challenges, this founding council authored the original governance charter, conceived the realm structures, and worked through freezing nights and blazing afternoons to turn an institutional dream into living reality. They laid the physical cables, carried the stage gear, and inspired their peers to believe in the vision of a national mega-festival.",
+      "Without the courage of SAC 2023–2024 to take that inaugural leap of faith, there would be no Aevorian Reverie today. Their names, sacrifices, and foundational grit remain permanently enshrined in the institutional memory of CGC University, Mohali.",
+    ],
+    signeeName: "Passed Out Students of SAC (2023–2024)",
+    signeeRole: "Founding Council & Pioneering Core Leads // Student Advisory Council",
+    initials: "SAC",
+    accent: "cyan" as const,
+    align: "left" as const,
+  },
+] as const;
 
 // ============================================================
 // LEGACY VIEW
@@ -184,7 +245,7 @@ export default function LegacyView() {
               signeeName={person.signeeName}
               signeeRole={person.signeeRole}
               initials={person.initials}
-              image=""
+              image={"image" in person && person.image ? person.image : ""}
               accentColor={person.accent ?? "violet"}
               align={person.align}
             />
@@ -265,6 +326,100 @@ export default function LegacyView() {
               </div>
               <div className="font-mono text-[10px] tracking-widest uppercase mt-2 text-emerald-300/70">
                 Institutional Operations &amp; Student Welfare // CGC University, Mohali
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          OUR ALUMNI & MENTORS — EDITORIAL SPREADS
+      ══════════════════════════════════════════════════════ */}
+      <section
+        className="relative z-20 mt-16"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        {/* Section Header */}
+        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-20 pb-12">
+          <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-amber-400 mb-3 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#f59e0b]" />
+            <span>THE FOUNDATIONAL CORPS // CHERISHED MENTORS &amp; COHORTS</span>
+          </div>
+          <h2 className="font-editorial text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.05]">
+            Our Alumni &amp; Mentors
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-zinc-400 font-light leading-relaxed max-w-2xl">
+            Rendered in full honour: the foundational leadership, mentors, and graduating student councils whose grit, imagination, and tireless devotion built the bedrock on which Saviskar 2026 stands.
+          </p>
+          <div className="mt-8 flex items-center gap-4">
+            <span className="h-px flex-1 bg-white/[0.05]" />
+            <span className="font-mono text-[9px] tracking-[0.3em] text-white/20 uppercase flex-shrink-0">
+              3 Distinguished Citations // CGC University &amp; SAC
+            </span>
+          </div>
+        </div>
+
+        {/* Editorial Spreads — identical format to MD, VC, and Pro-VC */}
+        <div className="relative z-20">
+          {ALUMNI_DIGNITARIES.map((person) => (
+            <div
+              key={person.id}
+              style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}
+            >
+              <DeskEditorialSpread
+                titleBadge={person.titleBadge}
+                deskTitle={person.deskTitle}
+                paragraphs={person.paragraphs as unknown as string[]}
+                signeeName={person.signeeName}
+                signeeRole={person.signeeRole}
+                initials={person.initials}
+                image=""
+                accentColor={person.accent ?? "amber"}
+                align={person.align}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Reconnect Callout & Alumni Manifesto Banner */}
+        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-16">
+          <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-950/20 via-zinc-950/90 to-black p-8 sm:p-12 backdrop-blur-xl">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-amber-500/10 blur-[100px]" />
+            <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-violet-500/10 blur-[100px]" />
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8">
+                <span className="font-editorial text-6xl text-amber-400/40 select-none leading-none">“</span>
+                <p className="font-editorial text-xl sm:text-2xl md:text-3xl text-zinc-100 font-light leading-snug -mt-4">
+                  We poured our hearts into the foundation so that you could touch the stars.
+                  Saviskar was never just an annual festival — it was our forge, our family, and our rite of passage.
+                  Seeing it illuminate the nation today is the greatest legacy we could have ever dreamed of.
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="h-0.5 w-8 bg-amber-400" />
+                  <div className="font-mono text-xs uppercase tracking-wider text-amber-300">
+                    The Alumni Council &amp; Past Organising Committees // CGC University
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-white/10 pt-6 lg:pt-0 lg:pl-8">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-zinc-400">
+                  ALUMNI ENGAGEMENT &amp; NEXUS
+                </div>
+                <div className="text-sm text-zinc-300 leading-relaxed font-light">
+                  Are you an alumnus of CGC University or a former coordinator of Saviskar? Reconnect with the Department of Student Affairs and mentor the next cohort of student leaders.
+                </div>
+                <div className="pt-2">
+                  <a
+                    href="mailto:dsa@cgc.edu.in?subject=Alumni%20Connect%20-%20Saviskar%20Legacy"
+                    className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/10 px-5 py-2.5 text-xs font-semibold text-amber-200 transition-all hover:bg-amber-500 hover:text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                  >
+                    <Mail size={14} />
+                    <span>Connect with Alumni DSA Cell</span>
+                    <ArrowUpRight size={13} className="opacity-70" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>

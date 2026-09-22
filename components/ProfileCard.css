@@ -4,7 +4,8 @@
   --pointer-from-center: 0;
   --pointer-from-top: 0.5;
   --pointer-from-left: 0.5;
-  --card-opacity: 0; /* kept for compat, no longer drives glow */
+  --card-opacity: 0;
+  /* kept for compat, no longer drives glow */
   --rotate-x: 0deg;
   --rotate-y: 0deg;
   --background-x: 50%;
@@ -27,14 +28,13 @@
 
 .pc-behind {
   position: absolute;
-  inset: -20px; /* extend past card edge so glow bleeds outward */
+  inset: -20px;
+  /* extend past card edge so glow bleeds outward */
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
-    var(--behind-glow-color) 0%,
-    transparent var(--behind-glow-size)
-  );
+  background: radial-gradient(circle at var(--pointer-x) var(--pointer-y),
+      var(--behind-glow-color) 0%,
+      transparent var(--behind-glow-size));
   filter: blur(48px) saturate(1.3);
   /* Breathing glow — always visible, tier-specific colour */
   animation: pc-breathe 3.5s ease-in-out infinite;
@@ -85,7 +85,8 @@
 /* Avatar layer — 16px gap from top so no head is ever clipped */
 .pc-avatar-layer {
   position: absolute;
-  top: 16px;     /* breathing room above the head */
+  top: 16px;
+  /* breathing room above the head */
   bottom: 0;
   left: 0;
   right: 0;
@@ -259,11 +260,26 @@
 
 /* ── Breathing glow keyframes ───────────────────────────────────────── */
 @keyframes pc-breathe {
-  0%, 100% { opacity: 0.20; }
-  50%       { opacity: 0.58; }
+
+  0%,
+  100% {
+    opacity: 0.20;
+  }
+
+  50% {
+    opacity: 0.58;
+  }
 }
 
 /* Tier-specific durations so cards don't pulse in lock-step */
-.pc-card-wrapper.pc-lead   .pc-behind { animation-duration: 2.8s; }
-.pc-card-wrapper.pc-core   .pc-behind { animation-duration: 3.8s; }
-.pc-card-wrapper.pc-member .pc-behind { animation-duration: 4.6s; }
+.pc-card-wrapper.pc-lead .pc-behind {
+  animation-duration: 2.8s;
+}
+
+.pc-card-wrapper.pc-core .pc-behind {
+  animation-duration: 3.8s;
+}
+
+.pc-card-wrapper.pc-member .pc-behind {
+  animation-duration: 4.6s;
+}

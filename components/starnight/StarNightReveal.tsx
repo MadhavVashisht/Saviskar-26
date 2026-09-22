@@ -1,32 +1,48 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowDown, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Ticket, Lock } from "lucide-react";
 
-const headliners = [
+function YoutubeIcon({ size = 16, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
+
+const headliners2026Teaser = [
   {
-    artist: "Salim-Sulaiman",
-    genre: "Bollywood • Sufi • Live Symphony",
-    tagline: "The legendary composer duo live under stadium spotlights.",
-    status: "CONFIRMED HEADLINER",
+    dayBadge: "DAY 01 HEADLINER",
+    artist: "GLOBAL STREAMING SENSATION",
+    genre: "High-Voltage Stadium Anthems & Pop Rock Fusion",
+    tagline:
+      "Over 2 Billion+ global streams. Turning 30,000+ voices into an electric ocean under the stadium sky.",
+    status: "CLASSIFIED • REVEAL IMMINENT",
+    stage: "CGC MAINSTAGE ARENA",
   },
   {
-    artist: "Sunanda Sharma",
-    genre: "Punjabi Folk & Contemporary Pop",
-    tagline: "Electrifying folk vocals that bring the entire stadium to its feet.",
-    status: "CONFIRMED HEADLINER",
-  },
-  {
-    artist: "Kushagra Thakur",
-    genre: "Indie Rock & Acoustic Melodies",
-    tagline: "Soulful indie anthems echoing across thousands of voices.",
-    status: "CONFIRMED HEADLINER",
+    dayBadge: "DAY 02 GRAND FINALE",
+    artist: "BOLLYWOOD & SUFI SYMPHONY ICON",
+    genre: "Master Composer Orchestra • Timeless Stadium Classics",
+    tagline:
+      "A monumental live orchestra, pulsating dhol, and iconic melodies echoing across college corridors.",
+    status: "CLASSIFIED • REVEAL IMMINENT",
+    stage: "CGC MAINSTAGE ARENA",
   },
 ];
 
 export default function StarNightReveal() {
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-black text-white">
+    <section className="relative min-h-screen w-full overflow-hidden bg-black text-white py-24 md:py-32">
       {/* Blackout atmosphere */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -52,108 +68,136 @@ export default function StarNightReveal() {
         <span className="absolute left-[27%] top-[68%] h-1 w-1 rounded-full bg-white/25" />
       </div>
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-28 text-center">
-        {/* 01 — blackout */}
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 text-center">
+        {/* 01 — blackout headline */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.9 }}
         >
-          <div className="liquid-glass mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[9px] uppercase tracking-[0.35em] text-violet-300">
-            THE MOMENT AFTER THE LIGHTS GO OUT
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/15 px-4 py-1.5 font-mono text-[9px] uppercase tracking-[0.35em] text-violet-300">
+            SAVISKAR 2026 • THE STAGE IGNITES
           </div>
 
-          <h2 className="mt-4 text-[clamp(2.5rem,9vw,9rem)] font-light leading-[0.8] tracking-tight text-white">
+          <h2 className="mt-4 text-[clamp(2.5rem,8vw,7.5rem)] font-extrabold leading-[0.85] tracking-tight text-white">
             AND THEN... <br />
-            <span className="font-editorial text-violet-300 font-normal">THE STAGE IGNITES.</span>
+            <span className="bg-gradient-to-r from-violet-300 via-purple-300 to-indigo-300 bg-clip-text text-transparent">
+              THE STAGE IGNITES.
+            </span>
           </h2>
         </motion.div>
 
-        {/* 02 — year */}
+        {/* 02 — year badge */}
         <motion.div
           initial={{ opacity: 0, scale: 0.88, y: 30 }}
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 1.2, delay: 0.45 }}
-          className="mt-14"
+          transition={{ duration: 1.2, delay: 0.3 }}
+          className="mt-12"
         >
           <p className="font-mono text-[10px] uppercase tracking-[0.55em] text-violet-400">
             SAVISKAR 2026 OFFICIAL LINEUP
           </p>
 
-          <div className="mt-2 font-mono text-[clamp(3rem,15vw,13rem)] font-extrabold leading-[0.75] tracking-tight text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.25)]">
+          <div className="mt-2 font-mono text-[clamp(4rem,14vw,11rem)] font-extrabold leading-[0.75] tracking-tight text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.25)]">
             2026
           </div>
 
           <div className="mx-auto mt-6 h-px w-36 bg-gradient-to-r from-transparent via-violet-400/80 to-transparent" />
         </motion.div>
 
-        {/* 03 — Real Headliners Showcase */}
-        <div className="mt-16 w-full max-w-5xl space-y-6">
-          {headliners.map((item, idx) => (
+        {/* 03 — 2026 Headliners Teaser Showcase */}
+        <div className="mt-14 w-full space-y-6 text-left">
+          {headliners2026Teaser.map((item, idx) => (
             <motion.div
-              key={item.artist}
+              key={item.dayBadge}
               initial={{ opacity: 0, y: 35 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 + idx * 0.15 }}
-              className="liquid-glass group relative overflow-hidden rounded-[26px] border border-white/12 p-8 transition-all hover:border-violet-500/40 hover:shadow-[0_20px_50px_rgba(168,85,247,0.2)] md:p-10"
+              className="group relative overflow-hidden border border-white/20 bg-gradient-to-b from-white/[0.08] to-black/85 p-8 backdrop-blur-xl transition-all hover:border-violet-500/60 hover:shadow-[0_0_50px_rgba(168,85,247,0.25)] md:p-10"
+              style={{
+                clipPath:
+                  "polygon(0 16px, 16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px))",
+              }}
             >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                <div className="text-left">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-violet-300">
-                      {item.status}
+              {/* Sci-Fi Corner Reticles */}
+              <div className="pointer-events-none absolute left-2 top-2 h-3.5 w-3.5 border-l-2 border-t-2 border-violet-400" />
+              <div className="pointer-events-none absolute right-2 top-2 h-3.5 w-3.5 border-r-2 border-t-2 border-violet-400" />
+              <div className="pointer-events-none absolute bottom-2 left-2 h-3.5 w-3.5 border-b-2 border-l-2 border-violet-400" />
+              <div className="pointer-events-none absolute bottom-2 right-2 h-3.5 w-3.5 border-b-2 border-r-2 border-violet-400" />
+
+              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="border border-violet-400/50 bg-violet-500/25 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.25em] text-violet-200">
+                      [{item.dayBadge}]
                     </span>
-                    <span className="text-white/20">•</span>
-                    <span className="text-xs uppercase tracking-wider text-white/50">
-                      {item.genre}
+                    <span className="flex items-center gap-1.5 border border-amber-400/40 bg-amber-500/15 px-3 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-300">
+                      <Lock size={11} />
+                      {item.status}
                     </span>
                   </div>
 
-                  <h3 className="mt-2 text-3xl font-bold tracking-tight text-white md:text-5xl">
+                  <h3 className="mt-3.5 text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
                     {item.artist}
                   </h3>
 
-                  <p className="mt-2 text-sm text-white/60">
+                  <p className="mt-1.5 text-xs font-medium uppercase tracking-wider text-violet-300/80">
+                    {item.genre}
+                  </p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-white/65">
                     {item.tagline}
                   </p>
                 </div>
 
-                <span className="liquid-glass self-start md:self-auto rounded-full px-5 py-2 text-xs font-mono uppercase tracking-wider text-white/80">
-                  CGC STADIUM STAGE
+                <span className="self-start rounded-full border border-white/15 bg-white/5 px-5 py-2 font-mono text-xs uppercase tracking-wider text-white/80 backdrop-blur-md md:self-auto shrink-0">
+                  {item.stage}
                 </span>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* 04 — future CTA placeholder */}
+        {/* 04 — CTA Actions */}
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="mt-16 flex flex-col items-center"
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mt-14 flex flex-col items-center"
         >
-          <p className="text-[9px] uppercase tracking-[0.45em] text-white/25">
-            SAVE THE NIGHT
+          <p className="font-mono text-[10px] uppercase tracking-[0.45em] text-white/40">
+            SECURE YOUR ACCESS TO STAR NIGHT 2026
           </p>
 
-          <button
-            type="button"
-            disabled
-            className="mt-5 inline-flex cursor-not-allowed items-center gap-3 rounded-full border border-white/10 px-7 py-3 text-xs text-white/30"
-          >
-            EXPLORE STAR NIGHT
-            <ArrowDown size={14} className="-rotate-90" />
-          </button>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/registration"
+              className="inline-flex items-center gap-3 rounded-full border border-violet-400 bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_40px_rgba(168,85,247,0.35)] transition-all hover:scale-105 hover:shadow-[0_0_60px_rgba(168,85,247,0.6)]"
+            >
+              <Ticket size={15} />
+              <span>Register & Get Passes</span>
+              <ArrowRight size={15} />
+            </Link>
 
-          <div className="mt-12 flex items-center gap-3 text-purple-300/35">
+            <a
+              href="https://www.youtube.com/@SaviskarCGCU"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-7 py-3.5 font-mono text-xs font-medium uppercase tracking-wider text-white transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-200"
+            >
+              <YoutubeIcon size={16} className="text-red-400" />
+              <span>Watch Previous Concerts</span>
+            </a>
+          </div>
+
+          <div className="mt-10 flex items-center gap-3 text-purple-300/50">
             <Sparkles size={12} />
-            <span className="text-[8px] uppercase tracking-[0.4em]">
-              Details will be revealed soon
+            <span className="font-mono text-[9px] uppercase tracking-[0.35em]">
+              Star Night entry included with verified Saviskar 2026 registration
             </span>
             <Sparkles size={12} />
           </div>

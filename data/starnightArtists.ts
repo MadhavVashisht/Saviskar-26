@@ -1,3 +1,26 @@
+export type DayPerformance = {
+  dayNumber: string; // "DAY 01" | "DAY 02"
+  date?: string;
+  theme?: string;
+  artists: string;
+  genre: string;
+  description: string;
+  badge: string;
+  image: string;
+  highlights: string[];
+};
+
+export type FestivalEdition = {
+  year: string;
+  edition: string;
+  subtitle: string;
+  attendance: string;
+  tagline: string;
+  heroImage: string;
+  days: DayPerformance[];
+};
+
+// Legacy Artist type for backward compatibility
 export type Artist = {
   year: string;
   artist: string;
@@ -8,59 +31,123 @@ export type Artist = {
   featured?: boolean;
 };
 
-export const headliners2026: Artist[] = [
-  {
-    year: "2026",
-    artist: "Salim-Sulaiman",
-    genre: "Bollywood • Sufi • Live Orchestra",
-    attendance: "Expected 45,000+",
-    tagline: "Anthems that define generations under one sky.",
-    image: "/images/concert-mission-centerstage.webp",
-    featured: true,
-  },
-  {
-    year: "2026",
-    artist: "Sunanda Sharma",
-    genre: "Punjabi Folk • Contemporary Pop",
-    attendance: "Expected 45,000+",
-    tagline: "Unmatched Punjabi folk energy lighting up the stage.",
-    image: "/images/concert-cultural-stage.webp",
-    featured: true,
-  },
-  {
-    year: "2026",
-    artist: "Kushagra Thakur",
-    genre: "Indie Rock • Acoustic Singer-Songwriter",
-    attendance: "Expected 45,000+",
-    tagline: "Intimate melodies echoing across thousands of voices.",
-    image: "/images/concert-solution-panoramic.webp",
-    featured: true,
-  },
-];
-
-export const artists: Artist[] = [
+export const festivalEditions: FestivalEdition[] = [
   {
     year: "2025",
-    artist: "Salim-Sulaiman • Sunanda Sharma • Kushagra Thakur",
-    genre: "Bollywood Symphony • Punjabi Folk • Indie Rock",
-    attendance: "25,000+",
-    tagline: "The legendary headline trio that illuminated Saviskar '25.",
-    image: "/images/gallery-1.webp",
+    edition: "Saviskar 2025",
+    subtitle: "The Electric Double-Header",
+    attendance: "25,000+ Crowd",
+    tagline:
+      "Two monumental nights that ignited CGC University into Northern India's loudest stadium chorus.",
+    heroImage: "/gallery/concert.webp",
+    days: [
+      {
+        dayNumber: "DAY 01",
+        date: "Saviskar '25 • Opening Night",
+        theme: "Acoustic Soul & High-Octane Punjabi Folk",
+        artists: "Kushagra Thakur & Sunanda Sharma",
+        genre: "Indie Rock • Acoustic Melodies • Powerhouse Punjabi Folk",
+        description:
+          "Opening night electrified the stadium, starting with Kushagra Thakur's intimate acoustic anthems and soulful indie melodies, escalating into Sunanda Sharma's high-octane Punjabi folk set that had 25,000 voices singing every lyric at the top of their lungs.",
+        badge: "OPENING NIGHT",
+        image: "/gallery/star 3.webp",
+        highlights: [
+          "Soulful Acoustic Anthems",
+          "High-Energy Punjabi Folk",
+          "Massive Opening Night Chorus",
+        ],
+      },
+      {
+        dayNumber: "DAY 02",
+        date: "Saviskar '25 • Grand Finale",
+        theme: "The Master Bollywood Symphony",
+        artists: "Salim-Sulaiman",
+        genre: "Bollywood Symphony • Sufi Anthems • Live Orchestra & Dhol",
+        description:
+          "The iconic composer duo orchestrated an unforgettable stadium finale with sweeping Bollywood classics, soaring Sufi rhythms, live dhol percussion, and 25,000 voices echoing under the night sky.",
+        badge: "GRAND FINALE",
+        image: "/gallery/star 1.webp",
+        highlights: [
+          "Full Live Symphony & Dhol",
+          "Timeless Sufi Classics",
+          "Stadium-Wide Singalong",
+        ],
+      },
+    ],
   },
   {
     year: "2024",
-    artist: "R Nait",
-    genre: "Punjabi Hip-Hop & Folk",
-    attendance: "20,000+",
-    tagline: "Every voice in the stadium sang in unison.",
-    image: "/images/gallery-2.webp",
+    edition: "Saviskar 2024",
+    subtitle: "Mystic Sufi to Stadium Bollywood Rock",
+    attendance: "20,000+ Crowd",
+    tagline:
+      "A transcendent spectrum of sound: from the sacred depths of Sufi poetry to soaring Bollywood rock anthems.",
+    heroImage: "/images/concert-stadium.webp",
+    days: [
+      {
+        dayNumber: "DAY 01",
+        date: "Saviskar '24 • Sufi Night",
+        theme: "Sufi & Qawwali Mysticism",
+        artists: "Sufi Night by Waqar Khan",
+        genre: "Mystical Sufi • Acoustic Harmonium • Soulful Ghazals",
+        description:
+          "Waqar Khan enchanted the CGC amphitheatre with an ethereal Sufi Night. Intimate acoustic strings, meditative qawwalis, and centuries of lyrical devotion created an unforgettable spiritual reverie under the stars.",
+        badge: "SUFI NIGHT",
+        image: "/images/cultural.webp",
+        highlights: [
+          "Enchanting Sufi Poetry",
+          "Soul-Stirring Ghazals",
+          "Acoustic Mysticism",
+        ],
+      },
+      {
+        dayNumber: "DAY 02",
+        date: "Saviskar '24 • Grand Finale",
+        theme: "Romantic Bollywood Rock Wave",
+        artists: "Ankit Tiwari",
+        genre: "Bollywood Rock • Melodic Ballads • Cinematic Romance",
+        description:
+          "Bollywood sensation Ankit Tiwari commanded the stage with chart-shattering anthems like 'Galliyan' and 'Sunn Raha Hai', turning the stadium grounds into a shimmering sea of flashlight waves.",
+        badge: "BOLLYWOOD HEADLINER",
+        image: "/gallery/crowd.webp",
+        highlights: [
+          "Chart-Busting Bollywood Hits",
+          "Sea of Flashlights",
+          "Rock & Romance Fusion",
+        ],
+      },
+    ],
+  },
+];
+
+// Flat artists export mapped from festivalEditions for backward compatibility
+export const artists: Artist[] = festivalEditions.map((ed) => ({
+  year: ed.year,
+  artist: ed.days.map((d) => `${d.dayNumber}: ${d.artists}`).join(" • "),
+  genre: ed.days.map((d) => d.genre.split("•")[0].trim()).join(" • "),
+  attendance: ed.attendance,
+  tagline: ed.tagline,
+  image: ed.heroImage,
+  featured: true,
+}));
+
+export const headliners2026 = [
+  {
+    day: "DAY 01",
+    status: "CLASSIFIED • REVEAL IMMINENT",
+    stage: "CGC MAINSTAGE ARENA",
+    theme: "Global Streaming Sensation & Stadium Anthems",
+    teaser:
+      "Their record-breaking tracks have dominated global charts and headline stadium tours worldwide. Headlining Day 01.",
+    targetFrequency: "102.6 MHz",
   },
   {
-    year: "2023",
-    artist: "Jass Manak",
-    genre: "Punjabi Pop",
-    attendance: "18,000+",
-    tagline: "The crowd sang every word.",
-    image: "/images/gallery-3.webp",
+    day: "DAY 02",
+    status: "CLASSIFIED • REVEAL IMMINENT",
+    stage: "CGC MAINSTAGE ARENA",
+    theme: "Mega Bollywood & Fusion Symphony Spectacle",
+    teaser:
+      "An iconic live stadium performance primed to create Northern India's biggest collegiate concert night.",
+    targetFrequency: "102.6 MHz",
   },
 ];
