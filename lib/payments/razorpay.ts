@@ -257,6 +257,8 @@ export class RazorpayGateway implements PaymentGateway {
           entity?: {
             id?: string;
             order_id?: string;
+            amount?: number;
+            currency?: string;
           };
         };
       };
@@ -291,6 +293,16 @@ export class RazorpayGateway implements PaymentGateway {
     const gatewayPaymentId: string =
       paymentEntity.id ?? "";
 
+    const amount: number | undefined =
+      typeof paymentEntity.amount === "number"
+        ? paymentEntity.amount
+        : undefined;
+
+    const currency: string | undefined =
+      typeof paymentEntity.currency === "string"
+        ? paymentEntity.currency
+        : undefined;
+
     let status: PaymentStatus = "pending";
 
     if (eventType === "payment.captured") {
@@ -306,6 +318,8 @@ export class RazorpayGateway implements PaymentGateway {
         gatewayOrderId,
         gatewayPaymentId,
         status,
+        amount,
+        currency,
         rawPayload: payload,
       },
     };

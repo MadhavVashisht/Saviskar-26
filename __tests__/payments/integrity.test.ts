@@ -667,6 +667,8 @@ describe("Phase 2B: Concurrent Webhook & Verification Idempotency (Postgres 2350
             entity: {
               id:       GATEWAY_PAYMENT_ID,
               order_id: GATEWAY_ORDER_ID,
+              amount:   29900,
+              currency: "INR",
             },
           },
         },

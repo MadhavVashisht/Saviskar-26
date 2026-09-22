@@ -196,8 +196,12 @@ function PaymentResumeContent() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "x-payment-resume-token": token,
         },
-        body: JSON.stringify({ paymentOrderId: data.paymentOrderId }),
+        body: JSON.stringify({
+          paymentOrderId: data.paymentOrderId,
+          resumeToken: token,
+        }),
       });
 
       const createJson = await createRes.json();

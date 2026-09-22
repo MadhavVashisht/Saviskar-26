@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 
 const PARTICIPANT_ID_PATTERN = /^SVK26-[A-Z0-9]{8}$/i;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,7 +53,7 @@ export async function GET(
 ) {
   // ─── Rate Limiting (10 requests per minute per IP) ──────
   const clientIp = getClientIp(request);
-  const rateLimit = checkRateLimit(`lookup:${clientIp}`, 10, 60 * 1000);
+  const rateLimit = await checkRateLimitAsync(`lookup:${clientIp}`, 10, 60 * 1000);
 
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -167,7 +167,7 @@ export async function GET(
 
   // Ownership verification: compare normalized email against authoritative participant email
   // If no record or email mismatch, return non-enumerating 404
-  if (!data || (data.email && data.email.trim().toLowerCase() !== normalizedEmail)) {
+  if (!data || !data.email || data.email.trim().toLowerCase() !== normalizedEmail) {
     return jsonResponse(
       {
         success: false,

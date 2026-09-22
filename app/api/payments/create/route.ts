@@ -25,6 +25,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { captureException } from "@/lib/monitoring/error-reporter";
 import { getPaymentGateway } from "@/lib/payments";
+import { getRegistrationSession } from "@/lib/auth/session";
+import { verifyPaymentResumeToken } from "@/lib/payments/resume-token";
 
 function errorResponse(
   message: string,
@@ -73,7 +75,7 @@ export async function POST(
 
   // ─── Parse Request ──────────────────────────────────────
 
-  let body: { paymentOrderId?: string };
+  let body: { paymentOrderId?: string; resumeToken?: string };
 
   try {
     body = await request.json();
@@ -95,6 +97,23 @@ export async function POST(
       400
     );
   }
+
+  // ─── Token Input Conflict Hardening ─────────────────────
+  const headerToken =
+    request.headers.get("x-payment-resume-token")?.trim() || "";
+  const bodyToken =
+    typeof body.resumeToken === "string"
+      ? body.resumeToken.trim()
+      : "";
+
+  if (headerToken && bodyToken && headerToken !== bodyToken) {
+    return errorResponse(
+      "Mismatched payment resume tokens provided.",
+      400
+    );
+  }
+
+  const resumeToken = headerToken || bodyToken;
 
   // ─── Look Up Payment Order ──────────────────────────────
 
@@ -136,9 +155,11 @@ export async function POST(
     );
   }
 
-  if (paymentOrder.status === "paid") {
+  if (paymentOrder.status !== "pending") {
     return errorResponse(
-      "This payment has already been completed.",
+      paymentOrder.status === "paid"
+        ? "This payment has already been completed."
+        : `Payment order is ${paymentOrder.status}.`,
       400
     );
   }
@@ -151,6 +172,110 @@ export async function POST(
       400
     );
   }
+
+  // ─── Look Up Payer Info ─────────────────────────────────
+
+  if (!paymentOrder.payer_participant_id) {
+    return errorResponse(
+      "Payment order is missing payer information.",
+      400
+    );
+  }
+
+  const {
+    data: payer,
+    error: payerError,
+  } = await supabaseAdmin
+    .from("participants")
+    .select("id, participant_id, name, email, phone")
+    .eq(
+      "id",
+      paymentOrder.payer_participant_id
+    )
+    .maybeSingle();
+
+  if (payerError || !payer) {
+    console.error(
+      "Payer lookup failed:",
+      payerError
+    );
+    return errorResponse(
+      "Payer information not found.",
+      404
+    );
+  }
+
+  // ─── Verify Internal Linked Items Consistency ───────────
+
+  const { data: orderItems, error: itemsError } = await supabaseAdmin
+    .from("payment_order_items")
+    .select("id, participant_id, participant_event_id, amount")
+    .eq("payment_order_id", paymentOrder.id);
+
+  if (itemsError || !orderItems || orderItems.length === 0) {
+    return errorResponse(
+      "Payment order has no linked items.",
+      400
+    );
+  }
+
+  const itemsMismatch = orderItems.some(
+    (item) => item.participant_id !== paymentOrder.payer_participant_id
+  );
+
+  if (itemsMismatch) {
+    return errorResponse(
+      "Payment order items are inconsistent.",
+      403
+    );
+  }
+
+  // ─── Authorization Boundary (Session or Resume Token) ───
+
+  const session = await getRegistrationSession();
+  let isAuthorized = false;
+
+  // Option A: Active Registration Session
+  if (session.authenticated && session.email) {
+    if (
+      payer.email &&
+      session.email.toLowerCase() === payer.email.trim().toLowerCase()
+    ) {
+      isAuthorized = true;
+    }
+  }
+
+  // Option B: Signed Payment Resume Token
+  if (!isAuthorized && resumeToken) {
+    const tokenResult = verifyPaymentResumeToken(resumeToken);
+    if (tokenResult.valid && tokenResult.payload) {
+      const payload = tokenResult.payload;
+      if (
+        payload.paymentOrderId === paymentOrder.id &&
+        payload.payerParticipantUuid === paymentOrder.payer_participant_id &&
+        payload.participantId === payer.participant_id
+      ) {
+        isAuthorized = true;
+      }
+    }
+  }
+
+  if (!isAuthorized) {
+    if (!session.authenticated && !resumeToken) {
+      return errorResponse(
+        "Payment authorization required.",
+        401
+      );
+    }
+    return errorResponse(
+      "Unauthorized access to this payment order.",
+      403
+    );
+  }
+
+  const payerName = payer.name ?? "";
+  const payerEmail = payer.email ?? "";
+  const payerPhone = payer.phone ?? "";
 
   // ─── If Gateway Order Already Exists, Reuse It ──────────
 
@@ -165,7 +290,11 @@ export async function POST(
           paymentOrder.gateway_order_id,
         amount: Number(paymentOrder.amount) * 100,
         currency: paymentOrder.currency ?? "INR",
-        payer: {},
+        payer: {
+          name: payerName,
+          email: payerEmail,
+          phone: payerPhone,
+        },
         orderReference:
           paymentOrder.order_reference,
       });
@@ -183,39 +312,6 @@ export async function POST(
         },
       }
     );
-  }
-
-  // ─── Look Up Payer Info ─────────────────────────────────
-
-  let payerName = "";
-  let payerEmail = "";
-  let payerPhone = "";
-
-  if (paymentOrder.payer_participant_id) {
-    const {
-      data: payer,
-      error: payerError,
-    } = await supabaseAdmin
-      .from("participants")
-      .select("name, email, phone")
-      .eq(
-        "id",
-        paymentOrder.payer_participant_id
-      )
-      .maybeSingle();
-
-    if (payerError) {
-      console.error(
-        "Payer lookup failed:",
-        payerError
-      );
-    }
-
-    if (payer) {
-      payerName = payer.name ?? "";
-      payerEmail = payer.email ?? "";
-      payerPhone = payer.phone ?? "";
-    }
   }
 
   // ─── Create Gateway Order ──────────────────────────────

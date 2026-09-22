@@ -18,15 +18,24 @@ export type RegistrationSessionPayload = {
 export const SESSION_COOKIE_NAME = "svk_reg_session";
 export const DEFAULT_SESSION_EXP_MS = 48 * 60 * 60 * 1000; // 48 hours
 
-function getSessionSecret(secretOverride?: string): string {
+export function getSessionSecret(secretOverride?: string): string {
   if (secretOverride) return secretOverride;
-  const secret =
-    process.env.SESSION_SECRET?.trim() ||
-    process.env.PAYMENT_RESUME_TOKEN_SECRET?.trim() ||
-    process.env.SUPABASE_SECRET_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-    "saviskar-2026-auth-session-fallback-secret-salt-32bytes";
-  return secret;
+
+  const sessionSecret = process.env.SESSION_SECRET?.trim();
+  if (sessionSecret) {
+    return sessionSecret;
+  }
+
+  // In production, fail closed immediately — never derive or fall back
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET is not configured in production environment."
+    );
+  }
+
+  // Development/test environments only.
+  // Explicitly forbidden to use NEXT_PUBLIC_* or PAYMENT_RESUME_TOKEN_SECRET as fallback.
+  return "dev-only-registration-session-secret-salt-32bytes-minimum";
 }
 
 function base64UrlEncode(input: string): string {
@@ -91,7 +100,14 @@ export function verifyRegistrationSessionToken(
   }
 
   const [payloadB64, providedSig] = parts;
-  const secret = getSessionSecret(secretOverride);
+
+  let secret: string;
+  try {
+    secret = getSessionSecret(secretOverride);
+  } catch {
+    return { valid: false, error: "Session secret is not configured." };
+  }
+
   const expectedSig = computeHmacSignature(payloadB64, secret);
 
   const providedBuf = Buffer.from(providedSig);

@@ -137,4 +137,63 @@ describe("P1-03: Participant Lookup API Ownership Challenge & PII Masking", () =
     expect(body.success).toBe(false);
     expect(body.error).toBe("Invalid participant ID.");
   });
+
+  it("H. Rate limit enforcement: 10 requests allowed, 11th request receives 429", async () => {
+    resetRateLimitStore();
+
+    // Perform 10 requests
+    for (let i = 0; i < 10; i++) {
+      const [req, ctx] = makeRequest("SVK26-12345678", "aarav.sharma@example.com");
+      const res = await GET(req, ctx);
+      expect(res.status).toBe(200);
+    }
+
+    // 11th request must be blocked
+    const [blockedReq, blockedCtx] = makeRequest("SVK26-12345678", "aarav.sharma@example.com");
+    const blockedRes = await GET(blockedReq, blockedCtx);
+    expect(blockedRes.status).toBe(429);
+
+    const data = await blockedRes.json();
+    expect(data.error).toContain("Too many lookup attempts");
+  });
+
+  it("I. Nonexistent participant and wrong email produce IDENTICAL JSON response and status", async () => {
+    const [reqNonexistent, ctxNonexistent] = makeRequest("SVK26-99999999", "anyone@example.com");
+    const resNonexistent = await GET(reqNonexistent, ctxNonexistent);
+
+    const [reqWrongEmail, ctxWrongEmail] = makeRequest("SVK26-12345678", "wrong.email@example.com");
+    const resWrongEmail = await GET(reqWrongEmail, ctxWrongEmail);
+
+    expect(resNonexistent.status).toBe(resWrongEmail.status);
+    expect(resNonexistent.status).toBe(404);
+
+    const bodyNonexistent = await resNonexistent.json();
+    const bodyWrongEmail = await resWrongEmail.json();
+    expect(bodyNonexistent).toEqual(bodyWrongEmail);
+  });
+
+  it("J. Response does not leak internal UUIDs, payment secrets, or admin fields", async () => {
+    const [req, ctx] = makeRequest("SVK26-12345678", "aarav.sharma@example.com");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    // Verify participant object contains no internal DB UUID or secret
+    expect(body.participant.id).toBeUndefined();
+    expect(body.participant._id).toBeUndefined();
+    expect(body.participant.secret).toBeUndefined();
+    expect(body.participant.token).toBeUndefined();
+    expect(body.participant.role).toBeUndefined();
+
+    // Verify raw email and phone are not leaked
+    expect(body.participant.email).not.toBe("aarav.sharma@example.com");
+    expect(body.participant.phone).not.toBe("9876543210");
+
+    // Verify events contain no gateway credentials
+    for (const evt of body.events) {
+      expect(evt.gateway_order_id).toBeUndefined();
+      expect(evt.gateway_payment_id).toBeUndefined();
+      expect(evt.secret).toBeUndefined();
+    }
+  });
 });

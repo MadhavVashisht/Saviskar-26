@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendRegistrationEmail } from "@/lib/send-registration-email";
 import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 import { generatePaymentResumeUrl } from "@/lib/payments/resume-token";
+import { getRegistrationSession } from "@/lib/auth/session";
 
 type MemberInput = {
   name?: unknown;
@@ -141,7 +142,20 @@ export async function POST(
   request: NextRequest
 ) {
   // =====================================================
-  // 1. RATE LIMIT
+  // 1. REGISTRATION SESSION AUTHENTICATION
+  // =====================================================
+
+  const session = await getRegistrationSession();
+
+  if (!session.authenticated || !session.email) {
+    return errorResponse(
+      "Registration authentication required.",
+      401
+    );
+  }
+
+  // =====================================================
+  // 2. RATE LIMIT
   // =====================================================
 
   const clientIp =
@@ -161,7 +175,7 @@ export async function POST(
   }
 
   // =====================================================
-  // 2. REQUEST SIZE
+  // 3. REQUEST SIZE
   // =====================================================
 
   const contentLength =
@@ -306,6 +320,13 @@ export async function POST(
     cleanPhone(
       body.phone
     );
+
+  if (!email || email !== session.email.toLowerCase()) {
+    return errorResponse(
+      "Submitted email does not match authenticated session.",
+      403
+    );
+  }
 
   /*
    * New participant:
@@ -584,11 +605,8 @@ export async function POST(
     const code = rpcError.code || "";
 
     // 1. Structured Error Codes (SVK01 - SVK11)
-    if (code === "SVK01") {
-      return errorResponse("That Participant ID was not found.", 404);
-    }
-    if (code === "SVK02") {
-      return errorResponse("The provided email does not match this Participant ID.", 400);
+    if (code === "SVK01" || code === "SVK02") {
+      return errorResponse("Invalid participant identification or email.", 400);
     }
     if (code === "SVK03" || code === "SVK04" || code === "SVK05") {
       return errorResponse(message, 400);
@@ -602,23 +620,11 @@ export async function POST(
 
     // 2. Backward Compatibility Fallbacks (Text Matching)
     if (
-      message.includes(
-        "Participant ID was not found"
-      )
+      message.includes("Participant ID was not found") ||
+      message.includes("The provided email does not match this Participant ID")
     ) {
       return errorResponse(
-        "That Participant ID was not found.",
-        404
-      );
-    }
-
-    if (
-      message.includes(
-        "The provided email does not match this Participant ID"
-      )
-    ) {
-      return errorResponse(
-        "The provided email does not match this Participant ID.",
+        "Invalid participant identification or email.",
         400
       );
     }

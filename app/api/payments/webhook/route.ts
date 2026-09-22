@@ -116,13 +116,22 @@ export async function POST(
     });
   }
 
+  if (!event.gatewayPaymentId) {
+    console.error(
+      "Webhook event missing gateway payment ID."
+    );
+    return new Response("Missing payment ID.", {
+      status: 400,
+    });
+  }
+
   const {
     data: paymentOrder,
     error: lookupError,
   } = await supabaseAdmin
     .from("payment_orders")
     .select(
-      "id, status, payer_participant_id, amount"
+      "id, status, payer_participant_id, amount, currency, gateway_order_id"
     )
     .eq(
       "gateway_order_id",
@@ -165,9 +174,69 @@ export async function POST(
     });
   }
 
+  if (paymentOrder.status !== "pending") {
+    console.warn(
+      "Webhook: payment order is not pending:",
+      paymentOrder.status
+    );
+    return new Response("OK", {
+      status: 200,
+    });
+  }
+
   // ─── Handle Event ──────────────────────────────────────
 
   if (event.status === "paid") {
+    // ─── Defense-In-Depth: Amount & Currency Verification ───
+    const expectedAmountPaise = Math.round(Number(paymentOrder.amount) * 100);
+    const expectedCurrency = (paymentOrder.currency || "INR").toUpperCase();
+
+    let capturedAmount = event.amount;
+    let capturedCurrency = event.currency;
+
+    // If webhook payload lacks trustworthy amount/currency, fetch server-side from Razorpay
+    if (typeof capturedAmount !== "number" || !capturedCurrency) {
+      try {
+        const fetched = await gateway.fetchPaymentDetails(event.gatewayPaymentId);
+        capturedAmount = fetched.amount;
+        capturedCurrency = fetched.currency;
+
+        if (fetched.gatewayOrderId !== event.gatewayOrderId) {
+          console.error("Webhook: Razorpay order ID mismatch:", {
+            expected: event.gatewayOrderId,
+            actual: fetched.gatewayOrderId,
+          });
+          return new Response("Order mismatch.", { status: 400 });
+        }
+
+        if (fetched.status !== "captured") {
+          console.error("Webhook: Payment status is not captured:", fetched.status);
+          return new Response("Payment not captured.", { status: 400 });
+        }
+      } catch (err) {
+        console.error("Webhook: Server-side payment lookup failed:", err);
+        return new Response("Could not verify payment details.", { status: 502 });
+      }
+    }
+
+    if (capturedAmount !== expectedAmountPaise) {
+      console.error("Webhook: Amount mismatch! Payment rejected.", {
+        expectedAmountPaise,
+        capturedAmount,
+        paymentOrderId: paymentOrder.id,
+      });
+      return new Response("Amount mismatch.", { status: 400 });
+    }
+
+    if (capturedCurrency.toUpperCase() !== expectedCurrency) {
+      console.error("Webhook: Currency mismatch! Payment rejected.", {
+        expectedCurrency,
+        capturedCurrency,
+        paymentOrderId: paymentOrder.id,
+      });
+      return new Response("Currency mismatch.", { status: 400 });
+    }
+
     // ─── Database-Enforced Idempotency Claim ─────────────────
     const { data: eventClaim, error: claimError } = await supabaseAdmin
       .from("processed_payment_events")

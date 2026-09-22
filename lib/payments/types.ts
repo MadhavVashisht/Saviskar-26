@@ -127,6 +127,12 @@ export type WebhookEvent = {
   /** Resolved payment status. */
   status: PaymentStatus;
 
+  /** Amount in smallest currency unit (paise) extracted from payload if present. */
+  amount?: number;
+
+  /** Currency code extracted from payload if present. */
+  currency?: string;
+
   /** Full raw payload (for logging). */
   rawPayload: unknown;
 };
