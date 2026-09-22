@@ -3,7 +3,7 @@ import {
   validatePassword, 
   getMfaAction,
   validateMfaCodeInput
-} from "@/app/admin/accept-invite/page";
+} from "@/lib/admin/onboarding";
 import { parseAuthHash } from "@/lib/utils/auth";
 
 describe("Admin Invitation Onboarding Unit Tests", () => {

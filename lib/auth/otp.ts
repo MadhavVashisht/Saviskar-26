@@ -15,7 +15,7 @@
 import { createHmac, randomInt, timingSafeEqual } from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sendOtpEmail } from "./send-otp-email";
-import { checkRateLimitAsync } from "@/lib/rate-limit";
+import { checkRateLimitAsync, resetRateLimitStore } from "@/lib/rate-limit";
 
 export const OTP_EXPIRATION_MS = 10 * 60 * 1000; // 10 minutes
 export const OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
@@ -121,8 +121,26 @@ export class SupabaseOtpStore implements IOtpStore {
       if (!error && typeof data === "number") {
         return data;
       }
-    } catch {
-      // Proceed to fallback if RPC is not present yet
+      if (error && isProductionEnvironment()) {
+        throw new Error(
+          `[AUTH OTP FATAL] Failed to atomically increment OTP attempts via RPC: ${error.message}`
+        );
+      }
+    } catch (rpcErr) {
+      if (isProductionEnvironment()) {
+        throw rpcErr instanceof Error
+          ? rpcErr
+          : new Error(
+              `[AUTH OTP FATAL] Failed to atomically increment OTP attempts via RPC: ${String(rpcErr)}`
+            );
+      }
+      // Proceed to fallback only in local non-production development if RPC is not yet deployed
+    }
+
+    if (isProductionEnvironment()) {
+      throw new Error(
+        "[AUTH OTP FATAL] Atomic increment_registration_otp_attempts RPC failed or unavailable in production. Non-atomic fallback is forbidden."
+      );
     }
 
     const { data: record } = await this.client
@@ -578,4 +596,5 @@ export async function verifyOtp(
 export function _clearOtpStoreForTesting() {
   memoryFallback.clear();
   setOtpStoreOverride(null);
+  resetRateLimitStore();
 }

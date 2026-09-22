@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 import {
@@ -15,16 +15,37 @@ import {
   MAX_VERIFY_ATTEMPTS,
   IOtpStore,
   OtpRecord,
+  MemoryOtpStore,
+  SupabaseOtpStore,
 } from "@/lib/auth/otp";
 import { POST as requestOtpHandler } from "@/app/api/auth/request-otp/route";
 import { POST as verifyOtpHandler } from "@/app/api/auth/verify-otp/route";
 import { NextRequest } from "next/server";
+import { SupabaseClient } from "@supabase/supabase-js";
+
+let lastDispatchedOtp: string | null = null;
+
+vi.mock("@/lib/auth/send-otp-email", () => ({
+  sendOtpEmail: vi.fn(async (_toEmail: string, otp: string) => {
+    lastDispatchedOtp = otp;
+    return {
+      success: true,
+      messageId: "mock-otp-msg-id",
+    };
+  }),
+}));
 
 describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
   const TEST_SECRET = "test-secret-salt-for-saviskar-auth-32-chars-long";
   const testEmail = "delegate@university.ac.in";
 
   beforeEach(() => {
+    lastDispatchedOtp = null;
+    _clearOtpStoreForTesting();
+    setOtpStoreOverride(new MemoryOtpStore());
+  });
+
+  afterEach(() => {
     _clearOtpStoreForTesting();
   });
 
@@ -187,16 +208,10 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       const dbEntry = sharedDatabaseTable.get(email);
       expect(dbEntry).toBeDefined();
 
-      // Find the issued code by comparing hash (since random)
-      const knownIssuedAt = dbEntry!.issuedAt;
-      let issuedCode = "";
-      for (let n = 100000; n < 1000000; n++) {
-        if (hashOtp(email, n.toString(), knownIssuedAt) === dbEntry!.otpHash) {
-          issuedCode = n.toString();
-          break;
-        }
-      }
-      expect(issuedCode).toMatch(/^\d{6}$/);
+      // Retrieve issued code from test email dispatch capture (deterministic, non-leaking)
+      expect(lastDispatchedOtp).toBeDefined();
+      expect(lastDispatchedOtp).toMatch(/^\d{6}$/);
+      const issuedCode = lastDispatchedOtp!;
 
       // Now switch execution context to Instance B (separate process/container memory)
       // Instance B has its own fresh client connection to shared database
@@ -244,18 +259,9 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       const email = "single-use@university.edu";
       await requestOtp(email, "192.168.1.60");
 
-      const store = (await import("@/lib/auth/otp")).getOtpStore();
-      const activeOtp = await store.getActiveOtp(email);
-      expect(activeOtp).toBeDefined();
-
-      // Find code
-      let validCode = "";
-      for (let n = 100000; n < 1000000; n++) {
-        if (hashOtp(email, n.toString(), activeOtp!.issuedAt) === activeOtp!.otpHash) {
-          validCode = n.toString();
-          break;
-        }
-      }
+      expect(lastDispatchedOtp).toBeDefined();
+      expect(lastDispatchedOtp).toMatch(/^\d{6}$/);
+      const validCode = lastDispatchedOtp!;
 
       // First verification succeeds
       const firstVerify = await verifyOtp(email, validCode);
@@ -487,31 +493,37 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       }
     });
 
+    it("Production Safety: In production environment, failed atomic increment RPC fails closed and never falls back to read-then-write", async () => {
+      const originalEnv = process.env.NODE_ENV;
+      try {
+        (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+        const mockSupabase = {
+          rpc: vi.fn().mockResolvedValue({ data: null, error: new Error("RPC failure simulated") }),
+          from: vi.fn(),
+        };
+        const store = new SupabaseOtpStore(mockSupabase as unknown as SupabaseClient);
+        await expect(store.incrementAttempts("test-uuid")).rejects.toThrow(/\[AUTH OTP FATAL\]/);
+        // Verify fallback .from().select() was NOT called in production
+        expect(mockSupabase.from).not.toHaveBeenCalled();
+      } finally {
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
+      }
+    });
+
     it("Concurrency Safety: Two simultaneous verification requests using the same OTP cannot both succeed (atomic single-use)", async () => {
       const email = "concurrency-test@university.edu";
-      let capturedCode = "";
-      const emailSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       await requestOtp(email, "127.0.0.1");
 
-      const store = (await import("@/lib/auth/otp")).getOtpStore();
-      const active = await store.getActiveOtp(email);
-      expect(active).not.toBeNull();
-
-      for (let n = 100000; n < 1000000; n++) {
-        if (hashOtp(email, n.toString(), active!.issuedAt) === active!.otpHash) {
-          capturedCode = n.toString();
-          break;
-        }
-      }
+      expect(lastDispatchedOtp).toBeDefined();
+      expect(lastDispatchedOtp).toMatch(/^\d{6}$/);
+      const capturedCode = lastDispatchedOtp!;
 
       // Execute two simultaneous verification requests using the same valid OTP
       const [res1, res2] = await Promise.all([
         verifyOtp(email, capturedCode),
         verifyOtp(email, capturedCode),
       ]);
-
-      emailSpy.mockRestore();
 
       const successes = [res1, res2].filter((r) => r.success);
       const failures = [res1, res2].filter((r) => !r.success);
