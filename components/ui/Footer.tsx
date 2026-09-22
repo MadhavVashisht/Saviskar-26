@@ -228,7 +228,7 @@ export default function Footer() {
                   <motion.a
                     whileHover={{ scale: 1.02, x: 2 }}
                     whileTap={{ scale: 0.98 }}
-                    href="tel:+918099731133"
+                    href="tel:+916280039126"
                     className="liquid-glass flex items-center gap-3 rounded-2xl border border-white/10 p-3.5 transition-colors hover:border-violet-500/40 hover:bg-white/10"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
@@ -239,7 +239,7 @@ export default function Footer() {
                         Technical & Realm Ops
                       </p>
                       <p className="mt-0.5 text-xs font-medium text-white">
-                        +91 80997 31133
+                        +91 6280039126
                       </p>
                     </div>
                   </motion.a>
@@ -247,7 +247,7 @@ export default function Footer() {
                   <motion.a
                     whileHover={{ scale: 1.02, x: 2 }}
                     whileTap={{ scale: 0.98 }}
-                    href="tel:+919454775557"
+                    href="tel:+917347250314"
                     className="liquid-glass flex items-center gap-3 rounded-2xl border border-white/10 p-3.5 transition-colors hover:border-violet-500/40 hover:bg-white/10"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
@@ -258,7 +258,7 @@ export default function Footer() {
                         Hospitality Desk
                       </p>
                       <p className="mt-0.5 text-xs font-medium text-white">
-                        +91 94547 75557
+                        +91 7347250314
                       </p>
                     </div>
                   </motion.a>

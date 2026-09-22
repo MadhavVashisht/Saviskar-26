@@ -186,7 +186,7 @@ export default async function RegisterPage({
               <Phone size={18} className="text-violet-300" />
               <div>
                 <p className="text-[9px] uppercase tracking-wider text-white/40">Helpline Numbers</p>
-                <p className="text-xs font-medium text-white">+91 76673 40235 • +91 80997 31133</p>
+                <p className="text-xs font-medium text-white">+91 76673 40235 • +91 6280039126</p>
               </div>
             </a>
           </div>
