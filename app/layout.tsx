@@ -54,11 +54,11 @@ export const metadata: Metadata = {
     "Punjab University Festival",
     "Student Festival Registrations"
   ],
-  authors: [{ name: "CGC University, Mohali", url: "https://saviskar-2026.vercel.app" }],
+  authors: [{ name: "CGC University, Mohali", url: "https://saviskar.co.in" }],
   creator: "CGC University, Mohali",
   publisher: "CGC University, Mohali",
   category: "University Festival & National Competitions",
-  metadataBase: new URL("https://saviskar-2026.vercel.app"),
+  metadataBase: new URL("https://saviskar.co.in"),
   alternates: {
     canonical: "/",
   },
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
     description:
       "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, 500+ Colleges & Universities, 25,000+ Participants, 2 Action-Packed Days.",
-    url: "https://saviskar-2026.vercel.app",
+    url: "https://saviskar.co.in",
     siteName: "Saviskar 2026",
     locale: "en_IN",
     type: "website",

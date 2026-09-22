@@ -233,17 +233,17 @@ export default function DeskEditorialSpread({
 
       {Header}
 
-      {/* Two-column spread */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-start">
+      {/* Two-column spread — items-stretch keeps both columns equal height */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-stretch">
         {align === "left" ? (
           <>
-            <div className="md:col-span-7">{TextContent}</div>
-            <div className="md:col-span-5">{VisualContent}</div>
+            <div className="md:col-span-7 h-full">{TextContent}</div>
+            <div className="md:col-span-5 h-full self-stretch">{VisualContent}</div>
           </>
         ) : (
           <>
-            <div className="md:col-span-5 order-2 md:order-1">{VisualContent}</div>
-            <div className="md:col-span-7 order-1 md:order-2">{TextContent}</div>
+            <div className="md:col-span-5 order-2 md:order-1 h-full self-stretch">{VisualContent}</div>
+            <div className="md:col-span-7 order-1 md:order-2 h-full">{TextContent}</div>
           </>
         )}
       </div>

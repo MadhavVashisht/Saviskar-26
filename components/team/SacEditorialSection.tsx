@@ -54,12 +54,12 @@ interface TierConf {
 const TIER_CONF: Record<Tier, TierConf> = {
   lead: {
     className: "pc-lead",
-    // Bright violet/purple — neon stage lead
-    behindGlowColor: "rgba(139, 92, 246, 0.80)",
-    behindGlowSize: "35%",
+    // Golden amber — distinguishes all heads/leads at a glance
+    behindGlowColor: "rgba(245, 158, 11, 0.80)",
+    behindGlowSize: "38%",
     innerGradient:
-      "linear-gradient(145deg, rgba(139,92,246,0.50) 0%, rgba(109,40,217,0.28) 40%, rgba(8,5,20,0.97) 100%)",
-    badgeLabel: "Lead",
+      "linear-gradient(145deg, rgba(245,158,11,0.32) 0%, rgba(180,83,9,0.20) 45%, rgba(10,5,0,0.97) 100%)",
+    badgeLabel: "Head",
   },
   core: {
     className: "pc-core",
@@ -99,7 +99,7 @@ function SacProfileCard({ member, tier }: SacCardProps) {
     <div id={`member-${member.id}`} className="flex justify-center flex-shrink-0">
       <ProfileCard
         name={member.name}
-        title={member.role || "Student Advisory Council"}
+        title={member.role || "Student Advisory Council (SAC)"}
         handle={handle}
         status={statusText}
         contactText={conf.badgeLabel}
@@ -310,10 +310,11 @@ export default function SacEditorialSection() {
       eyebrow: "Executive Council Apex",
       title: "Overall Heads",
       description:
-        "The supreme student executive command of Saviskar 2026. Presiding over the Student Advisory Council, anchoring festival governance, inter-wing strategic synchronization, and institutional liaison with university leadership to unite 25,000+ delegates under Aevorian Reverie.",
+        "The supreme student executive command of Saviskar 2026. Presiding over the Student Advisory Council (SAC), anchoring festival governance, inter-wing strategic synchronization, and institutional liaison with university leadership to unite 25,000+ delegates under Aevorian Reverie.",
       icon: <Crown size={14} />,
       accentClass: "text-amber-400",
       leads: OVERALL_HEADS,
+      leadsLabel: "Overall Heads",
       core: [],
       members: [],
     },
@@ -331,7 +332,6 @@ export default function SacEditorialSection() {
       members: [],
     },
     {
-      // Both Madhav Vashisht & Jashan Jot Singh receive Golden (Lead) cards
       id: "website",
       chapter: "CHAPTER 03",
       eyebrow: "Digital Architecture & Infrastructure",
@@ -340,8 +340,8 @@ export default function SacEditorialSection() {
         "The engineering force architecting the digital face of Saviskar 2026. Developing the high-performance responsive web portal, real-time ticket checkout flows, automated registration verification emails, payment gateways, and interactive 3D WebGL scenes across all devices.",
       icon: <Code2 size={14} />,
       accentClass: "text-amber-400",
-      leads: WEBSITE_TEAM,
-      leadsLabel: "Lead Architects & Developers",
+      leads: WEBSITE_TEAM,        // Both Madhav & Jashan Jot — golden glow
+      leadsLabel: "Website Heads",
       core: [],
       members: [],
     },
@@ -432,7 +432,7 @@ export default function SacEditorialSection() {
         {/* Tier colour legend */}
         <div className="mt-8 flex flex-wrap gap-3">
           {[
-            { label: "Team Lead", cls: "text-violet-400 border-violet-400/30 bg-violet-500/[0.06]" },
+            { label: "Head / Lead", cls: "text-amber-400 border-amber-400/30 bg-amber-500/[0.06]" },
             { label: "Core Member", cls: "text-cyan-400 border-cyan-400/30 bg-cyan-500/[0.06]" },
             { label: "Council Member", cls: "text-blue-400 border-blue-400/30 bg-blue-500/[0.06]" },
           ].map((t) => (

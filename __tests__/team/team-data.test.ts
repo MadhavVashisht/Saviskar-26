@@ -36,11 +36,11 @@ describe("Organising Team Data Structure with Exact Student Roster", () => {
 
     const lakshita = SAC_OFFICE_BEARERS.find((m) => m.name === "Lakshita");
     expect(lakshita).toBeDefined();
-    expect(lakshita?.role).toBe("President, Student Advisory Council");
+    expect(lakshita?.role).toBe("President, Student Advisory Council (SAC)");
 
     const aadit = SAC_OFFICE_BEARERS.find((m) => m.name === "Aadit Bhardwaj");
     expect(aadit).toBeDefined();
-    expect(aadit?.role).toBe("Vice President, Student Advisory Council");
+    expect(aadit?.role).toBe("Vice President, Student Advisory Council (SAC)");
   });
 
   it("should have exactly 19 other Core Members in SAC_CORE_LEADS (21 Core total with President & VP)", () => {

@@ -25,7 +25,7 @@ export default function TeamView() {
     { value: "01", label: "Apex Patron", sub: "Director Student Affairs" },
     { value: "01", label: "Dean Leadership", sub: "Dean Student Affairs" },
     { value: "04", label: "Directorate Leads", sub: "Culture & Operations" },
-    { value: "53", label: "SAC Council", sub: "Student Architects" },
+    { value: "53", label: "Student Advisory Council (SAC)", sub: "Student Architects" },
   ];
 
   return (
@@ -116,18 +116,18 @@ export default function TeamView() {
               Meet the executive patrons, cultural directorate, and student council leaders crafting North India&apos;s premier techno-cultural convergence at CGC University, Mohali.
             </p>
 
-            {/* Telemetry stat row */}
-            <div className="mt-10 flex flex-wrap items-start gap-x-8 gap-y-4">
+            {/* Telemetry stat row — 4-col grid keeps all stats on one line */}
+            <div className="mt-10 grid grid-cols-4 items-start gap-x-0">
               {telemetryDials.map((dial, idx) => (
                 <div key={idx} className="flex items-start gap-4">
                   {idx > 0 && (
                     <span className="h-8 w-px bg-white/[0.08] self-center flex-shrink-0" aria-hidden="true" />
                   )}
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-3xl sm:text-4xl font-bold text-white leading-none tracking-tight tabular-nums">
                       {dial.value}
                     </div>
-                    <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-400 mt-1.5 leading-tight">
+                    <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-400 mt-1.5 leading-tight break-words">
                       {dial.label}
                     </div>
                     <div className="font-mono text-[8px] text-white/25 tracking-wider mt-0.5">
@@ -198,18 +198,13 @@ export default function TeamView() {
         />
       </div>
 
-      {/* ════════════════════════════════════════════════════
-          3. CULTURAL & OPERATIONS DIRECTORATE
-      ════════════════════════════════════════════════════ */}
       <div id="directorate">
         {/* Section header */}
         <div
           className="relative z-20 pt-16 pb-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
           style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
         >
-          {/* Corner bracket decoration */}
           <div className="absolute top-16 left-4 sm:left-6 lg:left-8 w-4 h-4 border-t border-l border-violet-500/40" />
-
           <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-violet-400 mb-3">
             <Layers size={11} />
             <span>Festival Directorate // Cultural & Operations Command</span>
@@ -222,23 +217,57 @@ export default function TeamView() {
           </p>
         </div>
 
-        {[...LEVEL_3_CULTURAL_DIRECTORATE, ...LEVEL_4_OPERATIONS_COMMAND].map((faculty, idx) => (
-          <DeskEditorialSpread
-            key={faculty.id}
-            titleBadge={`FESTIVAL DIRECTORATE // ${(faculty.honorific ?? "FACULTY").toUpperCase()}`}
-            deskTitle={(faculty.name ?? "").toUpperCase()}
-            paragraphs={[
-              (faculty.bio ?? `${faculty.name} oversees a critical domain of Saviskar 2026 — bringing institutional expertise, operational precision, and creative vision to every facet of festival execution.`),
+        {/* Rich per-person bio copy — 4 paragraphs each to fill vertical space */}
+        {(() => {
+          const DIRECTORATE_BIOS: Record<string, string[]> = {
+            "ad-vaibhav-kelay": [
+              "Mr. Vaibhav Kelay is the creative engine behind every cultural spectacle at Saviskar 2026. As Assistant Director Cultural, he architects the full spectrum of artistic programming — from national-level fine arts competitions and classical music recitals to modern dance showcases and spoken-word arenas — ensuring each event carries both cultural authenticity and stadium-scale impact.",
+              "His curatorial philosophy centres on discovering and amplifying student talent from across the country. Under his directorship, Saviskar has evolved into one of North India's most sought-after platforms for emerging artists, drawing participants from 11 states who compete, collaborate, and create under a single, electrifying banner.",
+              "Mr. Kelay oversees the entire production pipeline for the flagship Star Night headline concerts — from artist liaison and stage design briefs to sound-system engineering and crowd choreography. His attention to the lived experience of every audience member is what transforms a concert into a memory that outlasts the event itself.",
+              "Department of Cultural Affairs & Student Development, CGC University — his domain is the heartbeat of Aevorian Reverie, and the roar of the stadium crowd is the truest measure of his craft.",
+            ],
+            "mgr-monika-dhaliwal": [
+              "Mrs. Monika Dhaliwal brings a rare combination of institutional authority and artistic sensitivity to the role of Senior Manager, Department of Student Affairs. Her oversight spans multi-genre fine arts curation, inter-college theatrical productions, craft pavilions, and the cultural co-ordination committees that synchronise dozens of simultaneous festival verticals.",
+              "A steadfast advocate for inclusive artistic expression, Mrs. Dhaliwal ensures that every category of cultural competition — from classical Bharatanatyam to contemporary street art installations — is judged, staged, and celebrated with equal rigor and respect. Under her guidance, the Saviskar fine arts pavilion has grown into an exhibition space that rivals dedicated arts festivals in scope and curation.",
+              "Her administrative precision ensures that no artist arrives on stage under-rehearsed, no jury convenes without a clear rubric, and no performance goes undocumented. The institutional memory she maintains across departments is what makes Saviskar 2026 feel like a well-oiled creative machine even in its most complex, high-stakes moments.",
+              "Department of Student Affairs, CGC University — Mrs. Dhaliwal's contribution is the invisible scaffold on which Aevorian Reverie's cultural grandeur stands.",
+            ],
+            "ops-anand-kumar": [
+              "Mr. Anand Kumar commands the entire operational backbone of Saviskar 2026. As Operations Command, he is responsible for the physical transformation of CGC University's campus — converting open grounds, corridors, and auditoriums into world-class festival venues with precision staging, broadcast-grade electrical grids, and seamless crowd-management infrastructure.",
+              "His team deploys and monitors over a dozen simultaneous technical setups across the festival's multi-venue footprint. From PA system calibration in open-air arenas to generator fail-safes and emergency lighting in enclosed theatres, Mr. Kumar's operational playbook leaves nothing to chance. Every contingency has a protocol; every protocol has an owner.",
+              "Security architecture is among his most critical responsibilities. Coordinating with university administration, local authorities, and event security contractors, he designs and enforces entry management systems that ensure the safety of 25,000+ delegates without sacrificing the vibrancy of the festival atmosphere. His approach — thorough, calm, and adaptive — sets the professional standard for campus-scale event operations in the region.",
+              "Festival Logistics & Infrastructure Management — the infrastructure Mr. Kumar builds over months disappears into the background during the festival, which is precisely the hallmark of exceptional operations leadership.",
+            ],
+            "ops-aditya": [
+              "Mr. Aditya is the living voice of Saviskar 2026. As Lead Stage Anchor and Youth Engagement Director, he commands the microphone at every flagship event — from the opening ceremony that sets the festival's tone to the closing gala that sends thousands of students home with a story worth telling. His stage presence is magnetic, his timing instinctive, and his ability to hold a crowd's attention through technical transitions seamless.",
+              "Beyond individual performances, Mr. Aditya designs and runs the student delegate liaison programme — the human bridge between incoming participants from across India and the Saviskar organisational machine. His team ensures that every student who arrives at CGC University for Saviskar 2026 feels informed, welcomed, and energised from the first checkpoint to the final curtain.",
+              "He also leads the youth engagement initiatives that build festival anticipation in the months before doors open — hosting campus activations, digital countdown events, and orientation workshops that prime thousands of first-time festival-goers for the Aevorian Reverie experience. His energy is contagious, and it cascades from the stage through the crowd and out into the wider student community.",
+              "Student Engagement & Stage Protocol, CGC University — when Mr. Aditya steps to the mic, Saviskar 2026 does not just begin; it ignites.",
+            ],
+          };
+
+          return [...LEVEL_3_CULTURAL_DIRECTORATE, ...LEVEL_4_OPERATIONS_COMMAND].map((faculty, idx) => {
+            const richBio = DIRECTORATE_BIOS[faculty.id];
+            const paragraphs = richBio ?? [
+              faculty.bio ?? `${faculty.name} oversees a critical domain of Saviskar 2026 — bringing institutional expertise, operational precision, and creative vision to every facet of festival execution.`,
               `${faculty.department ?? "CGC University"} — one of the pillars on which Aevorian Reverie stands.`,
-            ]}
-            signeeName={faculty.name ?? ""}
-            signeeRole={faculty.designation ?? (faculty.honorific ?? "")}
-            initials={(faculty.name ?? "??").split(" ").filter((n) => !["Dr.", "Mrs.", "Mr.", "Ms."].includes(n)).slice(0, 2).map((n) => n[0]).join("")}
-            image={faculty.image ?? ""}
-            accentColor={idx % 2 === 0 ? "violet" : "cyan"}
-            align={idx % 2 === 0 ? "left" : "right"}
-          />
-        ))}
+            ];
+            return (
+              <DeskEditorialSpread
+                key={faculty.id}
+                titleBadge={`FESTIVAL DIRECTORATE // ${(faculty.honorific ?? "FACULTY").toUpperCase()}`}
+                deskTitle={(faculty.designation ?? faculty.honorific ?? "").toUpperCase()}
+                paragraphs={paragraphs}
+                signeeName={faculty.name ?? ""}
+                signeeRole={faculty.designation ?? (faculty.honorific ?? "")}
+                initials={(faculty.name ?? "??").split(" ").filter((n) => !["Dr.", "Mrs.", "Mr.", "Ms."].includes(n)).slice(0, 2).map((n) => n[0]).join("")}
+                image={faculty.image ?? ""}
+                accentColor={idx % 2 === 0 ? "violet" : "cyan"}
+                align={idx % 2 === 0 ? "left" : "right"}
+              />
+            );
+          });
+        })()}
       </div>
 
       {/* ════════════════════════════════════════════════════

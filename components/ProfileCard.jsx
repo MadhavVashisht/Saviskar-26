@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import './ProfileCard.css';
 
-const DEFAULT_INNER_GRADIENT = 'linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)';
+const DEFAULT_INNER_GRADIENT = 'linear-gradient(145deg,#1a1a2e 0%,#0f3460 100%)';
 
 const ANIMATION_CONFIG = {
   INITIAL_DURATION: 1200,
@@ -22,20 +22,20 @@ const ProfileCardComponent = ({
   grainUrl = '',
   innerGradient = DEFAULT_INNER_GRADIENT,
   behindGlowEnabled = true,
-  behindGlowColor = 'rgba(125, 190, 255, 0.67)',
-  behindGlowSize = '25%',
+  behindGlowColor = 'rgba(0, 255, 255, 0.4)',
+  behindGlowSize = '40%',
   className = '',
   enableTilt = true,
   enableMobileTilt = false,
   mobileTiltSensitivity = 5,
   miniAvatarUrl,
-  name = 'Javi A. Torres',
-  title = 'Software Engineer',
-  handle = 'javicodes',
+  name = 'Madhav Vashisht',
+  title = 'Core Member, Student Advisory Council (SAC)',
+  handle = 'amadhav',
   status = 'Online',
   contactText = 'Contact',
   showUserInfo = true,
-  onContactClick = () => {}
+  onContactClick = () => { }
 }) => {
   const wrapRef = useRef(null);
   const shellRef = useRef(null);
@@ -208,60 +208,15 @@ const ProfileCardComponent = ({
     leaveRafRef.current = requestAnimationFrame(checkSettle);
   }, [tiltEngine]);
 
-  const handleDeviceOrientation = useCallback(
-    event => {
-      const shell = shellRef.current;
-      if (!shell || !tiltEngine) return;
-
-      const { beta, gamma } = event;
-      if (beta == null || gamma == null) return;
-
-      const centerX = shell.clientWidth / 2;
-      const centerY = shell.clientHeight / 2;
-      const x = clamp(centerX + gamma * mobileTiltSensitivity, 0, shell.clientWidth);
-      const y = clamp(
-        centerY + (beta - ANIMATION_CONFIG.DEVICE_BETA_OFFSET) * mobileTiltSensitivity,
-        0,
-        shell.clientHeight
-      );
-
-      tiltEngine.setTarget(x, y);
-    },
-    [tiltEngine, mobileTiltSensitivity]
-  );
-
   useEffect(() => {
     if (!enableTilt || !tiltEngine) return;
 
     const shell = shellRef.current;
     if (!shell) return;
 
-    const pointerMoveHandler = handlePointerMove;
-    const pointerEnterHandler = handlePointerEnter;
-    const pointerLeaveHandler = handlePointerLeave;
-    const deviceOrientationHandler = handleDeviceOrientation;
-
-    shell.addEventListener('pointerenter', pointerEnterHandler);
-    shell.addEventListener('pointermove', pointerMoveHandler);
-    shell.addEventListener('pointerleave', pointerLeaveHandler);
-
-    const handleClick = () => {
-      if (!enableMobileTilt || location.protocol !== 'https:') return;
-      const anyMotion = window.DeviceMotionEvent;
-      if (anyMotion && typeof anyMotion.requestPermission === 'function') {
-        anyMotion
-          .requestPermission()
-          .then(state => {
-            if (state === 'granted') {
-              window.addEventListener('deviceorientation', deviceOrientationHandler);
-            }
-          })
-          .catch(console.error);
-      } else {
-        window.addEventListener('deviceorientation', deviceOrientationHandler);
-      }
-    };
-    shell.addEventListener('click', handleClick);
+    shell.addEventListener('pointerenter', handlePointerEnter);
+    shell.addEventListener('pointermove', handlePointerMove);
+    shell.addEventListener('pointerleave', handlePointerLeave);
 
     const initialX = (shell.clientWidth || 0) - ANIMATION_CONFIG.INITIAL_X_OFFSET;
     const initialY = ANIMATION_CONFIG.INITIAL_Y_OFFSET;
@@ -270,76 +225,69 @@ const ProfileCardComponent = ({
     tiltEngine.beginInitial(ANIMATION_CONFIG.INITIAL_DURATION);
 
     return () => {
-      shell.removeEventListener('pointerenter', pointerEnterHandler);
-      shell.removeEventListener('pointermove', pointerMoveHandler);
-      shell.removeEventListener('pointerleave', pointerLeaveHandler);
-      shell.removeEventListener('click', handleClick);
-      window.removeEventListener('deviceorientation', deviceOrientationHandler);
+      shell.removeEventListener('pointerenter', handlePointerEnter);
+      shell.removeEventListener('pointermove', handlePointerMove);
+      shell.removeEventListener('pointerleave', handlePointerLeave);
       if (enterTimerRef.current) window.clearTimeout(enterTimerRef.current);
       if (leaveRafRef.current) cancelAnimationFrame(leaveRafRef.current);
       tiltEngine.cancel();
       shell.classList.remove('entering');
     };
-  }, [
-    enableTilt,
-    enableMobileTilt,
-    tiltEngine,
-    handlePointerMove,
-    handlePointerEnter,
-    handlePointerLeave,
-    handleDeviceOrientation
-  ]);
+  }, [enableTilt, tiltEngine, handlePointerMove, handlePointerEnter, handlePointerLeave]);
 
   const cardStyle = useMemo(
     () => ({
       '--icon': iconUrl ? `url(${iconUrl})` : 'none',
       '--grain': grainUrl ? `url(${grainUrl})` : 'none',
       '--inner-gradient': innerGradient ?? DEFAULT_INNER_GRADIENT,
-      '--behind-glow-color': behindGlowColor ?? 'rgba(125, 190, 255, 0.67)',
-      '--behind-glow-size': behindGlowSize ?? '50%'
+      '--behind-glow-color': behindGlowColor ?? 'rgba(0, 255, 255, 0.4)',
+      '--behind-glow-size': behindGlowSize ?? '40%'
     }),
     [iconUrl, grainUrl, innerGradient, behindGlowColor, behindGlowSize]
   );
-
-  const handleContactClick = useCallback(() => {
-    onContactClick?.();
-  }, [onContactClick]);
 
   return (
     <div ref={wrapRef} className={`pc-card-wrapper ${className}`.trim()} style={cardStyle}>
       {behindGlowEnabled && <div className="pc-behind" />}
       <div ref={shellRef} className="pc-card-shell">
         <section className="pc-card">
-          <div className="pc-inside">
+          <div className="pc-inside pc-inner-bg">
             <div className="pc-shine" />
             <div className="pc-glare" />
-            <div className="pc-content pc-avatar-content">
-              <Image
-                className="avatar"
-                src={avatarUrl}
-                alt={`${name || 'User'} avatar`}
-                width={300}
-                height={400}
-                unoptimized
-                onError={e => {
-                  const t = e.target;
-                  t.style.display = 'none';
-                }}
-              />
+          </div>
+
+          <div className="pc-avatar-layer">
+            <Image
+              className="avatar"
+              src={avatarUrl}
+              alt={`${name || 'User'} avatar`}
+              width={400}
+              height={550}
+              unoptimized
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+          </div>
+
+          <div className="pc-details-container">
+            <div className="pc-details-gradient" />
+            <div className="pc-details-content">
+
+              <div className="pc-details">
+                <h3 className="pc-name">{name}</h3>
+                <p className="pc-role">{title}</p>
+              </div>
+
               {showUserInfo && (
                 <div className="pc-user-info">
                   <div className="pc-user-details">
                     <div className="pc-mini-avatar">
                       <Image
                         src={miniAvatarUrl || avatarUrl}
-                        alt={`${name || 'User'} mini avatar`}
-                        width={40}
-                        height={40}
+                        alt="Mini avatar"
+                        width={36}
+                        height={36}
                         unoptimized
-                        onError={e => {
-                          const t = e.target;
-                          t.style.opacity = '0.5';
-                        }}
+                        onError={e => { e.target.style.opacity = '0.5'; }}
                       />
                     </div>
                     <div className="pc-user-text">
@@ -349,21 +297,14 @@ const ProfileCardComponent = ({
                   </div>
                   <button
                     className="pc-contact-btn"
-                    onClick={handleContactClick}
-                    style={{ pointerEvents: 'auto' }}
+                    onClick={() => onContactClick?.()}
                     type="button"
-                    aria-label={`Contact ${name || 'user'}`}
                   >
                     {contactText}
                   </button>
                 </div>
               )}
-            </div>
-            <div className="pc-content h-full">
-              <div className="pc-details flex flex-col justify-end pb-8 pt-4 h-full inset-0">
-                <h3>{name}</h3>
-                <p>{title}</p>
-              </div>
+
             </div>
           </div>
         </section>
@@ -372,5 +313,4 @@ const ProfileCardComponent = ({
   );
 };
 
-const ProfileCard = React.memo(ProfileCardComponent);
-export default ProfileCard;
+export default React.memo(ProfileCardComponent);
