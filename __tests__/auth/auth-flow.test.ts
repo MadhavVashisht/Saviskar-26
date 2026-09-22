@@ -4,6 +4,8 @@ import path from "path";
 import {
   createRegistrationSessionToken,
   verifyRegistrationSessionToken,
+  DEFAULT_SESSION_EXP_MS,
+  SESSION_COOKIE_NAME,
 } from "@/lib/auth/session";
 import {
   requestOtp,
@@ -87,6 +89,66 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
 
       expect(result.valid).toBe(false);
       expect(result.error).toContain("expired");
+    });
+
+    it("A: Default session lifetime is exactly 48 hours (172800000 ms)", () => {
+      expect(DEFAULT_SESSION_EXP_MS).toBe(48 * 60 * 60 * 1000);
+      expect(DEFAULT_SESSION_EXP_MS).toBe(172800000);
+
+      const beforeCreation = Date.now();
+      const token = createRegistrationSessionToken(testEmail, undefined, TEST_SECRET);
+      const afterCreation = Date.now();
+
+      const verification = verifyRegistrationSessionToken(token, TEST_SECRET);
+      expect(verification.valid).toBe(true);
+      expect(verification.payload).toBeDefined();
+
+      const { iat, exp } = verification.payload!;
+      expect(exp - iat).toBe(172800000);
+      expect(exp).toBeGreaterThanOrEqual(beforeCreation + 172800000);
+      expect(exp).toBeLessThanOrEqual(afterCreation + 172800000);
+    });
+
+    it("B: Valid 48-hour session verifies successfully within the 48-hour window", () => {
+      const token = createRegistrationSessionToken(testEmail, undefined, TEST_SECRET);
+      const result = verifyRegistrationSessionToken(token, TEST_SECRET);
+
+      expect(result.valid).toBe(true);
+      expect(result.payload?.email).toBe(testEmail);
+      expect(result.payload?.exp).toBeGreaterThan(Date.now());
+    });
+
+    it("C: Expired session (past 48 hours) is rejected", () => {
+      // Simulate token past its 48-hour window
+      const expiredToken = createRegistrationSessionToken(testEmail, -1000, TEST_SECRET);
+      const result = verifyRegistrationSessionToken(expiredToken, TEST_SECRET);
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("expired");
+    });
+
+    it("D: Fixed expiration: validating session does not extend or alter expiration timestamp", () => {
+      const token = createRegistrationSessionToken(testEmail, undefined, TEST_SECRET);
+      const firstCheck = verifyRegistrationSessionToken(token, TEST_SECRET);
+      expect(firstCheck.valid).toBe(true);
+
+      const firstExp = firstCheck.payload!.exp;
+      const firstIat = firstCheck.payload!.iat;
+      const firstNonce = firstCheck.payload!.nonce;
+
+      // Simulate subsequent check at a later point
+      const secondCheck = verifyRegistrationSessionToken(token, TEST_SECRET);
+      expect(secondCheck.valid).toBe(true);
+      expect(secondCheck.payload!.exp).toBe(firstExp);
+      expect(secondCheck.payload!.iat).toBe(firstIat);
+      expect(secondCheck.payload!.nonce).toBe(firstNonce);
+    });
+
+    it("E: Cookie maxAge calculation exactly matches 48 hours in seconds (172800s)", () => {
+      expect(SESSION_COOKIE_NAME).toBe("svk_reg_session");
+      const cookieMaxAgeSeconds = Math.floor(DEFAULT_SESSION_EXP_MS / 1000);
+      expect(cookieMaxAgeSeconds).toBe(172800);
+      expect(cookieMaxAgeSeconds).toBe(48 * 60 * 60);
     });
   });
 

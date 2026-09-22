@@ -16,7 +16,7 @@ export type RegistrationSessionPayload = {
 };
 
 export const SESSION_COOKIE_NAME = "svk_reg_session";
-const DEFAULT_SESSION_EXP_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const DEFAULT_SESSION_EXP_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 function getSessionSecret(secretOverride?: string): string {
   if (secretOverride) return secretOverride;
