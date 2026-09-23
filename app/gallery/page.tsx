@@ -444,6 +444,7 @@ export default function RedesignedGalleryPage() {
                         src={img.src}
                         alt={img.title}
                         fill
+                        unoptimized
                         sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
@@ -589,6 +590,7 @@ export default function RedesignedGalleryPage() {
                       src={img.src}
                       alt={img.title}
                       fill
+                      unoptimized
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
@@ -724,8 +726,7 @@ export default function RedesignedGalleryPage() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/60">
               Student photographers and realm coordinators can provide Google Drive folders
-              with public link access. Files can be automatically indexed, converted to WebP,
-              and synced directly to the official Saviskar archive.
+              with public link access. Files are automatically indexed and streamed in full original camera quality directly to the official Saviskar archive.
             </p>
           </div>
         </div>
@@ -892,6 +893,7 @@ export default function RedesignedGalleryPage() {
                   src={activePhoto.src}
                   alt={activePhoto.title}
                   fill
+                  unoptimized
                   className="object-contain"
                   priority
                 />

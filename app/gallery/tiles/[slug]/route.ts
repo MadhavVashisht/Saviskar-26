@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GLIMPSE_GALLERY_GDRIVE_IMAGES } from "@/data/gdriveManifest";
-import { GDRIVE_GALLERY_CONFIG } from "@/data/galleryConfig";
-import { parseGoogleDriveUrl, getDriveDirectImageUrl } from "@/lib/googleDrive";
+import { GLIMPSE_175_UNIQUE_TILES } from "@/data/gdriveManifest";
 
 export async function GET(
   request: NextRequest,
@@ -13,9 +11,10 @@ export async function GET(
   const match = slug.match(/tile_(\d+)/);
   const index = match ? parseInt(match[1], 10) - 1 : 0;
 
-  // Select external Google Drive image from user's Glimpse Gallery folder
-  const item = GLIMPSE_GALLERY_GDRIVE_IMAGES[index % GLIMPSE_GALLERY_GDRIVE_IMAGES.length];
-  const targetUrl = item.thumbnailSrc;
+  // Select external Google Drive image: each tile from 1 to 175 is 100% unique (strictly 0 repeats)
+  const safeIndex = Math.max(0, Math.min(index, GLIMPSE_175_UNIQUE_TILES.length - 1));
+  const item = GLIMPSE_175_UNIQUE_TILES[safeIndex];
+  const targetUrl = item.src;
 
   return NextResponse.redirect(new URL(targetUrl, request.url), {
     status: 307,

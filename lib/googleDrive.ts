@@ -47,12 +47,15 @@ export function parseGoogleDriveUrl(urlOrId: string): ParsedDriveTarget | null {
 
 /**
  * Converts a Google Drive File ID into an edge CDN image URL.
- * Google's lh3.googleusercontent.com CDN is drastically faster than drive.google.com/uc
- * and supports custom dimension downscaling (e.g. =w1600, =w800, =w400).
+ * Google's lh3.googleusercontent.com CDN with =s0 serves the 100% full-resolution,
+ * pristine uncompressed original image file (JPEG/PNG) without lossy WebP downsampling.
  */
-export function getDriveDirectImageUrl(fileId: string, width = 1600): string {
+export function getDriveDirectImageUrl(fileId: string, width?: number): string {
   if (!fileId) return "";
-  return `https://lh3.googleusercontent.com/d/${fileId}=w${width}`;
+  if (width && width > 0) {
+    return `https://lh3.googleusercontent.com/d/${fileId}=w${width}`;
+  }
+  return `https://lh3.googleusercontent.com/d/${fileId}=s0`;
 }
 
 /**

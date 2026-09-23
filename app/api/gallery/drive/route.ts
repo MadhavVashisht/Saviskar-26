@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Main Gallery items (40 high-res photos streamed from user's Google Drive)
+  // Main Gallery items (145 high-res photos streamed from user's Google Drive in full original quality)
   return NextResponse.json(
     {
       source: "main",
