@@ -51,7 +51,7 @@ const REALMS_DATA: Realm[] = [
     tagline: "Build. Invent. Compete.",
     description:
       "Where algorithmic brilliance clashes with high-torque combat robotics and mechanical adrenaline. Compete inside illuminated battle arenas and hackathons engineered for builders, hackers, and cybernetic innovators.",
-    image: "/images/realm-technical-v2.jpg",
+    image: "/images/realm-technical-v2.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-technical-rulebook.pdf",
     icon: Cpu,
     accentColor: "text-cyan-400",
@@ -77,7 +77,7 @@ const REALMS_DATA: Realm[] = [
     tagline: "Create. Think. Express.",
     description:
       "High-stakes mock stock trading floors, intense parliamentary debate chambers, live graffiti mural battles, digital cinema filmmaking, and unfiltered creative visual storytelling beyond the classroom.",
-    image: "/images/realm-nontech-v2.jpg",
+    image: "/images/realm-nontech-v2.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-non-technical-rulebook.pdf",
     icon: Palette,
     accentColor: "text-amber-400",
@@ -103,7 +103,7 @@ const REALMS_DATA: Realm[] = [
     tagline: "Dance. Music. Performance.",
     description:
       "Thunderous stadium sound rigs, blazing pyrotechnic fountains, battle of the bands rock face-offs, synchronized Western & traditional crew choreography, and solo vocal showdowns rocking the central Saviskar amphitheater.",
-    image: "/images/realm-cultural-v2.jpg",
+    image: "/images/realm-cultural-v2.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-cultural-rulebook.pdf",
     icon: Flame,
     accentColor: "text-fuchsia-400",
@@ -129,7 +129,7 @@ const REALMS_DATA: Realm[] = [
     tagline: "Autonomous. Neural. Beyond Human Frontier.",
     description:
       "North India's flagship Collegiate Artificial Intelligence Exposition. Witness autonomous humanoid robotics live demos, state-of-the-art generative agent showcases, neural computer vision labs, and student-founder venture pitches evaluated by premier technology venture capitalists.",
-    image: "/images/realm-aivishkar-ai.jpg",
+    image: "/images/realm-aivishkar-ai.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-aivishkar-rulebook.pdf",
     icon: Bot,
     accentColor: "text-violet-400",
@@ -190,7 +190,7 @@ export default function EventsView() {
       {/* 1. FIXED FULL-BLEED PANORAMIC STADIUM BACKGROUND */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <Image
-          src="/images/realms-page-bg.jpg"
+          src="/images/realms-page-bg.webp"
           alt="Saviskar 2026 Realms Festival Amphitheater Stadium Canopy"
           fill
           priority

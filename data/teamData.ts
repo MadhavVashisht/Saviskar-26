@@ -83,7 +83,7 @@ export const EDITORIAL_DIRECTOR: EditorialSpreadData = {
   signeeName: "Mrs. Bismin Dhaliwal",
   signeeRole: "Director Students Affairs // Chief Patron, Saviskar 2026",
   initials: "BD",
-  image: "/images/faculty/bismin-dhaliwal.png",
+  image: "/images/faculty/bismin-dhaliwal.webp",
   accent: "amber",
 };
 
@@ -100,7 +100,7 @@ export const EDITORIAL_DEAN: EditorialSpreadData = {
   signeeName: "Dr. Sachin Sharma",
   signeeRole: "Dean Student Affairs & Patron, Saviskar 2026",
   initials: "SS",
-  image: "/images/faculty/sachin-sharma.png",
+  image: "/images/faculty/sachin-sharma.webp",
   accent: "cyan",
 };
 
@@ -252,7 +252,7 @@ export const SAC_OFFICE_BEARERS: SacMember[] = [
     department: "Student Advisory Council (SAC)",
     year: "Executive Head",
     initials: "LK",
-    image: "/images/SAC/LAKSHITA.png",
+    image: "/images/SAC/LAKSHITA.webp",
   },
   {
     id: "sac-ob-aadit-bhardwaj",
@@ -265,7 +265,7 @@ export const SAC_OFFICE_BEARERS: SacMember[] = [
     department: "Student Advisory Council (SAC)",
     year: "Executive Head",
     initials: "AB",
-    image: "/images/SAC/AADIT BHARDWAJ.png",
+    image: "/images/SAC/AADIT BHARDWAJ.webp",
   },
 ];
 
@@ -285,7 +285,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "AV",
-    image: "/images/SAC/ABHAY.png",
+    image: "/images/SAC/ABHAY.webp",
   },
   {
     id: "sac-core-anmol-agarwal",
@@ -297,7 +297,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "AA",
-    image: "/images/SAC/ANMOL AGARWAL.png",
+    image: "/images/SAC/ANMOL AGARWAL.webp",
   },
   {
     id: "sac-core-avneet-kour",
@@ -309,7 +309,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "AK",
-    image: "/images/SAC/AVNEET KOUR.png",
+    image: "/images/SAC/AVNEET KOUR.webp",
   },
   {
     id: "sac-core-ayush-choudhary",
@@ -321,7 +321,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "AC",
-    image: "/images/SAC/AYUSH CHOUDHARY.png",
+    image: "/images/SAC/AYUSH CHOUDHARY.webp",
   },
   {
     id: "sac-core-chahat",
@@ -333,7 +333,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "CH",
-    image: "/images/SAC/CHAHAT.png",
+    image: "/images/SAC/CHAHAT.webp",
   },
   {
     id: "sac-core-dhruv-kumar",
@@ -345,7 +345,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "DK",
-    image: "/images/SAC/DHRUV KUMAR.png",
+    image: "/images/SAC/DHRUV KUMAR.webp",
   },
   {
     id: "sac-core-goutam-bajaj",
@@ -357,7 +357,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "GB",
-    image: "/images/SAC/GOUTAM BAJAJ.png",
+    image: "/images/SAC/GOUTAM BAJAJ.webp",
   },
   {
     id: "sac-core-gurkeerat-singh",
@@ -369,7 +369,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "GS",
-    image: "/images/SAC/GURKEERAT SINGH.png",
+    image: "/images/SAC/GURKEERAT SINGH.webp",
   },
   {
     id: "sac-core-jashan-jot-singh",
@@ -381,7 +381,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "JJ",
-    image: "/images/SAC/JASHAN JOT.png",
+    image: "/images/SAC/JASHAN JOT.webp",
   },
   {
     id: "sac-core-krishna-jaswal",
@@ -393,7 +393,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "KJ",
-    image: "/images/SAC/KRISHNA JASWAL.png",
+    image: "/images/SAC/KRISHNA JASWAL.webp",
   },
   {
     id: "sac-core-kush-dethliya",
@@ -405,7 +405,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "KD",
-    image: "/images/SAC/KUSH DETHLIYA.png",
+    image: "/images/SAC/KUSH DETHLIYA.webp",
   },
   {
     id: "sac-core-nitin-kumar",
@@ -417,7 +417,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "NK",
-    image: "/images/SAC/NITIN KUMAR.png",
+    image: "/images/SAC/NITIN KUMAR.webp",
   },
   {
     id: "sac-core-prabneet-kaur",
@@ -429,7 +429,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "PK",
-    image: "/images/SAC/PRABNEET KAUR.png",
+    image: "/images/SAC/PRABNEET KAUR.webp",
   },
   {
     id: "sac-core-prajval-kaur",
@@ -441,7 +441,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "PJ",
-    image: "/images/SAC/PRAJVAL KAUR.png",
+    image: "/images/SAC/PRAJVAL KAUR.webp",
   },
   {
     id: "sac-core-prince",
@@ -453,7 +453,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "PR",
-    image: "/images/SAC/PRINCE.png",
+    image: "/images/SAC/PRINCE.webp",
   },
   {
     id: "sac-core-saaransh-sharma",
@@ -465,7 +465,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "SS",
-    image: "/images/SAC/SAARANSH SHARMA.png",
+    image: "/images/SAC/SAARANSH SHARMA.webp",
   },
   {
     id: "sac-core-samarth-kumar",
@@ -477,7 +477,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Overall Head",
     department: "Student Advisory Council (SAC)",
     initials: "SK",
-    image: "/images/SAC/SAMARTH KUMAR.png",
+    image: "/images/SAC/SAMARTH KUMAR.webp",
   },
   {
     id: "sac-core-sukhdeep-singh",
@@ -489,7 +489,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Team Lead",
     department: "Student Advisory Council (SAC)",
     initials: "SD",
-    image: "/images/SAC/SUKHDEEP SINGH.png",
+    image: "/images/SAC/SUKHDEEP SINGH.webp",
   },
   {
     id: "sac-core-vinay-verma",
@@ -501,7 +501,7 @@ export const SAC_CORE_LEADS: SacMember[] = [
     personDetail: "Core Member",
     department: "Student Advisory Council (SAC)",
     initials: "VV",
-    image: "/images/SAC/VINAY VERMA.png",
+    image: "/images/SAC/VINAY VERMA.webp",
   },
 ];
 
@@ -519,7 +519,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "AS",
-    image: "/images/SAC/AKSHIT SHARMA.png",
+    image: "/images/SAC/AKSHIT SHARMA.webp",
   },
   {
     id: "sac-mem-anmol",
@@ -531,7 +531,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "AR",
-    image: "/images/SAC/ANMOL RATAN.png",
+    image: "/images/SAC/ANMOL RATAN.webp",
   },
   {
     id: "sac-mem-ayush-raj",
@@ -543,7 +543,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "AR",
-    image: "/images/SAC/AYUSH RAJ.png",
+    image: "/images/SAC/AYUSH RAJ.webp",
   },
   {
     id: "sac-mem-ayush-sharma",
@@ -555,7 +555,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "AS",
-    image: "/images/SAC/AYUSH SHARMA.png",
+    image: "/images/SAC/AYUSH SHARMA.webp",
   },
   {
     id: "sac-mem-ayushi-bhatia",
@@ -567,7 +567,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "AB",
-    image: "/images/SAC/AYUSHI BHATIA.png",
+    image: "/images/SAC/AYUSHI BHATIA.webp",
   },
   {
     id: "sac-mem-deepak-kumar",
@@ -579,7 +579,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "DK",
-    image: "/images/SAC/DEEPAK KUMAR.png",
+    image: "/images/SAC/DEEPAK KUMAR.webp",
   },
   {
     id: "sac-mem-ekta",
@@ -591,7 +591,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "EK",
-    image: "/images/SAC/EKTA KAUSHAL.png",
+    image: "/images/SAC/EKTA KAUSHAL.webp",
   },
   {
     id: "sac-mem-gursimran-singh-sidhu",
@@ -603,7 +603,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "GS",
-    image: "/images/SAC/GURSIMRAN.png",
+    image: "/images/SAC/GURSIMRAN.webp",
   },
   {
     id: "sac-mem-harshita",
@@ -615,7 +615,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "HR",
-    image: "/images/SAC/HARSHITA.png",
+    image: "/images/SAC/HARSHITA.webp",
   },
   {
     id: "sac-mem-himesh-yadav",
@@ -627,7 +627,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "HY",
-    image: "/images/SAC/HIMESH YADAV.png",
+    image: "/images/SAC/HIMESH YADAV.webp",
   },
   {
     id: "sac-mem-jatin-kumar",
@@ -639,7 +639,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "JK",
-    image: "/images/SAC/JATIN KUMAR.png",
+    image: "/images/SAC/JATIN KUMAR.webp",
   },
   {
     id: "sac-mem-krishna-malviya",
@@ -651,7 +651,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "KM",
-    image: "/images/SAC/KRISHNA MALVIYA.png",
+    image: "/images/SAC/KRISHNA MALVIYA.webp",
   },
   {
     id: "sac-mem-lakshay",
@@ -663,7 +663,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "LK",
-    image: "/images/SAC/LAKSHAY.png",
+    image: "/images/SAC/LAKSHAY.webp",
   },
   {
     id: "sac-mem-madhav-vashisht",
@@ -675,7 +675,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MV",
-    image: "/images/SAC/MADHAV VASHISHT.png",
+    image: "/images/SAC/MADHAV VASHISHT.webp",
     isSpotlightLead: false,
   },
   {
@@ -688,7 +688,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MJ",
-    image: "/images/SAC/MANJOT KAUR.png",
+    image: "/images/SAC/MANJOT KAUR.webp",
   },
   {
     id: "sac-mem-manraj-sharma",
@@ -700,7 +700,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MS",
-    image: "/images/SAC/MANRAJ SHARMA.png",
+    image: "/images/SAC/MANRAJ SHARMA.webp",
   },
   {
     id: "sac-mem-megha",
@@ -712,7 +712,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MG",
-    image: "/images/SAC/MEGHA.png",
+    image: "/images/SAC/MEGHA.webp",
   },
   {
     id: "sac-mem-mehul-bhati",
@@ -724,7 +724,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MB",
-    image: "/images/SAC/MEHUL BHATI.png",
+    image: "/images/SAC/MEHUL BHATI.webp",
   },
   {
     id: "sac-mem-muskaan-kalia",
@@ -736,7 +736,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MK",
-    image: "/images/SAC/MUSKAAN KALIA.png",
+    image: "/images/SAC/MUSKAAN KALIA.webp",
   },
   {
     id: "sac-mem-muskan",
@@ -748,7 +748,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "MK",
-    image: "/images/SAC/MUSKAN.png",
+    image: "/images/SAC/MUSKAN.webp",
   },
   {
     id: "sac-mem-nikhil",
@@ -760,7 +760,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "NK",
-    image: "/images/SAC/NIKHIL KUMAR.png",
+    image: "/images/SAC/NIKHIL KUMAR.webp",
   },
   {
     id: "sac-mem-prianshi",
@@ -772,7 +772,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "PR",
-    image: "/images/SAC/PRIANSHI KATOCH.png",
+    image: "/images/SAC/PRIANSHI KATOCH.webp",
   },
   {
     id: "sac-mem-prikishit",
@@ -784,7 +784,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "PK",
-    image: "/images/SAC/PRIKSHIT.png",
+    image: "/images/SAC/PRIKSHIT.webp",
   },
   {
     id: "sac-mem-rohan-mishra",
@@ -796,7 +796,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "RM",
-    image: "/images/SAC/ROHAN MISHRA.png",
+    image: "/images/SAC/ROHAN MISHRA.webp",
   },
   {
     id: "sac-mem-rohit-kumar",
@@ -808,7 +808,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "RK",
-    image: "/images/SAC/ROHIT KUMAR.png",
+    image: "/images/SAC/ROHIT KUMAR.webp",
   },
   {
     id: "sac-mem-shivani",
@@ -820,7 +820,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "SH",
-    image: "/images/SAC/SHIVANI.png",
+    image: "/images/SAC/SHIVANI.webp",
   },
   {
     id: "sac-mem-sugandh",
@@ -832,7 +832,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "SG",
-    image: "/images/SAC/SUGANDH.png",
+    image: "/images/SAC/SUGANDH.webp",
   },
   {
     id: "sac-mem-suraj-kumar",
@@ -844,7 +844,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "SK",
-    image: "/images/SAC/SURAJ KUMAR.png",
+    image: "/images/SAC/SURAJ KUMAR.webp",
   },
   {
     id: "sac-mem-vani",
@@ -856,7 +856,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "VN",
-    image: "/images/SAC/VANI.png",
+    image: "/images/SAC/VANI.webp",
   },
   {
     id: "sac-mem-vishal",
@@ -868,7 +868,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "VS",
-    image: "/images/SAC/VISHAL THAKUR.png",
+    image: "/images/SAC/VISHAL THAKUR.webp",
   },
   {
     id: "sac-mem-yash-sharma",
@@ -880,7 +880,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "YS",
-    image: "/images/SAC/YASH SHARMA.png",
+    image: "/images/SAC/YASH SHARMA.webp",
   },
   {
     id: "sac-mem-yuvraj",
@@ -892,7 +892,7 @@ export const SAC_COUNCIL_MEMBERS: SacMember[] = [
     personDetail: "Member",
     department: "Student Advisory Council (SAC)",
     initials: "YV",
-    image: "/images/SAC/YUVRAJ SINGH.png",
+    image: "/images/SAC/YUVRAJ SINGH.webp",
   },
 ];
 

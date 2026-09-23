@@ -44,7 +44,7 @@ export default async function RegisterPage({
       {/* 1. FIXED FULL-BLEED PANORAMIC STADIUM BACKGROUND */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <Image
-          src="/images/realms-page-bg.jpg"
+          src="/images/realms-page-bg.webp"
           alt="Saviskar 2026 Festival Amphitheater Stadium Canopy"
           fill
           priority

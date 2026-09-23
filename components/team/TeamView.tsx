@@ -34,7 +34,7 @@ export default function TeamView() {
       {/* ── FIXED PANORAMIC STADIUM BACKGROUND ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <Image
-          src="/images/concert-stadium.jpg"
+          src="/images/concert-stadium.webp"
           alt="Saviskar 2026 Festival Arena"
           fill
           priority

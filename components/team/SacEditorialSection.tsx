@@ -33,8 +33,8 @@ function getMemberAvatar(member: SacMember): string {
     return encodeURI(decodeURI(member.image));
   }
   return member.avatarVariant === "female"
-    ? "/images/team/avatar-female.jpg"
-    : "/images/team/avatar-male.jpg";
+    ? "/images/team/avatar-female.webp"
+    : "/images/team/avatar-male.webp";
 }
 
 // ============================================================

@@ -14,7 +14,7 @@ const categories = {
     tagline: "Build. Invent. Compete.",
     description:
       "Where cutting-edge code meets robotics and mechanical ingenuity. Compete across futuristic realms designed for builders and hackers.",
-    image: "/images/realm-technical-v2.jpg",
+    image: "/images/realm-technical-v2.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-technical-rulebook.pdf",
   },
   "non-technical": {
@@ -23,7 +23,7 @@ const categories = {
     tagline: "Create. Think. Express.",
     description:
       "Strategic simulations, visual arts, filmmaking, debates, and creative expression designed beyond the classroom.",
-    image: "/images/realm-nontech-v2.jpg",
+    image: "/images/realm-nontech-v2.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-non-technical-rulebook.pdf",
   },
   cultural: {
@@ -32,7 +32,7 @@ const categories = {
     tagline: "Dance. Music. Performance.",
     description:
       "High-voltage music, choreography, theatre, and grand performances taking over the central Saviskar concert mainstage.",
-    image: "/images/realm-cultural-v2.jpg",
+    image: "/images/realm-cultural-v2.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-cultural-rulebook.pdf",
   },
   aivishkar: {
@@ -41,7 +41,7 @@ const categories = {
     tagline: "Autonomous. Neural. Beyond Human Frontier.",
     description:
       "Flagship National AI Exposition featuring autonomous humanoid robotics, neural agent showcases, computer vision labs, and tech startup venture demo pitches.",
-    image: "/images/realm-aivishkar-ai.jpg",
+    image: "/images/realm-aivishkar-ai.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-aivishkar-rulebook.pdf",
   },
   avishkar: {
@@ -50,7 +50,7 @@ const categories = {
     tagline: "Autonomous. Neural. Beyond Human Frontier.",
     description:
       "Flagship National AI Exposition featuring autonomous humanoid robotics, neural agent showcases, computer vision labs, and tech startup venture demo pitches.",
-    image: "/images/realm-aivishkar-ai.jpg",
+    image: "/images/realm-aivishkar-ai.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-aivishkar-rulebook.pdf",
   },
   sports: {
@@ -59,7 +59,7 @@ const categories = {
     tagline: "Play. Push. Win.",
     description:
       "Under towering stadium floodlights and electric realm energy, bring unstoppable athletic stamina and compete for glory.",
-    image: "/images/concert-sports-arena.jpg",
+    image: "/images/realm-sports.webp",
     rulebookUrl: "/rulebooks/saviskar-2026-sports-rulebook.pdf",
   },
 };

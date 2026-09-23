@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: "The Legacy | Saviskar 2026",
     description:
       "Honoring the chancellor, leadership, DSA team, and alumni behind Saviskar 2026 at CGC University, Mohali.",
-    images: ["/images/concert-stadium.jpg"],
+    images: ["/images/concert-stadium.webp"],
   },
 };
 
