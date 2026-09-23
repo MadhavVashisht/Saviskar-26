@@ -9,24 +9,52 @@ interface PreloaderProps {
   minDurationSeconds?: number;
 }
 
-// Critical early assets strictly capped under 500 KB total
-const CRITICAL_IMAGES = [
-  "/images/concert-stadium.webp",
-  "/images/hero.webp",
-];
+// Retrieve all critical landing page assets to load & decode before entering
+const getLandingAssets = (): string[] => {
+  if (typeof window === "undefined") return [];
+  const isMobile = window.innerWidth < 768;
+
+  // 1. 3D Stadium amphitheater textures used by ScrollEngine3D WebGL pipeline
+  const stadiumTextures = isMobile
+    ? [
+        "/images/mobile/concert-stadium.webp",
+        "/images/mobile/firework-launch.webp",
+        "/images/mobile/scene-realms-stage.webp",
+        "/images/mobile/scene-starnight-show.webp",
+        "/images/mobile/scene-finale-celebration.webp",
+      ]
+    : [
+        "/images/concert-stadium.webp",
+        "/images/firework-launch.webp",
+        "/images/scene-realms-stage.webp",
+        "/images/scene-starnight-show.webp",
+        "/images/scene-finale-celebration.webp",
+      ];
+
+  // 2. Critical UI & Hero visual assets
+  const coreVisuals = [
+    "/images/hero.webp",
+    "/images/concert-mission-centerstage.webp",
+    "/logo.png",
+    "/PreLoader/preloader.webp",
+  ];
+
+  return [...stadiumTextures, ...coreVisuals];
+};
 
 const STATUS_STEPS = [
-  { at: 0, text: "INITIALIZING AEVORIAN FREQUENCIES // SRIJAN × AVISHKAR" },
-  { at: 20, text: "CALIBRATING 50+ REALMS // CGC UNIVERSITY MOHALI" },
-  { at: 45, text: "SYNCING 8K STAGE ILLUMINATIONS & SOUND RIGS" },
-  { at: 68, text: "WHERE TOMORROW DREAMS AWAKE • EXPANDING IMMERSION" },
-  { at: 88, text: "ALL SYSTEMS PRIMED • AWAKENING FESTIVAL REALM" },
+  { at: 0, text: "INITIALIZING AEVORIAN FREQUENCIES // CGC UNIVERSITY MOHALI" },
+  { at: 18, text: "FETCHING HIGH-RES STADIUM MESH & 3D VENUE TEXTURES" },
+  { at: 42, text: "CALIBRATING 50+ REALMS & STAGE PYROTECHNICS" },
+  { at: 65, text: "SYNCHRONIZING CINEMATIC SHADERS & AUDIO RIGS" },
+  { at: 85, text: "FINALIZING ASSET SYNC • PRIMING IMMERSIVE REALM" },
+  { at: 94, text: "ALL SYSTEMS PRIMED • AWAKENING FESTIVAL REALM" },
   { at: 99, text: "AEVORIAN REVERIE UNLOCKED • ENTERING SAVISKAR 2026" },
 ];
 
 export default function Preloader({
   onComplete,
-  minDurationSeconds = 1.8,
+  minDurationSeconds = 1.6,
 }: PreloaderProps) {
   const [showPreloader, setShowPreloader] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -44,12 +72,14 @@ export default function Preloader({
   const [statusText, setStatusText] = useState(STATUS_STEPS[0].text);
   const [isExiting, setIsExiting] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 4 });
+  const [assetCount, setAssetCount] = useState({ loaded: 0, total: 12 });
   const [timecode, setTimecode] = useState("00:00:00:00");
   const [windowSize, setWindowSize] = useState({ w: 1440, h: 900 });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const assetsReadyRef = useRef(false);
+  const completedAssetsRef = useRef(0);
+  const totalAssetsRef = useRef(12);
   const isExitingRef = useRef(false);
 
   // Clear any legacy session flag so preloader is never blocked
@@ -89,64 +119,101 @@ export default function Preloader({
     finishLoadingRef.current = finishLoading;
   }, [finishLoading]);
 
-  // Robust asset preloader with per-asset timeout protection (never hangs)
+  // Real asset preloader: tracks all 3D scene textures, fonts, hero imagery, and document state
   useEffect(() => {
     if (!showPreloader) return;
 
     let isMounted = true;
 
-    // Helper: wrap any promise with a strict timeout so a single slow asset never blocks
-    const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 1800): Promise<T | null> => {
-      return Promise.race([
-        promise,
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
-      ]);
+    const preloadImage = (src: string): Promise<void> => {
+      return new Promise<void>((resolve) => {
+        const img = new Image();
+        img.src = src;
+        if (img.complete) {
+          if (typeof img.decode === "function") {
+            img.decode().then(() => resolve()).catch(() => resolve());
+          } else {
+            resolve();
+          }
+          return;
+        }
+        img.onload = () => {
+          if (typeof img.decode === "function") {
+            img.decode().then(() => resolve()).catch(() => resolve());
+          } else {
+            resolve();
+          }
+        };
+        img.onerror = () => resolve();
+      });
     };
-
-    const preloadImage = (src: string) =>
-      withTimeout(
-        new Promise<void>((resolve) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        })
-      );
 
     const fontPromise =
       typeof document !== "undefined" && document.fonts
-        ? withTimeout(document.fonts.ready.catch(() => {}), 1500)
+        ? document.fonts.ready.catch(() => {})
         : Promise.resolve();
 
     const docPromise =
       typeof document !== "undefined" && document.readyState === "complete"
         ? Promise.resolve()
-        : withTimeout(
-            new Promise<void>((resolve) => {
-              if (document.readyState === "complete") {
-                resolve();
-              } else {
-                window.addEventListener("load", () => resolve(), { once: true });
-                // Also resolve on DOMContentLoaded as faster reliable fallback
-                window.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
-              }
-            }),
-            1500
-          );
+        : new Promise<void>((resolve) => {
+            if (typeof window === "undefined") return resolve();
+            if (document.readyState === "complete") {
+              resolve();
+            } else {
+              window.addEventListener("load", () => resolve(), { once: true });
+              window.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
+            }
+          });
 
-    const assetPromises = [
-      ...CRITICAL_IMAGES.map(preloadImage),
+    const videoPromise = new Promise<void>((resolve) => {
+      const vid = videoRef.current;
+      if (!vid) {
+        resolve();
+        return;
+      }
+      if (vid.readyState >= 2) {
+        resolve();
+        return;
+      }
+      const onReady = () => {
+        resolve();
+        cleanup();
+      };
+      const cleanup = () => {
+        vid.removeEventListener("loadeddata", onReady);
+        vid.removeEventListener("canplay", onReady);
+        vid.removeEventListener("error", onReady);
+      };
+      vid.addEventListener("loadeddata", onReady, { once: true });
+      vid.addEventListener("canplay", onReady, { once: true });
+      vid.addEventListener("error", onReady, { once: true });
+      // Video fallback timeout: 4s max in case mobile browser delays video buffering
+      setTimeout(onReady, 4000);
+    });
+
+    const imagesToPreload = getLandingAssets();
+    const assetPromises: Promise<unknown>[] = [
+      ...imagesToPreload.map(preloadImage),
       fontPromise,
       docPromise,
+      videoPromise,
     ];
 
     const totalAssets = assetPromises.length;
+    totalAssetsRef.current = totalAssets;
     let completedCount = 0;
+    completedAssetsRef.current = 0;
+
+    if (isMounted) {
+      setAssetCount({ loaded: 0, total: totalAssets });
+    }
 
     assetPromises.forEach((promise) => {
       Promise.resolve(promise).finally(() => {
         if (!isMounted) return;
         completedCount++;
+        completedAssetsRef.current = completedCount;
         setAssetCount({ loaded: completedCount, total: totalAssets });
         if (completedCount >= totalAssets) {
           assetsReadyRef.current = true;
@@ -155,22 +222,12 @@ export default function Preloader({
       });
     });
 
-    // 3-second hard timeout protection: preloader never hangs regardless of network conditions
-    const hardSafetyTimer = setTimeout(() => {
-      if (isMounted) {
-        assetsReadyRef.current = true;
-        setAssetsLoaded(true);
-      }
-    }, 3000);
-
     return () => {
       isMounted = false;
-      clearTimeout(hardSafetyTimer);
     };
   }, [showPreloader]);
 
-  // Smooth, monotonic cinematic progress engine
-  // Eliminates instant jump to 96% and guarantees steady, organic pacing
+  // Smooth, monotonic cinematic progress engine driven by REAL asset loading
   useEffect(() => {
     if (!showPreloader) return;
 
@@ -178,14 +235,14 @@ export default function Preloader({
     document.body.style.overflow = "hidden";
 
     const startTime = performance.now();
-    // Sweet-spot target duration: ~2.6 seconds total
-    const targetDurationMs = Math.max(2200, minDurationSeconds * 1000);
+    // Minimum duration for cinematic pacing (e.g. 1.6s) even if cached
+    const minDurationMs = Math.max(1600, minDurationSeconds * 1000);
     let currentPct = 0;
 
     const interval = setInterval(() => {
       const now = performance.now();
       const elapsed = now - startTime;
-      const timeRatio = Math.min(1, elapsed / targetDurationMs);
+      const timeRatio = Math.min(1, elapsed / minDurationMs);
 
       // SMPTE timecode calculation
       const totalFrames = Math.floor((elapsed / 1000) * 24);
@@ -197,45 +254,50 @@ export default function Preloader({
       );
 
       const isAssetsDone = assetsReadyRef.current;
+      const completed = completedAssetsRef.current;
+      const total = totalAssetsRef.current;
+      const assetRatio = total > 0 ? completed / total : 0;
 
-      // Calculate organic target progress based on smoothstep time curve
-      // Smoothstep: 3*t^2 - 2*t^3 gives a cinematic ease-in-out feel
-      const smoothStep = timeRatio * timeRatio * (3 - 2 * timeRatio);
-      const timeTarget = smoothStep * 100;
+      let desiredTarget: number;
 
-      let desiredTarget = timeTarget;
-
-      // If assets are still loading after 75% time, hold gently at 82% until ready
-      if (!isAssetsDone && desiredTarget > 82) {
-        desiredTarget = 82;
+      if (!isAssetsDone) {
+        // While assets are actively downloading, progress is strictly driven by real asset ratio,
+        // holding at max 88% until 100% of all textures and assets have fully loaded
+        desiredTarget = Math.min(88, assetRatio * 88);
+      } else {
+        // Once all assets are 100% downloaded, allow progress to glide to 100%,
+        // smoothed by the time ratio curve for a polished cinematic release
+        const timeSmooth = timeRatio * timeRatio * (3 - 2 * timeRatio) * 100;
+        desiredTarget = Math.max(88, timeSmooth);
+        if (timeRatio >= 0.98) {
+          desiredTarget = 100;
+        }
       }
 
-      // If assets are ready and time has reached target, glide to 100%
-      if (isAssetsDone && timeRatio >= 0.95) {
-        desiredTarget = 100;
-      }
-
-      // STRICT RATE LIMITER: Prevents any instant teleportation to 96%
-      // Maximum delta per 24ms tick is 1.4% -> smoothly takes minimum 1.8s even if cached
+      // Smooth rate-limited interpolation towards desiredTarget
       const delta = desiredTarget - currentPct;
       if (delta > 0) {
-        const step = Math.min(1.4, Math.max(0.4, delta * 0.12));
+        const step = Math.min(1.8, Math.max(0.35, delta * 0.14));
         currentPct = Math.min(100, currentPct + step);
       }
 
       const displayPct = Math.min(100, Math.floor(currentPct));
       setProgress(displayPct);
 
-      // Update telemetry status text
-      for (let i = STATUS_STEPS.length - 1; i >= 0; i--) {
-        if (displayPct >= STATUS_STEPS[i].at) {
-          setStatusText(STATUS_STEPS[i].text);
-          break;
+      // Telemetry status text update
+      if (!isAssetsDone && displayPct >= 80) {
+        setStatusText(`SYNCHRONIZING ASSETS (${completed}/${total}) • ALMOST READY`);
+      } else {
+        for (let i = STATUS_STEPS.length - 1; i >= 0; i--) {
+          if (displayPct >= STATUS_STEPS[i].at) {
+            setStatusText(STATUS_STEPS[i].text);
+            break;
+          }
         }
       }
 
       // Completion reached: hold for 140ms and transition into festival
-      if (currentPct >= 99.8) {
+      if (currentPct >= 99.8 && isAssetsDone) {
         clearInterval(interval);
         setProgress(100);
         setStatusText("AEVORIAN REVERIE UNLOCKED • ENTERING SAVISKAR 2026");
@@ -245,16 +307,19 @@ export default function Preloader({
       }
     }, 24);
 
-    // Ultimate fallback timer: force completion at 3.4 seconds max
-    const maxSafetyTimer = setTimeout(() => {
+    // Watchdog fallback timer: 15s max to prevent permanent hang on dropped network connections
+    const watchdogSafetyTimer = setTimeout(() => {
+      console.warn("Preloader watchdog timer triggered (15s). Unlocking interface.");
+      assetsReadyRef.current = true;
+      setAssetsLoaded(true);
       setProgress(100);
       finishLoadingRef.current();
-    }, 3400);
+    }, 15000);
 
     return () => {
       document.body.style.overflow = originalOverflow;
       clearInterval(interval);
-      clearTimeout(maxSafetyTimer);
+      clearTimeout(watchdogSafetyTimer);
     };
   }, [showPreloader, minDurationSeconds]);
 
@@ -462,14 +527,6 @@ export default function Preloader({
               playsInline
               loop
               preload="auto"
-              onLoadedData={() => {
-                assetsReadyRef.current = true;
-                setAssetsLoaded(true);
-              }}
-              onCanPlay={() => {
-                assetsReadyRef.current = true;
-                setAssetsLoaded(true);
-              }}
               className="w-full h-full object-cover transition-all duration-700 ease-out"
               style={{
                 transform: `scale(${1 + easedExpansion * 0.04})`,
