@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
@@ -20,8 +20,22 @@ import {
   X,
   Compass,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-interface Realm {
+export interface EventItem {
+  id: string;
+  slug: string;
+  name: string;
+  category: string | null;
+  description: string | null;
+  event_date: string | null;
+  start_time: string | null;
+  venue: string | null;
+  active: boolean;
+  registration_open?: boolean;
+}
+
+export interface Realm {
   id: string;
   slug: string;
   number: string;
@@ -35,13 +49,11 @@ interface Realm {
   accentColor: string;
   accentBorder: string;
   accentGlow: string;
-  tags: string[];
-  eventCount: string;
   prizePool: string;
   highlightChips?: string[];
 }
 
-const REALMS_DATA: Realm[] = [
+export const REALMS_DATA: Realm[] = [
   {
     id: "technical",
     slug: "technical",
@@ -57,16 +69,7 @@ const REALMS_DATA: Realm[] = [
     accentColor: "text-cyan-400",
     accentBorder: "hover:border-cyan-500/50",
     accentGlow: "rgba(6,182,212,0.25)",
-    eventCount: "15+ Competitions",
     prizePool: "₹3,50,000",
-    tags: [
-      "RoboWars (Heavyweight)",
-      "24H National Hackathon",
-      "Dronathon Obstacle Circuit",
-      "Bug Hunt CTF",
-      "Web3 & Blockchain Sprint",
-      "CAD Mechanical Design",
-    ],
   },
   {
     id: "non-technical",
@@ -83,16 +86,7 @@ const REALMS_DATA: Realm[] = [
     accentColor: "text-amber-400",
     accentBorder: "hover:border-amber-500/50",
     accentGlow: "rgba(245,158,11,0.25)",
-    eventCount: "14+ Competitions",
     prizePool: "₹2,50,000",
-    tags: [
-      "Mock Stock Exchange",
-      "Parliamentary Debate Arena",
-      "Live Graffiti & Mural Art",
-      "Short Film & Cinema Fest",
-      "Flash Street Photography",
-      "Ad-Mad & Crisis PR",
-    ],
   },
   {
     id: "cultural",
@@ -109,16 +103,7 @@ const REALMS_DATA: Realm[] = [
     accentColor: "text-fuchsia-400",
     accentBorder: "hover:border-fuchsia-500/50",
     accentGlow: "rgba(217,70,239,0.25)",
-    eventCount: "16+ Competitions",
     prizePool: "₹4,00,000",
-    tags: [
-      "Battle of the Bands",
-      "Step Stars (Crew Dance)",
-      "Gully Rap & Hip-Hop War",
-      "Solo Vocal Championship",
-      "Street Play (Nukkad Natak)",
-      "Fashion Vogue Runway",
-    ],
   },
   {
     id: "aivishkar",
@@ -135,7 +120,6 @@ const REALMS_DATA: Realm[] = [
     accentColor: "text-violet-400",
     accentBorder: "hover:border-violet-500/60",
     accentGlow: "rgba(168,85,247,0.35)",
-    eventCount: "Flagship Expo & Pitches",
     prizePool: "₹5,00,000+ in Grants",
     highlightChips: [
       "Autonomous Humanoid Robotics Arena",
@@ -143,47 +127,129 @@ const REALMS_DATA: Realm[] = [
       "Computer Vision & Neural Hardware",
       "AI Startup Pitch Deck & VC Grants",
     ],
-    tags: [
-      "Autonomous Agents",
-      "Humanoid Robotics",
-      "Generative AI Demo",
-      "Neural Hardware",
-      "Computer Vision",
-      "Venture Pitch",
-    ],
   },
 ];
 
-const METRICS = [
+export const METRICS = [
   { label: "PREMIER REALMS", value: "04", subtitle: "Technical, Non-Tech, Cultural, AIvishkar" },
   { label: "COMPETITIONS", value: "50+", subtitle: "Certified Inter-University Events" },
   { label: "PRIZE POOL", value: "₹10L+", subtitle: "Cash Rewards, Trophies & AI Grants" },
   { label: "COLLEGES", value: "500+", subtitle: "Universities Across All India" },
 ];
 
+export function matchesRealm(eventCategory: string | null | undefined, realmId: string): boolean {
+  if (!eventCategory) return false;
+  const cat = eventCategory.trim().toLowerCase();
+  if (realmId === "aivishkar") {
+    return cat === "aivishkar" || cat === "avishkar";
+  }
+  return cat === realmId.toLowerCase();
+}
+
+export function matchesSearch(event: EventItem, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [
+    event.name,
+    event.description,
+    event.venue,
+  ].some((field) => Boolean(field && field.toLowerCase().includes(q)));
+}
+
+export function sortEvents(events: EventItem[]): EventItem[] {
+  return [...events].sort((a, b) => {
+    const dateA = a.event_date || "";
+    const dateB = b.event_date || "";
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
 export default function EventsView() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [actualEvents, setActualEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadEvents() {
+      setLoading(true);
+      setFetchError(null);
+
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          "id, slug, name, category, description, event_date, start_time, venue, active, registration_open"
+        )
+        .eq("active", true)
+        .order("event_date", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error("EVENT FETCH ERROR:", error);
+        setActualEvents([]);
+        setFetchError("Unable to load current event lineup. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setActualEvents(data || []);
+      setLoading(false);
+    }
+
+    loadEvents();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Compute actual events per realm, matching search, up to 6 chips, and dynamic event counts
+  const realmsWithEvents = useMemo(() => {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+
+    return REALMS_DATA.map((realm) => {
+      const allRealmEvents = sortEvents(
+        actualEvents.filter((event) => matchesRealm(event.category, realm.id))
+      );
+
+      const matchingEvents = trimmedQuery
+        ? allRealmEvents.filter((event) => matchesSearch(event, trimmedQuery))
+        : allRealmEvents;
+
+      const displayedChips = matchingEvents.slice(0, 6);
+      const dynamicEventCount = `${allRealmEvents.length} Competition${allRealmEvents.length === 1 ? "" : "s"}`;
+
+      return {
+        ...realm,
+        allEvents: allRealmEvents,
+        matchingEvents,
+        displayedChips,
+        dynamicEventCount,
+      };
+    });
+  }, [actualEvents, searchQuery]);
 
   // Filter realms based on tab and search query
   const filteredRealms = useMemo(() => {
-    return REALMS_DATA.filter((realm) => {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+
+    return realmsWithEvents.filter((realm) => {
       const matchesCategory =
         selectedCategory === "all" || realm.id === selectedCategory;
 
       if (!matchesCategory) return false;
 
-      if (!searchQuery.trim()) return true;
+      // During search, a realm card appears only when at least one actual event matches
+      if (trimmedQuery) {
+        return realm.matchingEvents.length > 0;
+      }
 
-      const q = searchQuery.toLowerCase();
-      const matchTitle = realm.title.toLowerCase().includes(q);
-      const matchTagline = realm.tagline.toLowerCase().includes(q);
-      const matchDesc = realm.description.toLowerCase().includes(q);
-      const matchTags = realm.tags.some((tag) => tag.toLowerCase().includes(q));
-
-      return matchTitle || matchTagline || matchDesc || matchTags;
+      return true;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [realmsWithEvents, selectedCategory, searchQuery]);
 
   return (
     <div className="relative min-h-screen w-full bg-black text-white selection:bg-white selection:text-black">
@@ -351,6 +417,7 @@ export default function EventsView() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search competitions, robotics, dance, AI..."
+              aria-label="Search events"
               className="w-full rounded-full border border-white/10 bg-black/40 pl-9 pr-8 py-1.5 text-xs text-white placeholder-white/40 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400/50 sm:w-64"
             />
             {searchQuery && (
@@ -371,7 +438,39 @@ export default function EventsView() {
       <section className="relative z-20 mx-auto max-w-[1440px] px-5 pb-28 pt-6 md:px-10">
         <div className="space-y-10 md:space-y-14">
           <AnimatePresence mode="popLayout">
-            {filteredRealms.length === 0 ? (
+            {loading ? (
+              <div className="liquid-glass rounded-3xl border border-white/12 p-12 text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
+                <p className="mt-4 text-sm text-white/60">Loading verified events...</p>
+              </div>
+            ) : fetchError ? (
+              <div className="liquid-glass rounded-3xl border border-red-500/20 p-12 text-center">
+                <p className="text-base font-medium text-white">{fetchError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoading(true);
+                    setFetchError(null);
+                    supabase
+                      .from("events")
+                      .select("id, slug, name, category, description, event_date, start_time, venue, active, registration_open")
+                      .eq("active", true)
+                      .order("event_date", { ascending: true })
+                      .then(({ data, error }) => {
+                        if (error) {
+                          setFetchError("Unable to load current event lineup. Please try again.");
+                        } else {
+                          setActualEvents(data || []);
+                        }
+                        setLoading(false);
+                      });
+                  }}
+                  className="mt-4 rounded-full bg-white/10 px-5 py-2 text-xs font-semibold text-white hover:bg-white/20 transition-all"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredRealms.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -381,7 +480,7 @@ export default function EventsView() {
                 <Compass size={40} className="mx-auto text-violet-400 mb-4 animate-bounce" />
                 <h3 className="text-xl font-semibold text-white">No Competitions Found</h3>
                 <p className="mt-2 text-sm text-white/60">
-                  No realm matches &quot;{searchQuery}&quot;. Try searching for &quot;Robotics&quot;, &quot;Dance&quot;, &quot;AI&quot;, or &quot;Hackathon&quot;.
+                  No current events match &quot;{searchQuery.trim()}&quot;.
                 </p>
                 <button
                   type="button"
@@ -391,7 +490,7 @@ export default function EventsView() {
                   }}
                   className="mt-6 rounded-full bg-white px-6 py-2.5 text-xs font-semibold text-black hover:bg-violet-100 transition-all"
                 >
-                  Reset Filter
+                  Clear Search
                 </button>
               </motion.div>
             ) : (
@@ -479,16 +578,25 @@ export default function EventsView() {
                             </div>
                           )}
 
-                          {/* Tag Pills */}
+                          {/* Event Chips */}
                           <div className="mt-6 flex flex-wrap gap-2">
-                            {realm.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs text-white/75 transition-colors hover:border-white/20 hover:text-white"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                            {realm.displayedChips.length > 0 ? (
+                              realm.displayedChips.map((event) => (
+                                <Link
+                                  key={event.id}
+                                  href={`/events/${realm.slug}/${event.slug}`}
+                                  className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs text-white/75 transition-colors hover:border-violet-400/50 hover:bg-white/10 hover:text-white"
+                                >
+                                  {event.name}
+                                </Link>
+                              ))
+                            ) : (
+                              !loading && (
+                                <span className="font-mono text-xs text-white/40 italic">
+                                  Lineup announcements in progress
+                                </span>
+                              )
+                            )}
                           </div>
                         </div>
 
@@ -515,7 +623,7 @@ export default function EventsView() {
                           </a>
 
                           <div className="ml-auto hidden xl:flex items-center gap-4 text-xs font-mono text-white/50">
-                            <span>{realm.eventCount}</span>
+                            <span>{realm.dynamicEventCount}</span>
                             <span>•</span>
                             <span className="text-violet-300">{realm.prizePool}</span>
                           </div>

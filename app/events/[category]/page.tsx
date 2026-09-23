@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, FileDown, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, FileDown, Search, Sparkles, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -89,8 +89,34 @@ export default function CategoryPage() {
 
   const [categoryEvents, setCategoryEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const categoryInfo = categories[category as Category];
+
+  const [prevCategory, setPrevCategory] = useState(category);
+  if (category !== prevCategory) {
+    setPrevCategory(category);
+    setSearchQuery("");
+  }
+
+  const filteredEvents = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return categoryEvents;
+    }
+
+    return categoryEvents.filter((event) => {
+      return [
+        event.name,
+        event.description,
+        event.venue,
+        event.registration_type,
+      ].some((value) =>
+        value?.toLowerCase().includes(query)
+      );
+    });
+  }, [categoryEvents, searchQuery]);
 
   useEffect(() => {
     if (!categoryInfo) return;
@@ -192,7 +218,7 @@ export default function CategoryPage() {
           </span>
 
           <h1 className="text-[clamp(4rem,12vw,11.5rem)] font-light leading-[0.8] tracking-tight text-white">
-            {categoryInfo.title}.
+            {categoryInfo.title}
           </h1>
 
           <div className="mt-8 flex flex-col gap-8 border-t border-white/20 pt-8 md:flex-row md:items-end md:justify-between">
@@ -241,10 +267,42 @@ export default function CategoryPage() {
             Official Lineup
           </div>
 
-          <h2 className="text-[clamp(3.5rem,7vw,7rem)] font-light leading-[0.88] tracking-tight text-white">
-            Pick your <br />
-            <span className="font-editorial text-violet-300 font-normal">challenge.</span>
-          </h2>
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <h2 className="text-[clamp(3.5rem,7vw,7rem)] font-light leading-[0.88] tracking-tight text-white">
+              Pick your <br />
+              <span className="font-editorial text-violet-300 font-normal">challenge.</span>
+            </h2>
+
+            {!loading && categoryEvents.length > 0 && (
+              <div className="w-full md:w-auto md:min-w-[340px] lg:min-w-[400px]">
+                <div className="relative w-full">
+                  <Search
+                    size={18}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={`Search ${categoryInfo.title} events...`}
+                    aria-label="Search events"
+                    className="liquid-glass w-full rounded-full py-3.5 pl-11 pr-11 text-sm text-white placeholder-white/40 transition-all duration-300 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Clear event search"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="mt-16 space-y-4">
             {/* Loading */}
@@ -259,8 +317,8 @@ export default function CategoryPage() {
 
             {/* Events List */}
             {!loading &&
-              categoryEvents.length > 0 &&
-              categoryEvents.map((item, index) => (
+              filteredEvents.length > 0 &&
+              filteredEvents.map((item, index) => (
                 <Link
                   key={item.id}
                   href={`/events/${category}/${item.slug}`}
@@ -314,6 +372,29 @@ export default function CategoryPage() {
                 </Link>
               ))}
 
+            {/* Empty Search State */}
+            {!loading && categoryEvents.length > 0 && filteredEvents.length === 0 && (
+              <div className="liquid-glass rounded-[28px] border border-white/10 p-12 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-violet-300">
+                  <Search size={20} />
+                </div>
+                <p className="text-xl font-semibold text-white">
+                  No challenges found
+                </p>
+                <p className="mt-2 text-sm text-white/50">
+                  No events in this realm match &ldquo;{searchQuery.trim()}&rdquo;.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear event search"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-violet-300 transition hover:bg-violet-500/20 hover:text-white"
+                >
+                  Clear Search
+                </button>
+              </div>
+            )}
+
             {/* Empty State */}
             {!loading && categoryEvents.length === 0 && (
               <div className="liquid-glass rounded-[28px] p-12 text-center">
@@ -329,7 +410,11 @@ export default function CategoryPage() {
 
           {!loading && categoryEvents.length > 0 && (
             <div className="mt-12 flex items-center justify-between border-t border-white/10 pt-6 text-xs text-white/40 font-mono">
-              <span>{categoryEvents.length} VERIFIED EVENTS</span>
+              <span>
+                {searchQuery.trim()
+                  ? `${filteredEvents.length} OF ${categoryEvents.length} EVENTS`
+                  : `${categoryEvents.length} VERIFIED EVENTS`}
+              </span>
               <span>CGC UNIVERSITY MOHALI • SAVISKAR 2026</span>
             </div>
           )}
