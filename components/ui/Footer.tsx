@@ -137,9 +137,23 @@ export default function Footer() {
             </p>
           </div>
 
-          <p className="font-mono text-[11px] tracking-wider text-white/40">
-            © 2026 SAVISKAR • CGC UNIVERSITY MOHALI • ALL RIGHTS RESERVED
-          </p>
+          <div className="flex flex-col items-start gap-1.5 md:items-end">
+            <p className="font-mono text-[11px] tracking-wider text-white/40">
+              © 2026 SAVISKAR • CGC UNIVERSITY MOHALI • ALL RIGHTS RESERVED
+            </p>
+            <p className="text-[11px] text-white/50 flex items-center gap-1">
+              <span>Made by</span>
+              <a
+                href="https://www.amadhav.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-violet-300 transition-colors hover:text-white underline underline-offset-2 inline-flex items-center gap-0.5"
+              >
+                <span>Madhav Vashisht</span>
+                <ArrowUpRight size={11} className="inline opacity-70" />
+              </a>
+            </p>
+          </div>
         </div>
       </div>
 
