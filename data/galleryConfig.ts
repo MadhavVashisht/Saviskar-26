@@ -22,19 +22,19 @@
 export const GDRIVE_GALLERY_CONFIG = {
   /**
    * 1. MAIN GALLERY GOOGLE DRIVE URL
-   * Paste your Main Gallery Google Drive folder or sharing link here:
+   * Configured with your provided Google Drive link:
    */
   mainGalleryDriveUrl:
     process.env.NEXT_PUBLIC_MAIN_GALLERY_GDRIVE_URL ||
-    "", // <-- PASTE MAIN GALLERY GOOGLE DRIVE URL HERE IF NOT USING .ENV
+    "https://drive.google.com/drive/folders/1sKBgnkvnwO53Wvcg_m26MfOQidN3szL9?usp=share_link",
 
   /**
    * 2. GLIMPSE GALLERY GOOGLE DRIVE URL
-   * Paste your Glimpse Gallery (Dome Sphere / 3D Grid) Google Drive link here:
+   * Configured with your provided Google Drive link:
    */
   glimpseGalleryDriveUrl:
     process.env.NEXT_PUBLIC_GLIMPSE_GALLERY_GDRIVE_URL ||
-    "", // <-- PASTE GLIMPSE GALLERY GOOGLE DRIVE URL HERE IF NOT USING .ENV
+    "https://drive.google.com/drive/folders/1eIpgYcrOpKOfBvw-FsbQ8-vAn-ysqomb?usp=sharing",
 };
 
 /**
