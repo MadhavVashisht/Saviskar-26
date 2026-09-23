@@ -91,16 +91,16 @@ export default async function EventPage({
       : "Individual";
 
 const eventHeroImages: Record<string, string> = {
-  hackathon: "/gallery/technical.jpg",
-  roborace: "/gallery/technical.jpg",
-  dronathon: "/gallery/technical.jpg",
+  hackathon: "/images/realm-technical-v2.webp",
+  roborace: "/images/realm-technical-v2.webp",
+  dronathon: "/images/realm-technical-v2.webp",
 
-  dance: "/gallery/cultural.jpg",
-  singing: "/gallery/cultural.jpg",
+  dance: "/images/realm-cultural-v2.webp",
+  singing: "/images/realm-cultural-v2.webp",
 
-  sports: "/gallery/sports.jpg",
+  sports: "/images/realm-sports.webp",
 
-  default: "/gallery/hero.jpg",
+  default: "/images/hero.webp",
 };
 
 const heroImage =

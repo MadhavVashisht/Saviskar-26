@@ -53,15 +53,33 @@ export default function RedesignedGalleryPage() {
   const [photoCategory, setPhotoCategory] = useState<string>("All");
   const [videoCategory, setVideoCategory] = useState<string>("All");
 
+  // Dynamic Google Drive Photos State
+  const [photos, setPhotos] = useState<GalleryImage[]>(GALLERY_IMAGES);
+  const [isDriveStreaming, setIsDriveStreaming] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch("/api/gallery/drive?source=main")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
+          setPhotos(data.items);
+          if (data.isExternal) {
+            setIsDriveStreaming(true);
+          }
+        }
+      })
+      .catch((err) => console.error("Error fetching drive gallery:", err));
+  }, []);
+
   // Lightbox & Theater Modals
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [activeTheaterVideo, setActiveTheaterVideo] = useState<GalleryVideo | null>(null);
 
   // Filtered Media
   const filteredPhotos = useMemo(() => {
-    if (photoCategory === "All") return GALLERY_IMAGES;
-    return GALLERY_IMAGES.filter((img) => img.category === photoCategory);
-  }, [photoCategory]);
+    if (photoCategory === "All") return photos;
+    return photos.filter((img) => img.category === photoCategory);
+  }, [photos, photoCategory]);
 
   const filteredVideos = useMemo(() => {
     if (videoCategory === "All") return GALLERY_VIDEOS;
@@ -183,7 +201,11 @@ export default function RedesignedGalleryPage() {
 
           <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-950/30 px-3.5 py-1.5 font-mono text-[11px] tracking-wider text-violet-300 backdrop-blur-md">
             <Radio size={12} className="animate-pulse text-cyan-400" />
-            <span>AEVORIAN ARCHIVES // LIVE DISPATCH</span>
+            <span>
+              {isDriveStreaming
+                ? "GOOGLE DRIVE CDN STREAM // ACTIVE"
+                : "AEVORIAN ARCHIVES // LIVE DISPATCH"}
+            </span>
           </div>
         </div>
 
@@ -191,7 +213,7 @@ export default function RedesignedGalleryPage() {
         <div className="mt-8 max-w-4xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-violet-300">
             <Sparkles size={12} className="text-violet-400" />
-            Official Visual & Cinematic Chronicle
+            Official Visual &amp; Cinematic Chronicle
           </div>
 
           <h1 className="mt-4 text-4xl font-extralight tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
@@ -211,7 +233,9 @@ export default function RedesignedGalleryPage() {
         {/* Telemetry Stat Counters */}
         <div className="mt-10 grid grid-cols-2 gap-3 border-y border-white/10 py-6 sm:grid-cols-4 md:gap-6">
           <div className="border-l border-violet-500/40 pl-4">
-            <div className="font-mono text-2xl font-bold text-white md:text-3xl">24+</div>
+            <div className="font-mono text-2xl font-bold text-white md:text-3xl">
+              {photos.length}+
+            </div>
             <div className="text-xs uppercase tracking-wider text-white/40">Curated Stills</div>
           </div>
           <div className="border-l border-fuchsia-500/40 pl-4">

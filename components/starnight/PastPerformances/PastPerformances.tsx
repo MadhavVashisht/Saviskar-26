@@ -15,44 +15,44 @@ import { festivalEditions } from "@/data/starnightArtists";
 */
 const starNightPhotos = [
   {
-    src: "/gallery/star 1.webp",
-    alt: "Star Night performance",
+    src: "/images/artists/artist-4-salim-sulaiman.webp",
+    alt: "Salim-Sulaiman Star Night live performance",
     className:
       "left-[2%] top-[4%] h-[310px] w-[205px] -rotate-[3deg] md:h-[390px] md:w-[255px]",
   },
   {
-    src: "/gallery/star 2.webp",
-    alt: "Star Night performance",
+    src: "/images/concert-stadium.webp",
+    alt: "Star Night stadium chorus",
     className:
       "left-[28%] top-[0%] h-[245px] w-[410px] rotate-[2deg] md:h-[300px] md:w-[500px]",
   },
   {
-    src: "/gallery/star 3.webp",
-    alt: "Star Night performance",
+    src: "/images/artists/artist-3-kushagra-sunanda.webp",
+    alt: "Kushagra Thakur & Sunanda Sharma performance",
     className:
       "right-[1%] top-[6%] h-[310px] w-[205px] rotate-[3deg] md:h-[390px] md:w-[255px]",
   },
   {
-    src: "/gallery/star 4.webp",
-    alt: "Star Night performance",
+    src: "/images/scene-realms-stage.webp",
+    alt: "Concert fireworks bloom",
     className:
       "left-[22%] top-[39%] h-[245px] w-[410px] -rotate-[2deg] md:h-[300px] md:w-[500px]",
   },
   {
-    src: "/gallery/star 5.webp",
-    alt: "Star Night performance",
+    src: "/images/scene-starnight-show.webp",
+    alt: "Star Night laser canopy",
     className:
       "right-[2%] top-[43%] h-[310px] w-[205px] -rotate-[3deg] md:h-[390px] md:w-[255px]",
   },
   {
-    src: "/gallery/concert.webp",
-    alt: "Star Night concert",
+    src: "/images/concert.webp",
+    alt: "Star Night concert stage",
     className:
       "left-[1%] bottom-[2%] h-[245px] w-[410px] rotate-[2deg] md:h-[300px] md:w-[500px]",
   },
   {
-    src: "/gallery/hero.webp",
-    alt: "Star Night stage",
+    src: "/images/hero.webp",
+    alt: "Star Night main entrance",
     className:
       "right-[28%] bottom-[0%] h-[245px] w-[410px] -rotate-[2deg] md:h-[300px] md:w-[500px]",
   },

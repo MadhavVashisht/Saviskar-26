@@ -39,7 +39,7 @@ export const festivalEditions: FestivalEdition[] = [
     attendance: "25,000+ Crowd",
     tagline:
       "Two monumental nights that ignited CGC University into Northern India's loudest stadium chorus.",
-    heroImage: "/gallery/concert.webp",
+    heroImage: "/images/concert.webp",
     days: [
       {
         dayNumber: "DAY 01",
@@ -50,7 +50,7 @@ export const festivalEditions: FestivalEdition[] = [
         description:
           "Opening night electrified the stadium, starting with Kushagra Thakur's intimate acoustic anthems and soulful indie melodies, escalating into Sunanda Sharma's high-octane Punjabi folk set that had 25,000 voices singing every lyric at the top of their lungs.",
         badge: "OPENING NIGHT",
-        image: "/gallery/star 3.webp",
+        image: "/images/artists/artist-3-kushagra-sunanda.webp",
         highlights: [
           "Soulful Acoustic Anthems",
           "High-Energy Punjabi Folk",
@@ -66,7 +66,7 @@ export const festivalEditions: FestivalEdition[] = [
         description:
           "The iconic composer duo orchestrated an unforgettable stadium finale with sweeping Bollywood classics, soaring Sufi rhythms, live dhol percussion, and 25,000 voices echoing under the night sky.",
         badge: "GRAND FINALE",
-        image: "/gallery/star 1.webp",
+        image: "/images/artists/artist-4-salim-sulaiman.webp",
         highlights: [
           "Full Live Symphony & Dhol",
           "Timeless Sufi Classics",
@@ -93,7 +93,7 @@ export const festivalEditions: FestivalEdition[] = [
         description:
           "Waqar Khan enchanted the CGC amphitheatre with an ethereal Sufi Night. Intimate acoustic strings, meditative qawwalis, and centuries of lyrical devotion created an unforgettable spiritual reverie under the stars.",
         badge: "SUFI NIGHT",
-        image: "/images/cultural.webp",
+        image: "/images/artists/artist-1-waqar-khan.webp",
         highlights: [
           "Enchanting Sufi Poetry",
           "Soul-Stirring Ghazals",
@@ -109,7 +109,7 @@ export const festivalEditions: FestivalEdition[] = [
         description:
           "Bollywood sensation Ankit Tiwari commanded the stage with chart-shattering anthems like 'Galliyan' and 'Sunn Raha Hai', turning the stadium grounds into a shimmering sea of flashlight waves.",
         badge: "BOLLYWOOD HEADLINER",
-        image: "/gallery/crowd.webp",
+        image: "/images/artists/artist-2-ankit-tiwari.webp",
         highlights: [
           "Chart-Busting Bollywood Hits",
           "Sea of Flashlights",
