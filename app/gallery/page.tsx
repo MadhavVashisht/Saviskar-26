@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -35,6 +35,47 @@ function YoutubeIcon({ size = 16, className = "" }: { size?: number; className?:
     </svg>
   );
 }
+
+/**
+ * High-performance gallery image with animated shimmer placeholder,
+ * asynchronous decoding, and graceful fade-in
+ */
+function GalleryCardImage({
+  src,
+  alt,
+  className = "",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-neutral-900/80">
+      {/* Animated violet/neutral shimmer skeleton while downloading */}
+      {!loaded && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-r from-neutral-900 via-violet-950/25 to-neutral-900 animate-pulse">
+          <ImageIcon size={26} className="text-white/20 animate-pulse" />
+        </div>
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        unoptimized
+        loading="lazy"
+        decoding="async"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        onLoad={() => setLoaded(true)}
+        className={`${className} transition-all duration-500 ease-out ${
+          loaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-105 blur-sm"
+        }`}
+      />
+    </div>
+  );
+}
+
 import Navbar from "@/components/ui/Navbar";
 import {
   GALLERY_IMAGES,
@@ -47,11 +88,15 @@ import {
 } from "@/data/galleryData";
 
 type MediaTypeTab = "all" | "photos" | "videos";
+const PAGE_SIZE = 18;
 
 export default function RedesignedGalleryPage() {
   const [mediaTab, setMediaTab] = useState<MediaTypeTab>("all");
   const [photoCategory, setPhotoCategory] = useState<string>("All");
   const [videoCategory, setVideoCategory] = useState<string>("All");
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+  const [isLightboxLoaded, setIsLightboxLoaded] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Dynamic Google Drive Photos State
   const [photos, setPhotos] = useState<GalleryImage[]>(GALLERY_IMAGES);
@@ -71,9 +116,37 @@ export default function RedesignedGalleryPage() {
       .catch((err) => console.error("Error fetching drive gallery:", err));
   }, []);
 
+  // Reset pagination on category or media tab change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [mediaTab, photoCategory, videoCategory]);
+
   // Lightbox & Theater Modals
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [activeTheaterVideo, setActiveTheaterVideo] = useState<GalleryVideo | null>(null);
+
+  // Reset lightbox loading status on photo navigation
+  useEffect(() => {
+    setIsLightboxLoaded(false);
+  }, [selectedPhotoIndex]);
+
+  // Infinite scroll intersection observer sentinel
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "600px 0px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [mediaTab, photoCategory, videoCategory]);
 
   // Filtered Media
   const filteredPhotos = useMemo(() => {
@@ -93,7 +166,6 @@ export default function RedesignedGalleryPage() {
 
   const combinedItems = useMemo<CombinedItem[]>(() => {
     const list: CombinedItem[] = [];
-    const maxLen = Math.max(filteredPhotos.length, filteredVideos.length);
     let pIdx = 0;
     let vIdx = 0;
 
@@ -114,6 +186,31 @@ export default function RedesignedGalleryPage() {
     }
     return list;
   }, [filteredPhotos, filteredVideos]);
+
+  // Sliced lists for progressive fast rendering
+  const visibleCombinedItems = useMemo(
+    () => combinedItems.slice(0, visibleCount),
+    [combinedItems, visibleCount]
+  );
+
+  const visiblePhotos = useMemo(
+    () => filteredPhotos.slice(0, visibleCount),
+    [filteredPhotos, visibleCount]
+  );
+
+  const visibleVideos = useMemo(
+    () => filteredVideos.slice(0, visibleCount),
+    [filteredVideos, visibleCount]
+  );
+
+  const currentTotal =
+    mediaTab === "all"
+      ? combinedItems.length
+      : mediaTab === "photos"
+      ? filteredPhotos.length
+      : filteredVideos.length;
+
+  const currentVisible = Math.min(visibleCount, currentTotal);
 
   // Selected photo for Lightbox
   const activePhoto =
@@ -359,9 +456,9 @@ export default function RedesignedGalleryPage() {
           </div>
 
           <div className="font-mono text-xs text-white/40">
-            {mediaTab === "photos" && `${filteredPhotos.length} FRAMES VISIBLE`}
-            {mediaTab === "videos" && `${filteredVideos.length} REELS VISIBLE`}
-            {mediaTab === "all" && `${combinedItems.length} ARTIFACTS VISIBLE`}
+            {mediaTab === "photos" && `${currentVisible} of ${filteredPhotos.length} FRAMES VISIBLE`}
+            {mediaTab === "videos" && `${currentVisible} of ${filteredVideos.length} REELS VISIBLE`}
+            {mediaTab === "all" && `${currentVisible} of ${combinedItems.length} ARTIFACTS VISIBLE`}
           </div>
         </div>
 
@@ -414,13 +511,13 @@ export default function RedesignedGalleryPage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          SHOWCASE GRID
+          SHOWCASE GRID (FAST PROGRESSIVE RENDERING)
       ═══════════════════════════════════════════════════════ */}
       <section className="relative z-10 mx-auto max-w-[1440px] px-6 py-12 md:px-12 md:py-16">
         {/* ALL MEDIA TAB */}
         {mediaTab === "all" && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {combinedItems.map((item, idx) => {
+            {visibleCombinedItems.map((item, idx) => {
               if (item.type === "photo") {
                 const img = item.data;
                 const isWide = img.featured || img.aspectRatio === "wide";
@@ -430,7 +527,7 @@ export default function RedesignedGalleryPage() {
                     layout
                     initial={{ opacity: 0, y: 25 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: (idx % 9) * 0.04, duration: 0.4 }}
+                    transition={{ delay: (idx % 9) * 0.03, duration: 0.35 }}
                     onClick={() => {
                       const actualIdx = filteredPhotos.findIndex((p) => p.id === img.id);
                       setSelectedPhotoIndex(actualIdx >= 0 ? actualIdx : 0);
@@ -440,18 +537,15 @@ export default function RedesignedGalleryPage() {
                     }`}
                   >
                     <div className="relative h-80 w-full overflow-hidden sm:h-96">
-                      <Image
-                        src={img.src}
+                      <GalleryCardImage
+                        src={img.thumbnailSrc || img.src}
                         alt={img.title}
-                        fill
-                        unoptimized
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        className="object-cover group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent transition-opacity group-hover:opacity-90" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent transition-opacity group-hover:opacity-90 z-20 pointer-events-none" />
 
                       {/* Top Badges */}
-                      <div className="absolute left-5 top-5 flex items-center gap-2">
+                      <div className="absolute left-5 top-5 z-30 flex items-center gap-2">
                         <span className="rounded-full border border-white/20 bg-black/60 px-3 py-1 font-mono text-[10px] tracking-wider text-violet-300 backdrop-blur-md">
                           {img.category}
                         </span>
@@ -464,7 +558,7 @@ export default function RedesignedGalleryPage() {
                       </div>
 
                       {/* Bottom Info */}
-                      <div className="absolute inset-x-0 bottom-0 p-6">
+                      <div className="absolute inset-x-0 bottom-0 p-6 z-30">
                         <h3 className="text-xl font-semibold text-white transition-colors group-hover:text-violet-200">
                           {img.title}
                         </h3>
@@ -484,31 +578,29 @@ export default function RedesignedGalleryPage() {
                     layout
                     initial={{ opacity: 0, y: 25 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: (idx % 9) * 0.04, duration: 0.4 }}
+                    transition={{ delay: (idx % 9) * 0.03, duration: 0.35 }}
                     className="group relative overflow-hidden rounded-[26px] border border-red-500/20 bg-gradient-to-b from-red-950/15 via-white/[0.02] to-black/80 transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_15px_40px_rgba(239,68,68,0.25)]"
                   >
                     <div
                       className="relative h-56 w-full cursor-pointer overflow-hidden sm:h-64"
                       onClick={() => setActiveTheaterVideo(vid)}
                     >
-                      <Image
+                      <GalleryCardImage
                         src={vid.thumbnailUrl}
                         alt={vid.title}
-                        fill
-                        unoptimized
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        className="object-cover group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-20 pointer-events-none" />
 
                       {/* Play Button Trigger */}
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full border border-red-500/60 bg-red-600/90 text-white shadow-[0_0_30px_rgba(220,38,38,0.7)] backdrop-blur-md transition-transform duration-300 group-hover:scale-110">
                           <Play size={24} className="ml-1 fill-white" />
                         </div>
                       </div>
 
                       {/* Category & Badge */}
-                      <div className="absolute left-5 top-5 flex items-center gap-2">
+                      <div className="absolute left-5 top-5 z-30 flex items-center gap-2">
                         <span className="flex items-center gap-1 rounded-full border border-red-500/40 bg-red-950/70 px-2.5 py-1 font-mono text-[10px] font-semibold text-red-300 backdrop-blur-md">
                           <Tv size={10} />
                           {vid.dateBadge}
@@ -516,7 +608,7 @@ export default function RedesignedGalleryPage() {
                       </div>
 
                       {/* Audio Pulse Visualizer */}
-                      <div className="absolute bottom-4 right-5 flex items-center gap-1 text-white/70">
+                      <div className="absolute bottom-4 right-5 z-30 flex items-center gap-1 text-white/70">
                         <Volume2 size={14} className="text-red-400" />
                         <span className="flex items-end gap-0.5 h-3">
                           <span className="w-0.5 h-2 bg-red-400 animate-pulse" />
@@ -571,7 +663,7 @@ export default function RedesignedGalleryPage() {
         {/* PHOTOGRAPHS ONLY TAB */}
         {mediaTab === "photos" && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPhotos.map((img, idx) => {
+            {visiblePhotos.map((img, idx) => {
               const isWide = img.featured || img.aspectRatio === "wide";
               return (
                 <motion.div
@@ -579,24 +671,24 @@ export default function RedesignedGalleryPage() {
                   layout
                   initial={{ opacity: 0, y: 25 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (idx % 9) * 0.04, duration: 0.4 }}
-                  onClick={() => setSelectedPhotoIndex(idx)}
+                  transition={{ delay: (idx % 9) * 0.03, duration: 0.35 }}
+                  onClick={() => {
+                    const actualIdx = filteredPhotos.findIndex((p) => p.id === img.id);
+                    setSelectedPhotoIndex(actualIdx >= 0 ? actualIdx : 0);
+                  }}
                   className={`group relative cursor-pointer overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.02] transition-all duration-300 hover:border-violet-500/50 hover:shadow-[0_15px_40px_rgba(139,92,246,0.2)] ${
                     isWide ? "sm:col-span-2 lg:col-span-2" : "col-span-1"
                   }`}
                 >
                   <div className="relative h-80 w-full overflow-hidden sm:h-96">
-                    <Image
-                      src={img.src}
+                    <GalleryCardImage
+                      src={img.thumbnailSrc || img.src}
                       alt={img.title}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      className="object-cover group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent transition-opacity group-hover:opacity-90" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent transition-opacity group-hover:opacity-90 z-20 pointer-events-none" />
 
-                    <div className="absolute left-5 top-5 flex items-center gap-2">
+                    <div className="absolute left-5 top-5 z-30 flex items-center gap-2">
                       <span className="rounded-full border border-white/20 bg-black/60 px-3 py-1 font-mono text-[10px] tracking-wider text-violet-300 backdrop-blur-md">
                         {img.category}
                       </span>
@@ -608,7 +700,7 @@ export default function RedesignedGalleryPage() {
                       )}
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 p-6">
+                    <div className="absolute inset-x-0 bottom-0 p-6 z-30">
                       <h3 className="text-xl font-semibold text-white transition-colors group-hover:text-violet-200">
                         {img.title}
                       </h3>
@@ -626,42 +718,40 @@ export default function RedesignedGalleryPage() {
         {/* VIDEOS ONLY TAB */}
         {mediaTab === "videos" && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredVideos.map((vid, idx) => (
+            {visibleVideos.map((vid, idx) => (
               <motion.div
                 key={vid.id}
                 layout
                 initial={{ opacity: 0, y: 25 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05, duration: 0.4 }}
+                transition={{ delay: idx * 0.04, duration: 0.35 }}
                 className="group relative overflow-hidden rounded-[26px] border border-red-500/20 bg-gradient-to-b from-red-950/15 via-white/[0.02] to-black/80 transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_15px_40px_rgba(239,68,68,0.25)]"
               >
                 <div
                   className="relative h-56 w-full cursor-pointer overflow-hidden sm:h-64"
                   onClick={() => setActiveTheaterVideo(vid)}
                 >
-                  <Image
+                  <GalleryCardImage
                     src={vid.thumbnailUrl}
                     alt={vid.title}
-                    fill
-                    unoptimized
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    className="object-cover group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-20 pointer-events-none" />
 
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full border border-red-500/60 bg-red-600/90 text-white shadow-[0_0_30px_rgba(220,38,38,0.7)] backdrop-blur-md transition-transform duration-300 group-hover:scale-110">
                       <Play size={24} className="ml-1 fill-white" />
                     </div>
                   </div>
 
-                  <div className="absolute left-5 top-5 flex items-center gap-2">
+                  <div className="absolute left-5 top-5 z-30 flex items-center gap-2">
                     <span className="flex items-center gap-1 rounded-full border border-red-500/40 bg-red-950/70 px-2.5 py-1 font-mono text-[10px] font-semibold text-red-300 backdrop-blur-md">
                       <Tv size={10} />
                       {vid.dateBadge}
                     </span>
                   </div>
 
-                  <div className="absolute bottom-4 right-5 flex items-center gap-1 text-white/70">
+                  <div className="absolute bottom-4 right-5 z-30 flex items-center gap-1 text-white/70">
                     <Volume2 size={14} className="text-red-400" />
                     <span className="flex items-end gap-0.5 h-3">
                       <span className="w-0.5 h-2 bg-red-400 animate-pulse" />
@@ -710,6 +800,24 @@ export default function RedesignedGalleryPage() {
             ))}
           </div>
         )}
+
+        {/* Load More & Infinite Scroll Controls */}
+        {visibleCount < currentTotal && (
+          <div className="mt-14 flex flex-col items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+              className="group inline-flex items-center gap-2.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-violet-300 backdrop-blur-md transition-all hover:border-violet-400 hover:bg-violet-500/20 hover:text-white hover:shadow-[0_0_30px_rgba(168,85,247,0.35)] active:scale-95 cursor-pointer"
+            >
+              <Sparkles size={14} className="text-violet-400 group-hover:rotate-12 transition-transform" />
+              <span>Load More Artifacts ({currentVisible} of {currentTotal})</span>
+            </button>
+            <span className="font-mono text-[11px] text-white/40">
+              Showing {currentVisible} of {currentTotal} curated artifacts • Streaming smoothly
+            </span>
+          </div>
+        )}
+        <div ref={sentinelRef} className="h-10 w-full pointer-events-none" />
       </section>
 
       {/* ═══════════════════════════════════════════════════════
@@ -888,18 +996,29 @@ export default function RedesignedGalleryPage() {
               className="relative max-h-[90vh] max-w-5xl overflow-hidden rounded-[28px] border border-white/15 bg-neutral-950 p-4 md:p-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative h-[65vh] w-[82vw] max-w-4xl overflow-hidden rounded-[20px] bg-black">
+              <div className="relative h-[65vh] w-[82vw] max-w-4xl overflow-hidden rounded-[20px] bg-black/90 flex items-center justify-center">
+                {!isLightboxLoaded && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-neutral-950/80">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500/20 border-t-violet-400" />
+                    <span className="font-mono text-[10px] tracking-widest text-violet-300 uppercase">
+                      STREAMING 2K MASTER
+                    </span>
+                  </div>
+                )}
                 <Image
                   src={activePhoto.src}
                   alt={activePhoto.title}
                   fill
                   unoptimized
-                  className="object-contain"
+                  onLoad={() => setIsLightboxLoaded(true)}
+                  className={`object-contain transition-opacity duration-500 ${
+                    isLightboxLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                   priority
                 />
               </div>
 
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-2">
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-2">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[10px] tracking-widest text-violet-400 uppercase">
@@ -922,7 +1041,17 @@ export default function RedesignedGalleryPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <a
+                    href={activePhoto.src.replace(/=s\d+$/, "=s0")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-mono text-zinc-300 hover:border-violet-400 hover:bg-violet-500/20 hover:text-white transition-all"
+                  >
+                    <ExternalLink size={12} />
+                    <span>Download 8K RAW</span>
+                  </a>
+
                   <span className="font-mono text-xs text-white/40">
                     FRAME {(selectedPhotoIndex ?? 0) + 1} / {filteredPhotos.length}
                   </span>

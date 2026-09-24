@@ -12,7 +12,9 @@ export interface GalleryVideo {
 
 export interface GalleryImage {
   id: string;
+  fileId?: string;
   src: string;
+  thumbnailSrc?: string;
   title: string;
   category: "Main Stage" | "Technical & AI" | "Culture & Arts" | "Showcases" | "Sports" | "Campus" | "Behind the Scenes";
   description: string;
