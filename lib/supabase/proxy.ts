@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminSessionExpired } from "./admin-session";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -53,6 +54,27 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/admin/login";
       url.search = "";
       return NextResponse.redirect(url);
+    }
+
+    return response;
+  }
+
+  // Enforce server-side admin session expiration
+  if (isAdminSessionExpired(user)) {
+    await supabase.auth.signOut();
+
+    if (!isExemptPath) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      url.search = "";
+      const redirect = NextResponse.redirect(url);
+
+      // Copy any auth-cookie changes produced by signOut().
+      response.cookies.getAll().forEach((cookie) => {
+        redirect.cookies.set(cookie);
+      });
+
+      return redirect;
     }
 
     return response;

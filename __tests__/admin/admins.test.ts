@@ -38,7 +38,7 @@ mockBuilder.then = function (resolve: (value: { data: unknown; error: unknown })
 const mockServerClient = {
   auth: {
     getUser: vi.fn().mockResolvedValue({
-      data: { user: { id: "sm-id", email: "jashan082006@gmail.com" } },
+      data: { user: { id: "sm-id", email: "jashan082006@gmail.com", last_sign_in_at: new Date().toISOString() } },
       error: null,
     }),
     mfa: {
@@ -227,7 +227,7 @@ describe("Admin Management API Security & RBAC", () => {
       process.env.PRIMARY_ADMIN_USER_ID = "sm-id";
       // Primary Master
       mockServerClient.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "sm-id", email: "primary@example.com" } },
+        data: { user: { id: "sm-id", email: "primary@example.com", last_sign_in_at: new Date().toISOString() } },
         error: null,
       });
       mockBuilder.maybeSingle.mockResolvedValueOnce({ data: { role: "master" }, error: null });
@@ -236,7 +236,7 @@ describe("Admin Management API Security & RBAC", () => {
 
       // Other Master
       mockServerClient.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "other-id", email: "other@example.com" } },
+        data: { user: { id: "other-id", email: "other@example.com", last_sign_in_at: new Date().toISOString() } },
         error: null,
       });
       mockBuilder.maybeSingle.mockResolvedValueOnce({ data: { role: "master" }, error: null });

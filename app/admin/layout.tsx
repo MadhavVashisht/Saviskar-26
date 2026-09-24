@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AdminSessionWatcher } from "@/components/admin/AdminSessionWatcher";
 
 export const metadata: Metadata = {
   robots: {
@@ -13,5 +14,10 @@ export default function AdminLayout({
 }: {
   children: ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <AdminSessionWatcher />
+      {children}
+    </>
+  );
 }

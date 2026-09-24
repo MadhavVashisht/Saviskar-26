@@ -1,5 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import {
+  isAdminSessionExpired,
+  getAdminSessionMaxAgeSeconds,
+  DEFAULT_ADMIN_SESSION_MAX_AGE_SECONDS,
+} from "./admin-session";
+
+export {
+  isAdminSessionExpired,
+  getAdminSessionMaxAgeSeconds,
+  DEFAULT_ADMIN_SESSION_MAX_AGE_SECONDS,
+};
 
 export type AdminRole = "master" | "admin";
 
@@ -50,6 +61,23 @@ export async function requireAdmin() {
       user: null,
       role: null,
       error: "Unauthorized" as const,
+      status: 401,
+    };
+  }
+
+  // Authoritatively enforce session expiration server-side
+  if (isAdminSessionExpired(user)) {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Safe fallback if signOut throws
+    }
+
+    return {
+      supabase,
+      user: null,
+      role: null,
+      error: "Session expired" as const,
       status: 401,
     };
   }
