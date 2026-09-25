@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import Navbar from "@/components/ui/Navbar";
 
 export const revalidate = 300;
 
@@ -108,40 +109,36 @@ const heroImage =
   eventHeroImages.default;
   return (
     <main className="min-h-screen bg-black text-white">
+      {/* Universal Site Navbar */}
+      <Navbar />
 
       {/* HERO */}
       <section className="relative flex min-h-screen flex-col">
-{/* Hero background image */}
-<div className="absolute inset-0 overflow-hidden">
-  <Image
-    src={heroImage}
-    alt={currentEvent.name}
-    fill
-    priority
-    className="object-cover scale-110 animate-[slowZoom_20s_linear_infinite_alternate]"
-  />
-<div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent" />
-  <div className="absolute inset-0 bg-black/72" />
-  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/10" />
-</div>
+        {/* Hero background image */}
+        <div className="absolute inset-0 overflow-hidden">
+          <Image
+            src={heroImage}
+            alt={currentEvent.name}
+            fill
+            priority
+            className="object-cover scale-110 animate-[slowZoom_20s_linear_infinite_alternate]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent" />
+          <div className="absolute inset-0 bg-black/72" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/10" />
+        </div>
         {/* Subtle background glow */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[80vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.035] blur-[130px]" />
 
-        {/* Top navigation */}
-        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between px-6 py-8 md:px-10">
-
+        {/* Top sub-navigation */}
+        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between px-6 pt-24 pb-4 md:px-10 md:pt-28">
           <Link
             href={`/events/${category}`}
-            className="flex items-center gap-2 text-sm text-white/50 transition hover:text-white"
+            className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white hover:scale-105"
           >
-            <ArrowLeft size={15} />
-            {formatCategory(category)}
+            <ArrowLeft size={14} />
+            <span>{formatCategory(category)} Realm</span>
           </Link>
-
-          <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/35">
-            Saviskar 2026
-          </span>
-
         </div>
 
         {/* Hero content */}

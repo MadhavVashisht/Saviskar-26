@@ -21,6 +21,7 @@ import {
   Compass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Navbar from "@/components/ui/Navbar";
 
 export interface EventItem {
   id: string;
@@ -274,34 +275,11 @@ export default function EventsView() {
         <div className="absolute left-[20%] bottom-[15%] h-[600px] w-[600px] rounded-full bg-fuchsia-600/10 blur-[180px]" />
       </div>
 
-      {/* 2. FLOATING TOP HEADER */}
-      <header className="relative z-30 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-6 md:px-10">
-        <Link
-          href="/"
-          className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
-        >
-          <ArrowLeft size={14} />
-          <span>Home</span>
-        </Link>
+      {/* Universal Site Navbar */}
+      <Navbar />
 
-        {/* University Badge */}
-        <div className="liquid-glass hidden sm:inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/80">
-          <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
-          <span>CGC UNIVERSITY MOHALI</span>
-          <span className="text-white/30">|</span>
-          <span className="text-violet-300">AEVORIAN REVERIE</span>
-        </div>
-
-        <Link
-          href="/register"
-          className="rounded-full bg-white px-5 py-2 text-xs font-semibold text-black transition-all hover:bg-violet-100 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-        >
-          Register Pass
-        </Link>
-      </header>
-
-      {/* 3. HERO INTRODUCTION */}
-      <section className="relative z-20 mx-auto max-w-[1440px] px-5 pb-10 pt-10 md:px-10 md:pt-16">
+      {/* HERO INTRODUCTION */}
+      <section className="relative z-20 mx-auto max-w-[1440px] px-5 pb-10 pt-28 md:px-10 md:pt-36">
         {/* Glowing Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, FileDown, Search, Sparkles, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Navbar from "@/components/ui/Navbar";
 
 const categories = {
   technical: {
@@ -169,6 +170,9 @@ export default function CategoryPage() {
 
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
+      {/* Universal Site Navbar */}
+      <Navbar />
+
       {/* 01. HERO WITH 8K CONCERT STAGE PHOTOGRAPHY */}
       <section className="relative min-h-[92vh] overflow-hidden">
         <Image
@@ -185,9 +189,9 @@ export default function CategoryPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.2)_0%,rgba(0,0,0,0.6)_60%,#000000_95%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
 
-        {/* Navigation Bar */}
-        <div className="absolute left-0 top-0 z-20 w-full">
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-8 md:px-10">
+        {/* Sub-Navigation Actions */}
+        <div className="absolute left-0 top-20 md:top-24 z-20 w-full">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 md:px-10">
             <Link
               href="/events"
               className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition hover:text-white"
@@ -195,10 +199,6 @@ export default function CategoryPage() {
               <ArrowLeft size={14} />
               <span>All Realms</span>
             </Link>
-
-            <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/50">
-              SAVISKAR 2026 • CGC UNIVERSITY
-            </span>
 
             <a
               href={categoryInfo.rulebookUrl}

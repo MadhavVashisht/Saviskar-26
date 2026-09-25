@@ -6,7 +6,6 @@ import QRCode from "qrcode";
 import Link from "next/link";
 import {
   AlertCircle,
-  ArrowLeft,
   Check,
   ChevronRight,
   CreditCard,
@@ -14,6 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Footer from "@/components/ui/Footer";
+import Navbar from "@/components/ui/Navbar";
 
 type ResumeOrderData = {
   success: boolean;
@@ -315,24 +315,8 @@ function PaymentResumeContent() {
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
-      {/* Top Header */}
-      <header className="fixed top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/70 transition hover:text-white"
-          >
-            <ArrowLeft size={14} />
-            Saviskar 2026
-          </Link>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-medium uppercase tracking-wider text-white/50">
-              Secure Gateway
-            </span>
-          </div>
-        </div>
-      </header>
+      {/* Universal Site Navbar */}
+      <Navbar />
 
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-24 md:pt-40 md:pb-32">
         {loading ? (

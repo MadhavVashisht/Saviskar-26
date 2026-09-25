@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
-import { ArrowLeft, ArrowUpRight, Mail, Phone, Sparkles } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Sparkles } from "lucide-react";
 import MouseSpotlight from "@/components/ui/MouseSpotlight";
 import RegistrationFlowManager from "@/components/registration/RegistrationFlowManager";
 import { getRegistrationSession } from "@/lib/auth/session";
 import Footer from "@/components/ui/Footer";
+import Navbar from "@/components/ui/Navbar";
 
 export const metadata: Metadata = {
   title: "Official Registration Portal",
@@ -70,47 +71,23 @@ export default async function RegisterPage({
         <MouseSpotlight />
       </div>
 
-      {/* Top Navigation */}
-      <header className="relative z-20 px-6 py-6 md:px-10">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          {fromAdmin ? (
-            <Link
-              href="/admin"
-              className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
-            >
-              <ArrowLeft size={14} />
-              <span>Back to Admin</span>
-            </Link>
-          ) : (
-            <Link
-              href="/"
-              className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
-            >
-              <ArrowLeft size={14} />
-              <span>Saviskar Home</span>
-            </Link>
-          )}
-
-          <div className="liquid-glass hidden sm:inline-flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-white/80 px-4 py-1.5 rounded-full">
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#c084fc]" />
-            <span>CGC UNIVERSITY MOHALI</span>
-            <span className="text-white/30">|</span>
-            <span className="text-violet-300">AEVORIAN REVERIE</span>
-          </div>
-
-          <Link
-            href="/events"
-            className="liquid-glass flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
-          >
-            <span>All 4 Realms</span>
-            <ArrowUpRight size={13} />
-          </Link>
-        </div>
-      </header>
+      {/* Universal Site Navbar */}
+      <Navbar />
 
       {/* Hero */}
-      <section className="relative z-10 px-6 pb-12 pt-10 md:px-10 md:pb-16 md:pt-14">
+      <section className="relative z-10 px-6 pb-12 pt-28 md:px-10 md:pb-16 md:pt-36">
         <div className="mx-auto max-w-[1200px]">
+          {fromAdmin && (
+            <div className="mb-6">
+              <Link
+                href="/admin"
+                className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white hover:scale-105"
+              >
+                <ArrowLeft size={14} />
+                <span>Back to Admin</span>
+              </Link>
+            </div>
+          )}
           <div className="liquid-glass mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.3em] text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
             <Sparkles size={12} className="text-violet-300 animate-spin" />
             <span>OFFICIAL ACCREDITATION PORTAL // SAVISKAR 2026</span>

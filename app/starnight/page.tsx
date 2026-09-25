@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import Navbar from "@/components/ui/Navbar";
 import Hero from "@/components/starnight/Hero/Hero";
 import PastPerformances from "@/components/starnight/PastPerformances/PastPerformances";
 
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
 export default function StarNightPage() {
   return (
     <main className="w-full overflow-x-hidden bg-black">
+      <Navbar />
       <Hero />
 
       <PastPerformances />
