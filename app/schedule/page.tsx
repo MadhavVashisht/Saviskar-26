@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import { motion, useScroll, useSpring } from "motion/react";
 import { supabase } from "@/lib/supabase";
+import Navbar from "@/components/ui/Navbar";
 import ScheduleTimeline from "@/components/schedule/ScheduleTimeline";
 import ThomsoReplicaMap from "@/components/schedule/ThomsoReplicaMap";
-import { CAMPUS_VENUES, FESTIVAL_SCHEDULE, ScheduleEvent } from "@/data/scheduleData";
+import { CAMPUS_VENUES, FESTIVAL_SCHEDULE } from "@/data/scheduleData";
 
 type Event = {
   id: string;
@@ -112,8 +113,11 @@ export default function SchedulePage() {
   });
 
   return (
-    <main className="w-full min-h-screen bg-[#070b08] text-white selection:bg-amber-400 selection:text-black">
-      {/* View Mode 1: Exact Replica Thomso Map Experience (Full Screen Default) */}
+    <main className="w-full min-h-screen bg-[#030306] text-white selection:bg-violet-500 selection:text-white">
+      {/* Universal Site Navbar (Logo, Center Pill, Orbital Singularity Disc Trigger) */}
+      <Navbar />
+
+      {/* View Mode 1: Exact Replica Thomso Map Experience with Saviskar 2026 Liquid Glass Theme */}
       {viewMode === "map" ? (
         <div className="w-full h-screen overflow-hidden">
           <ThomsoReplicaMap
@@ -123,15 +127,15 @@ export default function SchedulePage() {
         </div>
       ) : (
         /* View Mode 2: Chronological Hour-by-Hour Timeline Matrix */
-        <div className="min-h-screen overflow-x-hidden bg-black text-white">
+        <div className="min-h-screen overflow-x-hidden bg-[#030306] text-white pt-24">
           {/* Top progress bar */}
           <motion.div
             style={{ scaleX: progress }}
-            className="fixed left-0 right-0 top-0 z-[100] h-[3px] origin-left bg-amber-400 shadow-[0_0_12px_#f59e0b]"
+            className="fixed left-0 right-0 top-0 z-[100] h-[3px] origin-left bg-violet-400 shadow-[0_0_12px_#a855f7]"
           />
 
-          {/* Header Navigation */}
-          <header className="sticky top-0 z-30 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 border-b border-white/10 bg-black/80 backdrop-blur-xl md:px-10">
+          {/* Subheader Navigation */}
+          <header className="sticky top-20 z-30 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 border-b border-white/10 bg-black/70 backdrop-blur-xl md:px-10">
             <Link
               href="/"
               className="group flex items-center gap-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white"
@@ -144,15 +148,15 @@ export default function SchedulePage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setViewMode("map")}
-                className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-amber-300 hover:bg-amber-500/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                className="flex items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-violet-300 hover:bg-violet-500/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(168,85,247,0.25)]"
               >
-                <Compass size={14} />
+                <Compass size={14} className="text-violet-400" />
                 <span>Interactive Campus Map</span>
               </button>
 
               <Link
                 href="/events"
-                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-amber-100 transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-violet-100 transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)]"
               >
                 Explore Realms
               </Link>
@@ -160,17 +164,17 @@ export default function SchedulePage() {
           </header>
 
           {/* Timeline Hero Intro */}
-          <section className="relative px-6 pt-16 pb-12 md:px-10 lg:px-14 border-b border-white/[0.08]">
+          <section className="relative px-6 pt-12 pb-12 md:px-10 lg:px-14 border-b border-white/[0.08]">
             <div className="mx-auto max-w-[1350px]">
               <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
                 <div>
-                  <div className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-amber-400 mb-3 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+                  <div className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-violet-400 mb-3 bg-violet-500/10 border border-violet-500/30 px-3 py-1 rounded-full">
                     <Clock size={12} />
-                    <span>CHRONOLOGICAL RUNWAY // HOUR BY HOUR</span>
+                    <span>CHRONOLOGICAL MATRIX // HOUR BY HOUR</span>
                   </div>
                   <h1 className="font-editorial text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight leading-[1.0]">
                     Festival Schedule<br />
-                    <span className="italic font-normal text-amber-300">
+                    <span className="italic font-normal bg-gradient-to-r from-violet-200 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">
                       Chronological Matrix
                     </span>
                   </h1>
@@ -187,13 +191,13 @@ export default function SchedulePage() {
                     </p>
                   </div>
                   <div>
-                    <p className="font-editorial text-4xl text-amber-300 font-bold">{dayCount}</p>
+                    <p className="font-editorial text-4xl text-violet-300 font-bold">{dayCount}</p>
                     <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-zinc-400">
                       FESTIVAL DAYS
                     </p>
                   </div>
                   <div>
-                    <p className="font-editorial text-4xl text-emerald-400 font-bold">
+                    <p className="font-editorial text-4xl text-cyan-400 font-bold">
                       {CAMPUS_VENUES.length}
                     </p>
                     <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-zinc-400">
@@ -226,7 +230,7 @@ export default function SchedulePage() {
           {/* Call to action & Return to Map */}
           <section className="relative overflow-hidden bg-black px-6 py-20 text-white md:px-10 lg:px-14 border-t border-white/[0.08]">
             <div className="relative z-10 mx-auto max-w-[1200px] text-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-amber-300 mb-6 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-violet-300 mb-6 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
                 <Sparkles size={12} />
                 <span>SAVISKAR 2026 // AEVORIAN REVERIE</span>
               </div>
@@ -241,7 +245,7 @@ export default function SchedulePage() {
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <button
                   onClick={() => setViewMode("map")}
-                  className="flex items-center gap-2 rounded-full bg-amber-400 px-8 py-3.5 text-sm font-semibold text-black transition-all hover:bg-amber-300 hover:scale-105 shadow-[0_0_25px_rgba(245,158,11,0.4)]"
+                  className="flex items-center gap-2 rounded-full bg-violet-500 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-violet-400 hover:scale-105 shadow-[0_0_25px_rgba(168,85,247,0.4)]"
                 >
                   <Compass size={16} />
                   <span>Launch Interactive Campus Map</span>
@@ -261,7 +265,7 @@ export default function SchedulePage() {
           {/* Footer bar */}
           <div className="flex items-center justify-center border-t border-white/[0.06] bg-zinc-950 px-6 py-6">
             <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.25em] text-zinc-500">
-              <CalendarDays size={12} className="text-amber-400" />
+              <CalendarDays size={12} className="text-violet-400" />
               <span>CGC University, Mohali &bull; 28–29 October 2026 &bull; Official Spatial Schedule</span>
             </div>
           </div>

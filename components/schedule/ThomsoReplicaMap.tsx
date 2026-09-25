@@ -61,9 +61,8 @@ export default function ThomsoReplicaMap({
   const [selectedDay, setSelectedDay] = useState<number | "all">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isRailOpen, setIsRailOpen] = useState<boolean>(true);
-  const [showAnnouncement, setShowAnnouncement] = useState<boolean>(true);
 
-  // Camera Zoom & Position (using Thomso's exact camera coordinates)
+  // Camera Zoom & Position (using exact camera math)
   // { tx: translateX %, ty: translateY %, z: zoom scale }
   const [camera, setCamera] = useState<{ tx: number; ty: number; z: number }>({
     tx: 0,
@@ -81,8 +80,7 @@ export default function ThomsoReplicaMap({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const venueDrawerRef = useRef<HTMLButtonElement>(null);
 
-  // ── 1. THOMSO CAMERA MATH ENGINE ──────────────────────────────────────────
-  // Computes precise translation percentages to focus on a venue without clipping
+  // ── 1. CAMERA GLIDE MATH ENGINE ──────────────────────────────────────────
   const calculateCamera = useCallback(
     (venue: CampusVenue, targetZ: number, originX: number = 50, originY: number = 50) => {
       const limit = 50 * (targetZ - 1);
@@ -99,8 +97,8 @@ export default function ThomsoReplicaMap({
   // Focus camera when active venue changes or hovers
   useEffect(() => {
     if (activeVenue) {
-      // Thomso side drawer logic: If building is on left (x < 50), drawer is on right side
-      // Shift building towards right (originX = 26) so it's not obscured by the drawer!
+      // Side drawer logic: If building is on left (x < 50), drawer is on right side
+      // Shift building towards right (originX = 26) so it's not obscured by the drawer
       const originX = activeVenue.coordinates.x < 50 ? 26 : 74;
       setCamera(calculateCamera(activeVenue, 1.7, originX, 50));
       setManualPan({ x: 0, y: 0 });
@@ -118,8 +116,7 @@ export default function ThomsoReplicaMap({
     }
   }, [activeVenue, hoveredVenueId, calculateCamera]);
 
-  // ── 2. THOMSO MOUSE PARALLAX ENGINE ───────────────────────────────────────
-  // Subtle 2.5D floating tilt: moves pins and film with smooth exponential damping
+  // ── 2. MOUSE PARALLAX ENGINE ─────────────────────────────────────────────
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -276,6 +273,23 @@ export default function ThomsoReplicaMap({
   // Determine drawer orientation based on venue coordinates
   const isDrawerOnRight = activeVenue ? activeVenue.coordinates.x < 50 : false;
 
+  const getVenueAccent = (venue: CampusVenue) => {
+    switch (venue.accentColor) {
+      case "amber":
+        return { color: "#f59e0b", glow: "rgba(245, 158, 11, 0.45)" };
+      case "cyan":
+        return { color: "#06b6d4", glow: "rgba(6, 182, 212, 0.45)" };
+      case "emerald":
+        return { color: "#10b981", glow: "rgba(16, 185, 129, 0.45)" };
+      case "rose":
+        return { color: "#f43f5e", glow: "rgba(244, 63, 94, 0.45)" };
+      case "fuchsia":
+        return { color: "#d946ef", glow: "rgba(217, 70, 239, 0.45)" };
+      default:
+        return { color: "#a855f7", glow: "rgba(168, 85, 247, 0.45)" };
+    }
+  };
+
   return (
     <div
       ref={rootRef}
@@ -289,249 +303,16 @@ export default function ThomsoReplicaMap({
       }
     >
       {/* ══════════════════════════════════════════════════════════
-          1. TOP ANNOUNCEMENT BANNER
+          1. FLOATING LIQUID-GLASS COMMAND & FILTER BAR
+          Sits centered beneath the site's top Navbar
       ══════════════════════════════════════════════════════════ */}
-      {showAnnouncement && (
-        <div className="relative z-40 flex items-center justify-between border-b border-amber-500/25 bg-gradient-to-r from-amber-950/60 via-emerald-950/40 to-amber-950/60 px-4 py-1.5 font-mono text-xs text-amber-200/90 backdrop-blur-md">
-          <div className="mx-auto flex items-center gap-2 text-center text-[11px] sm:text-xs tracking-wider">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#f59e0b]" />
-            <span>Saviskar 2026 Digital Pass Portal is Live — Fast-Track QR Entry to All Grounds &amp; Competitions</span>
-            <Link
-              href="/register"
-              className="ml-2 font-bold text-white underline hover:text-amber-300 transition-colors"
-            >
-              Get Pass &rarr;
-            </Link>
-          </div>
-          <button
-            onClick={() => setShowAnnouncement(false)}
-            aria-label="Dismiss Announcement"
-            className="flex-shrink-0 text-amber-400/60 hover:text-amber-200 transition-colors p-1"
-          >
-            <X size={13} />
-          </button>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════
-          2. TOP FLOATING CONTROL BAR (Disc Icon, Filters, Modes)
-      ══════════════════════════════════════════════════════════ */}
-      <header className="relative z-30 flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/[0.08] bg-black/60 backdrop-blur-xl gap-4">
-        {/* Left: Disc Menu Icon / Home Link */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="group flex h-9 w-9 items-center justify-center rounded-full border border-amber-500/40 bg-gradient-to-br from-amber-500/20 via-black to-emerald-950/40 text-amber-300 shadow-[0_0_15px_rgba(201,168,76,0.3)] hover:scale-105 transition-all"
-            title="Saviskar 2026 — Home"
-          >
-            <Compass size={17} className="transition-transform group-hover:rotate-45" />
-          </Link>
-
-          <div className="hidden sm:block">
-            <div className="font-mono text-[8.5px] uppercase tracking-[0.28em] text-amber-400/90">
-              SAVISKAR 2026 // SPATIAL MAP
-            </div>
-            <h1 className="font-editorial text-base font-bold text-white tracking-wide leading-none">
-              CGC University, Mohali
-            </h1>
-          </div>
-        </div>
-
-        {/* Right: Day Filters, What's On Toggle, Timeline Mode */}
-        <div className="flex items-center gap-2">
-          {/* Day Filter Pills */}
-          <div className="hidden md:flex rounded-full border border-white/10 bg-white/[0.04] p-0.5">
-            {[
-              { id: "all", label: "All Days" },
-              { id: 1, label: "Day 1 (28 Oct)" },
-              { id: 2, label: "Day 2 (29 Oct)" },
-            ].map((d) => (
-              <button
-                key={d.id}
-                onClick={() => setSelectedDay(d.id as number | "all")}
-                className={`rounded-full px-3 py-1 font-mono text-[9.5px] uppercase tracking-wider transition-all ${
-                  selectedDay === d.id
-                    ? "bg-amber-400 text-black font-bold shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                    : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Toggle "What's on" Rail Drawer */}
-          <button
-            onClick={() => setIsRailOpen(!isRailOpen)}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[9.5px] uppercase tracking-wider transition-all ${
-              isRailOpen
-                ? "border-amber-400/50 bg-amber-500/10 text-amber-300 shadow-[0_0_12px_rgba(201,168,76,0.25)]"
-                : "border-white/10 bg-white/[0.05] text-zinc-300 hover:text-white"
-            }`}
-          >
-            <ListFilter size={12} />
-            <span className="hidden sm:inline">What&apos;s On</span>
-            <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[8.5px] font-bold">
-              {filteredEvents.length}
-            </span>
-          </button>
-
-          {/* Timeline View Switcher Button */}
-          {onSwitchToTimeline && (
-            <button
-              onClick={onSwitchToTimeline}
-              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1 font-mono text-[9.5px] uppercase tracking-wider text-zinc-300 hover:text-white hover:border-white/30 transition-all"
-            >
-              <CalendarDays size={12} className="text-violet-400" />
-              <span className="hidden sm:inline">Timeline View</span>
-            </button>
-          )}
-
-          {/* Realms link */}
-          <Link
-            href="/events"
-            className="rounded-full bg-white px-3.5 py-1 font-sans text-xs font-semibold text-black hover:bg-amber-100 hover:scale-105 transition-all shadow-[0_0_12px_rgba(255,255,255,0.3)]"
-          >
-            Realms
-          </Link>
-        </div>
-      </header>
-
-      {/* ══════════════════════════════════════════════════════════
-          3. MAIN MAP CONTAINER (Full Viewport + Plains Setting)
-      ══════════════════════════════════════════════════════════ */}
-      <div className="relative flex-1 w-full h-[calc(100vh-64px)] overflow-hidden">
-        {/* ── A. FLOATING LEFT "WHAT'S ON" RAIL (.rail) ── */}
-        {isRailOpen && !activeVenue && (
-          <aside className="rail" aria-label="Events happening around the campus">
-            <p className="rail__head">
-              <span className="rail__pulse" aria-hidden="true" />
-              <span>What&apos;s on</span>
-              <Link href="/events" className="rail__all">
-                <span>See all</span>
-                <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </p>
-
-            {/* Quick Category Filter Pills in Rail */}
-            <div className="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-              {[
-                { id: "all", label: "All" },
-                { id: "technical", label: "Tech" },
-                { id: "cultural", label: "Arts" },
-                { id: "non-technical", label: "Non-Tech" },
-                { id: "sports", label: "Sports" },
-              ].map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCategory(c.id)}
-                  className={`flex-shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[8.5px] uppercase tracking-wider transition-all ${
-                    selectedCategory === c.id
-                      ? "bg-amber-400 text-black font-bold"
-                      : "bg-black/50 border border-white/10 text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Drifting Viewport */}
-            <div className="rail__viewport">
-              <ul
-                className="rail__track"
-                style={
-                  {
-                    "--rail-dur": `${Math.max(35, filteredEvents.length * 4.5)}s`,
-                    "--rail-copies": 2,
-                  } as React.CSSProperties
-                }
-              >
-                {filteredEvents.map((ev, idx) => {
-                  const venue = CAMPUS_VENUES.find((v) => v.id === ev.venueId);
-                  const accent =
-                    venue?.accentColor === "amber"
-                      ? "#c9a84c"
-                      : venue?.accentColor === "cyan"
-                      ? "#06b6d4"
-                      : venue?.accentColor === "emerald"
-                      ? "#10b981"
-                      : venue?.accentColor === "rose"
-                      ? "#f43f5e"
-                      : "#a855f7";
-
-                  return (
-                    <li key={`track-1-${ev.id}-${idx}`} className="rail__item">
-                      <button
-                        type="button"
-                        className="rail__card"
-                        style={{ "--accent": accent } as React.CSSProperties}
-                        onClick={() => {
-                          if (venue) handleFlyToVenue(venue);
-                        }}
-                        onMouseEnter={() => setHoveredVenueId(ev.venueId)}
-                        onMouseLeave={() => setHoveredVenueId(null)}
-                      >
-                        <span className="rail__top">
-                          <span className="rail__dot" aria-hidden="true" />
-                          <span className="rail__kind">{ev.category}</span>
-                          <span className="rail__day">Day {ev.day}</span>
-                        </span>
-                        <span className="rail__title">{ev.name}</span>
-                        <span className="rail__where">{ev.venueName}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-
-                {/* Duplicated list for infinite seamless loop */}
-                {filteredEvents.map((ev, idx) => {
-                  const venue = CAMPUS_VENUES.find((v) => v.id === ev.venueId);
-                  const accent =
-                    venue?.accentColor === "amber"
-                      ? "#c9a84c"
-                      : venue?.accentColor === "cyan"
-                      ? "#06b6d4"
-                      : venue?.accentColor === "emerald"
-                      ? "#10b981"
-                      : venue?.accentColor === "rose"
-                      ? "#f43f5e"
-                      : "#a855f7";
-
-                  return (
-                    <li key={`track-2-${ev.id}-${idx}`} className="rail__item">
-                      <button
-                        type="button"
-                        className="rail__card"
-                        style={{ "--accent": accent } as React.CSSProperties}
-                        onClick={() => {
-                          if (venue) handleFlyToVenue(venue);
-                        }}
-                        onMouseEnter={() => setHoveredVenueId(ev.venueId)}
-                        onMouseLeave={() => setHoveredVenueId(null)}
-                      >
-                        <span className="rail__top">
-                          <span className="rail__dot" aria-hidden="true" />
-                          <span className="rail__kind">{ev.category}</span>
-                          <span className="rail__day">Day {ev.day}</span>
-                        </span>
-                        <span className="rail__title">{ev.name}</span>
-                        <span className="rail__where">{ev.venueName}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </aside>
-        )}
-
-        {/* ── B. CENTERED SEARCH FIELD (.camp__search) ── */}
-        {!activeVenue && (
+      {!activeVenue && (
+        <div className="camp__control-bar">
+          {/* Centered Search Input Pill */}
           <div className="camp__search" role="search">
             <label className="camp__field">
               <span className="camp__icon" aria-hidden="true">
-                ⌕
+                <Search size={15} className="text-violet-400" />
               </span>
               <input
                 ref={searchInputRef}
@@ -561,7 +342,9 @@ export default function ThomsoReplicaMap({
                 onMouseDown={(e) => e.preventDefault()}
               >
                 {searchResults.length === 0 ? (
-                  <p className="camp__none">No competitions or venues match &ldquo;{searchQuery}&rdquo;</p>
+                  <p className="camp__none">
+                    No competitions or venues match &ldquo;{searchQuery}&rdquo;
+                  </p>
                 ) : (
                   <ul>
                     {searchResults.map((item) => {
@@ -586,9 +369,179 @@ export default function ThomsoReplicaMap({
               </div>
             )}
           </div>
+
+          {/* Day Filter Pills */}
+          <div className="hidden sm:flex items-center rounded-full border border-white/15 bg-black/60 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
+            {[
+              { id: "all", label: "All Days" },
+              { id: 1, label: "Day 1 (28 Oct)" },
+              { id: 2, label: "Day 2 (29 Oct)" },
+            ].map((d) => (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDay(d.id as number | "all")}
+                className={`rounded-full px-3 py-1 font-mono text-[9px] uppercase tracking-wider transition-all duration-300 ${
+                  selectedDay === d.id
+                    ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold shadow-[0_0_12px_rgba(168,85,247,0.5)] scale-105"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Toggle "What's on" Rail Drawer */}
+          <button
+            onClick={() => setIsRailOpen(!isRailOpen)}
+            className={`pointer-events-auto flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-mono text-[9.5px] uppercase tracking-wider backdrop-blur-xl transition-all ${
+              isRailOpen
+                ? "border-violet-400/60 bg-violet-950/40 text-violet-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                : "border-white/15 bg-black/60 text-zinc-300 hover:text-white"
+            }`}
+          >
+            <ListFilter size={12} className="text-violet-400" />
+            <span className="hidden sm:inline">What&apos;s On</span>
+            <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[8.5px] font-bold">
+              {filteredEvents.length}
+            </span>
+          </button>
+
+          {/* Timeline View Switcher Button */}
+          {onSwitchToTimeline && (
+            <button
+              onClick={onSwitchToTimeline}
+              className="pointer-events-auto hidden md:flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-3.5 py-1.5 font-mono text-[9.5px] uppercase tracking-wider text-zinc-300 backdrop-blur-xl hover:text-white hover:border-violet-400/40 transition-all"
+            >
+              <CalendarDays size={12} className="text-violet-400" />
+              <span>Timeline Matrix</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════
+          2. MAIN MAP CONTAINER (Full Viewport + Plains Setting)
+      ══════════════════════════════════════════════════════════ */}
+      <div className="relative flex-1 w-full h-full overflow-hidden">
+        {/* ── A. FLOATING LEFT "WHAT'S ON" RAIL (.rail) ── */}
+        {isRailOpen && !activeVenue && (
+          <aside className="rail" aria-label="Events happening around the campus">
+            <p className="rail__head">
+              <span className="rail__pulse" aria-hidden="true" />
+              <span>What&apos;s on ({filteredEvents.length})</span>
+              <Link href="/events" className="rail__all">
+                <span>Realms</span>
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </p>
+
+            {/* Quick Category Filter Pills in Rail */}
+            <div className="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {[
+                { id: "all", label: "All" },
+                { id: "technical", label: "Tech" },
+                { id: "cultural", label: "Arts" },
+                { id: "non-technical", label: "Non-Tech" },
+                { id: "sports", label: "Sports" },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCategory(c.id)}
+                  className={`flex-shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[8.5px] uppercase tracking-wider transition-all ${
+                    selectedCategory === c.id
+                      ? "bg-violet-500 text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                      : "bg-black/60 border border-white/10 text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Drifting Viewport */}
+            <div className="rail__viewport">
+              <ul
+                className="rail__track"
+                style={
+                  {
+                    "--rail-dur": `${Math.max(35, filteredEvents.length * 4.5)}s`,
+                    "--rail-copies": 2,
+                  } as React.CSSProperties
+                }
+              >
+                {filteredEvents.map((ev, idx) => {
+                  const venue = CAMPUS_VENUES.find((v) => v.id === ev.venueId);
+                  const accent = venue ? getVenueAccent(venue) : { color: "#a855f7", glow: "rgba(168,85,247,0.4)" };
+
+                  return (
+                    <li key={`track-1-${ev.id}-${idx}`} className="rail__item">
+                      <button
+                        type="button"
+                        className="rail__card"
+                        style={
+                          {
+                            "--accent": accent.color,
+                            "--accent-glow": accent.glow,
+                          } as React.CSSProperties
+                        }
+                        onClick={() => {
+                          if (venue) handleFlyToVenue(venue);
+                        }}
+                        onMouseEnter={() => setHoveredVenueId(ev.venueId)}
+                        onMouseLeave={() => setHoveredVenueId(null)}
+                      >
+                        <span className="rail__top">
+                          <span className="rail__dot" aria-hidden="true" />
+                          <span className="rail__kind">{ev.category}</span>
+                          <span className="rail__day">Day {ev.day}</span>
+                        </span>
+                        <span className="rail__title">{ev.name}</span>
+                        <span className="rail__where">{ev.venueName}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+
+                {/* Duplicated list for infinite seamless loop */}
+                {filteredEvents.map((ev, idx) => {
+                  const venue = CAMPUS_VENUES.find((v) => v.id === ev.venueId);
+                  const accent = venue ? getVenueAccent(venue) : { color: "#a855f7", glow: "rgba(168,85,247,0.4)" };
+
+                  return (
+                    <li key={`track-2-${ev.id}-${idx}`} className="rail__item">
+                      <button
+                        type="button"
+                        className="rail__card"
+                        style={
+                          {
+                            "--accent": accent.color,
+                            "--accent-glow": accent.glow,
+                          } as React.CSSProperties
+                        }
+                        onClick={() => {
+                          if (venue) handleFlyToVenue(venue);
+                        }}
+                        onMouseEnter={() => setHoveredVenueId(ev.venueId)}
+                        onMouseLeave={() => setHoveredVenueId(null)}
+                      >
+                        <span className="rail__top">
+                          <span className="rail__dot" aria-hidden="true" />
+                          <span className="rail__kind">{ev.category}</span>
+                          <span className="rail__day">Day {ev.day}</span>
+                        </span>
+                        <span className="rail__title">{ev.name}</span>
+                        <span className="rail__where">{ev.venueName}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </aside>
         )}
 
-        {/* ── C. INTERACTIVE MAP STAGE & PURE HTML MARKERS ── */}
+        {/* ── B. INTERACTIVE MAP STAGE & PURE HTML OVERLAYS ── */}
         <div
           className="camp__frame"
           onMouseDown={handleMouseDown}
@@ -597,8 +550,9 @@ export default function ThomsoReplicaMap({
           onMouseLeave={handleMouseUp}
           style={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
-          {/* Day Scene Ambient Elements: Sunlight beam & plains grid */}
+          {/* Day Scene Ambient Elements: Sunlight beam, plains grid & cosmic nebula */}
           <div className="camp__sunbeam" aria-hidden="true" />
+          <div className="camp__nebula" aria-hidden="true" />
           <div className="camp__plains-grid" aria-hidden="true" />
 
           {/* Map Stage Frame */}
@@ -611,7 +565,7 @@ export default function ThomsoReplicaMap({
               }}
             >
               {/* 
-                STRICT REQUIREMENT: 
+                STRICT CONSTRAINT: 
                 "DONOT WRITE ANYTHING OVER IMAGE USE HTML OR ANY LANGUAGE TO GIVE NAMES AND OTHER ELEMNTS OVER THE IMAGE."
                 The image below is 100% clean with ZERO baked text.
               */}
@@ -627,7 +581,7 @@ export default function ThomsoReplicaMap({
 
               {/* ══════════════════════════════════════════════════════════
                   PURE HTML/CSS VENUE PINS (.pin)
-                  Parchment tag, gold border, small-caps serif font
+                  Liquid glass capsule, neon indicator dot, serif name
               ══════════════════════════════════════════════════════════ */}
               <div
                 className="camp__pins"
@@ -643,16 +597,7 @@ export default function ThomsoReplicaMap({
                   const isFound = matchingVenueIds ? matchingVenueIds.has(venue.id) : false;
                   const isDim = matchingVenueIds ? !matchingVenueIds.has(venue.id) : false;
 
-                  const accent =
-                    venue.accentColor === "amber"
-                      ? "#c9a84c"
-                      : venue.accentColor === "cyan"
-                      ? "#06b6d4"
-                      : venue.accentColor === "emerald"
-                      ? "#10b981"
-                      : venue.accentColor === "rose"
-                      ? "#f43f5e"
-                      : "#a855f7";
+                  const accent = getVenueAccent(venue);
 
                   return (
                     <button
@@ -662,7 +607,8 @@ export default function ThomsoReplicaMap({
                         {
                           left: `${venue.coordinates.x}%`,
                           top: `${venue.coordinates.y}%`,
-                          "--accent": accent,
+                          "--accent": accent.color,
+                          "--accent-glow": accent.glow,
                         } as React.CSSProperties
                       }
                       className={`pin ${isFlipped ? "is-flipped" : ""} ${
@@ -679,7 +625,7 @@ export default function ThomsoReplicaMap({
                       {/* Central Glowing Dot */}
                       <span className="pin__dot" aria-hidden="true" />
 
-                      {/* Parchment Small-Caps Serif Tag */}
+                      {/* Liquid Glass Capsule Tag */}
                       <span className="pin__label">
                         <span className="pin__name">{venue.shortName}</span>
                         {eventCount > 0 && (
@@ -705,14 +651,14 @@ export default function ThomsoReplicaMap({
             Hover a venue to fly to it &middot; Click to walk in
           </p>
 
-          {/* ── D. MAP CONTROLS HUD (Zoom In, Zoom Out, Recenter) ── */}
-          <div className="absolute bottom-5 left-5 z-30 flex flex-col gap-2">
-            <div className="flex flex-col rounded-2xl border border-white/15 bg-black/85 p-1 shadow-2xl backdrop-blur-xl">
+          {/* ── C. MAP CONTROLS HUD (Zoom In, Zoom Out, Recenter) ── */}
+          <div className="absolute bottom-6 left-6 z-30 flex flex-col gap-2">
+            <div className="flex flex-col rounded-2xl border border-white/15 bg-black/80 p-1 shadow-2xl backdrop-blur-xl">
               <button
                 type="button"
                 onClick={handleZoomIn}
                 title="Zoom In"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 hover:bg-white/15 hover:text-white transition-all"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 hover:bg-violet-600/30 hover:text-white transition-all"
               >
                 <ZoomIn size={16} />
               </button>
@@ -721,7 +667,7 @@ export default function ThomsoReplicaMap({
                 type="button"
                 onClick={handleZoomOut}
                 title="Zoom Out"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 hover:bg-white/15 hover:text-white transition-all"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 hover:bg-violet-600/30 hover:text-white transition-all"
               >
                 <ZoomOut size={16} />
               </button>
@@ -730,7 +676,7 @@ export default function ThomsoReplicaMap({
                 type="button"
                 onClick={handleResetCamera}
                 title="Recenter Campus Grounds"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 hover:bg-white/15 hover:text-white transition-all"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 hover:bg-violet-600/30 hover:text-white transition-all"
               >
                 <RotateCcw size={15} />
               </button>
@@ -739,7 +685,7 @@ export default function ThomsoReplicaMap({
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            4. VENUE SIDE DRAWER (.venue & .venue--right)
+            3. VENUE SIDE DRAWER (.venue & .venue--right)
             Slides in opposite to building with event schedule matrix
         ══════════════════════════════════════════════════════════ */}
         {activeVenue && (
@@ -747,16 +693,8 @@ export default function ThomsoReplicaMap({
             className={`venue ${isDrawerOnRight ? "venue--right" : ""}`}
             style={
               {
-                "--accent":
-                  activeVenue.accentColor === "amber"
-                    ? "#c9a84c"
-                    : activeVenue.accentColor === "cyan"
-                    ? "#06b6d4"
-                    : activeVenue.accentColor === "emerald"
-                    ? "#10b981"
-                    : activeVenue.accentColor === "rose"
-                    ? "#f43f5e"
-                    : "#a855f7",
+                "--accent": getVenueAccent(activeVenue).color,
+                "--accent-glow": getVenueAccent(activeVenue).glow,
               } as React.CSSProperties
             }
             onClick={() => setActiveVenue(null)}

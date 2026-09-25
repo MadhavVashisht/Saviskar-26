@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Navbar from "@/components/ui/Navbar";
 import ThomsoReplicaMap from "@/components/schedule/ThomsoReplicaMap";
 
 export const metadata: Metadata = {
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
 
 export default function MapPage() {
   return (
-    <main className="w-full h-screen overflow-hidden bg-black">
+    <main className="w-full h-screen overflow-hidden bg-[#030306]">
+      <Navbar />
       <ThomsoReplicaMap />
     </main>
   );
