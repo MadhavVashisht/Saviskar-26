@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUpRight, CalendarDays } from "lucide-react";
-import { motion, useScroll, useSpring, useTransform } from "motion/react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Compass,
+  Clock,
+  Sparkles,
+  ArrowUpRight,
+} from "lucide-react";
+import { motion, useScroll, useSpring } from "motion/react";
 import { supabase } from "@/lib/supabase";
 import ScheduleTimeline from "@/components/schedule/ScheduleTimeline";
+import ThomsoReplicaMap from "@/components/schedule/ThomsoReplicaMap";
+import { CAMPUS_VENUES, FESTIVAL_SCHEDULE, ScheduleEvent } from "@/data/scheduleData";
 
 type Event = {
   id: string;
@@ -23,20 +32,64 @@ type Event = {
 export default function SchedulePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"map" | "timeline">("map");
+
+  // Check URL query on mount for direct timeline link
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("view") === "timeline") {
+        setViewMode("timeline");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     async function loadSchedule() {
-      const { data } = await supabase
-        .from("events")
-        .select(
-          "id, slug, name, category, description, event_date, start_time, venue, active, registration_open"
-        )
-        .eq("active", true)
-        .order("event_date", { ascending: true })
-        .order("start_time", { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from("events")
+          .select(
+            "id, slug, name, category, description, event_date, start_time, venue, active, registration_open"
+          )
+          .eq("active", true)
+          .order("event_date", { ascending: true })
+          .order("start_time", { ascending: true });
 
-      setEvents((data ?? []) as Event[]);
-      setLoading(false);
+        if (error || !data || data.length === 0) {
+          const mappedFallback: Event[] = FESTIVAL_SCHEDULE.map((s) => ({
+            id: s.id,
+            slug: s.slug,
+            name: s.name,
+            category: s.category,
+            description: s.description,
+            event_date: s.date,
+            start_time: s.startTime,
+            venue: s.venueName,
+            active: true,
+            registration_open: s.registrationOpen,
+          }));
+          setEvents(mappedFallback);
+        } else {
+          setEvents(data as Event[]);
+        }
+      } catch {
+        const mappedFallback: Event[] = FESTIVAL_SCHEDULE.map((s) => ({
+          id: s.id,
+          slug: s.slug,
+          name: s.name,
+          category: s.category,
+          description: s.description,
+          event_date: s.date,
+          start_time: s.startTime,
+          venue: s.venueName,
+          active: true,
+          registration_open: s.registrationOpen,
+        }));
+        setEvents(mappedFallback);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadSchedule();
@@ -48,189 +101,172 @@ export default function SchedulePage() {
         events
           .map((event) => event.event_date)
           .filter(Boolean)
-      ).size,
+      ).size || 2,
     [events]
   );
 
-  const heroRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, {
     stiffness: 90,
     damping: 25,
   });
-  const heroY = useTransform(progress, [0, 0.18], [0, -80]);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-black text-white selection:bg-white selection:text-black">
-      <motion.div
-        style={{ scaleX: progress }}
-        className="fixed left-0 right-0 top-0 z-[100] h-[3px] origin-left bg-violet-400 shadow-[0_0_12px_#a855f7]"
-      />
-
-      {/* React Bits-style animated background layer + Motion parallax */}
-      <section
-        ref={heroRef}
-        className="relative flex min-h-[88vh] items-end overflow-hidden bg-black text-white"
-      >
-        <motion.div
-          style={{ y: heroY }}
-          className="pointer-events-none absolute inset-0"
-        >
-          <div className="absolute left-[10%] top-[18%] h-[42vw] w-[42vw] rounded-full bg-violet-600/20 blur-[150px]" />
-          <div className="absolute right-[2%] top-[8%] h-[38vw] w-[38vw] rounded-full bg-fuchsia-600/15 blur-[150px]" />
-
-          {/* React Bits-inspired animated dot field */}
+    <main className="w-full min-h-screen bg-[#070b08] text-white selection:bg-amber-400 selection:text-black">
+      {/* View Mode 1: Exact Replica Thomso Map Experience (Full Screen Default) */}
+      {viewMode === "map" ? (
+        <div className="w-full h-screen overflow-hidden">
+          <ThomsoReplicaMap
+            onSwitchToTimeline={() => setViewMode("timeline")}
+            externalEvents={FESTIVAL_SCHEDULE}
+          />
+        </div>
+      ) : (
+        /* View Mode 2: Chronological Hour-by-Hour Timeline Matrix */
+        <div className="min-h-screen overflow-x-hidden bg-black text-white">
+          {/* Top progress bar */}
           <motion.div
-            animate={{ backgroundPosition: ["0px 0px", "80px 40px"] }}
-            transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 opacity-30"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, rgba(255,255,255,0.22) 1px, transparent 1px)",
-              backgroundSize: "34px 34px",
-            }}
+            style={{ scaleX: progress }}
+            className="fixed left-0 right-0 top-0 z-[100] h-[3px] origin-left bg-amber-400 shadow-[0_0_12px_#f59e0b]"
           />
 
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_45%,transparent_0%,rgba(0,0,0,0.28)_45%,#000_90%)]" />
-        </motion.div>
-
-        <div className="relative z-10 mx-auto w-full max-w-[1600px] px-6 pb-16 pt-40 md:px-10 md:pb-24 lg:px-14">
-          <div className="flex items-end justify-between gap-8">
-            <div>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7 }}
-                className="mb-7 text-[10px] uppercase tracking-[0.5em] text-violet-300"
-              >
-                SAVISKAR 2026 • AEVORIAN REVERIE / OFFICIAL TIMELINE
-              </motion.p>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 40, filter: "blur(14px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                className="max-w-[1000px] font-light text-[clamp(4.5rem,11vw,11rem)] leading-[0.78] tracking-tight text-white"
-              >
-                THE TWO <br />
-                <span className="font-editorial text-violet-300 font-normal">DAYS.</span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.8 }}
-                className="mt-10 max-w-xl text-base leading-7 text-white/50 md:text-lg"
-              >
-                48 hours of non-stop competition, innovation, and celebration.
-                From the opening inauguration ceremony to the midnight Star Night finale at CGC University, Mohali (28–29 October 2026).
-              </motion.p>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.8, type: "spring" }}
-              className="hidden shrink-0 md:block"
-            >
-              <ArrowDown className="animate-bounce text-white/30" size={28} />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative px-6 py-24 md:px-10 md:py-32 lg:px-14">
-        <div className="mx-auto max-w-[1350px]">
-          <div className="mb-20 grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.35em] text-black/35">
-                FOLLOW THE TIMELINE
-              </p>
-              <h2 className="mt-5 max-w-3xl font-serif text-[clamp(3rem,6vw,6.5rem)] leading-[0.84] tracking-[-0.06em]">
-                WHEN IT
-                <br />
-                HAPPENS.
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-8 border-t border-black/10 pt-5 md:border-t-0 md:border-l md:pl-8">
-              <div>
-                <p className="font-serif text-4xl">{events.length}</p>
-                <p className="mt-1 text-[8px] uppercase tracking-[0.25em] text-black/35">
-                  EVENTS
-                </p>
-              </div>
-              <div>
-                <p className="font-serif text-4xl">{dayCount || "—"}</p>
-                <p className="mt-1 text-[8px] uppercase tracking-[0.25em] text-black/35">
-                  DAYS
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="space-y-6">
-              {[1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  className="h-44 animate-pulse rounded-[28px] bg-black/[0.05]"
-                />
-              ))}
-            </div>
-          ) : (
-            <ScheduleTimeline events={events} />
-          )}
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-black px-6 py-32 text-white md:px-10 lg:px-14">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-          className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/20 blur-[150px]"
-        />
-
-        <div className="relative z-10 mx-auto max-w-[1200px] text-center">
-          <p className="text-[9px] uppercase tracking-[0.4em] text-white/35">
-            SAVISKAR 2026
-          </p>
-          <h2 className="mt-6 font-serif text-[clamp(4rem,10vw,10rem)] leading-[0.78] tracking-[-0.07em]">
-            SEE YOU
-            <br />
-            THERE.
-          </h2>
-
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/register"
-              className="group flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-medium text-black transition-transform hover:scale-[1.03]"
-            >
-              Register for Saviskar 2026
-              <ArrowUpRight
-                size={16}
-                className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              />
-            </Link>
-
+          {/* Header Navigation */}
+          <header className="sticky top-0 z-30 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 border-b border-white/10 bg-black/80 backdrop-blur-xl md:px-10">
             <Link
               href="/"
-              className="rounded-full border border-white/15 px-7 py-4 text-sm text-white/65 transition hover:border-white/35 hover:text-white"
+              className="group flex items-center gap-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white"
             >
-              Back to home
+              <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
+              <span>Back to Home</span>
             </Link>
+
+            {/* Quick Switch to Map */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setViewMode("map")}
+                className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-amber-300 hover:bg-amber-500/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+              >
+                <Compass size={14} />
+                <span>Interactive Campus Map</span>
+              </button>
+
+              <Link
+                href="/events"
+                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-amber-100 transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+              >
+                Explore Realms
+              </Link>
+            </div>
+          </header>
+
+          {/* Timeline Hero Intro */}
+          <section className="relative px-6 pt-16 pb-12 md:px-10 lg:px-14 border-b border-white/[0.08]">
+            <div className="mx-auto max-w-[1350px]">
+              <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
+                <div>
+                  <div className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] uppercase text-amber-400 mb-3 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+                    <Clock size={12} />
+                    <span>CHRONOLOGICAL RUNWAY // HOUR BY HOUR</span>
+                  </div>
+                  <h1 className="font-editorial text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight leading-[1.0]">
+                    Festival Schedule<br />
+                    <span className="italic font-normal text-amber-300">
+                      Chronological Matrix
+                    </span>
+                  </h1>
+                  <p className="mt-4 text-base sm:text-lg text-zinc-400 font-light leading-relaxed max-w-2xl">
+                    Browse every verified competition across the 48-hour festival runway at CGC University, Mohali. Switch back to the interactive campus map at any time.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-8 border-t border-white/10 pt-5 md:border-t-0 md:border-l md:pl-8">
+                  <div>
+                    <p className="font-editorial text-4xl text-white font-bold">{events.length}</p>
+                    <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-zinc-400">
+                      EVENTS
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-editorial text-4xl text-amber-300 font-bold">{dayCount}</p>
+                    <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-zinc-400">
+                      FESTIVAL DAYS
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-editorial text-4xl text-emerald-400 font-bold">
+                      {CAMPUS_VENUES.length}
+                    </p>
+                    <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-zinc-400">
+                      VENUES
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Timeline Events List */}
+          <section className="relative px-6 py-16 md:px-10 lg:px-14">
+            <div className="mx-auto max-w-[1350px]">
+              {loading ? (
+                <div className="space-y-6">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="h-44 animate-pulse rounded-[28px] bg-white/[0.04]"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <ScheduleTimeline events={events} />
+              )}
+            </div>
+          </section>
+
+          {/* Call to action & Return to Map */}
+          <section className="relative overflow-hidden bg-black px-6 py-20 text-white md:px-10 lg:px-14 border-t border-white/[0.08]">
+            <div className="relative z-10 mx-auto max-w-[1200px] text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-amber-300 mb-6 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+                <Sparkles size={12} />
+                <span>SAVISKAR 2026 // AEVORIAN REVERIE</span>
+              </div>
+
+              <h2 className="font-editorial text-4xl sm:text-6xl font-bold tracking-tight text-white leading-tight">
+                Explore the Grounds in 3D
+              </h2>
+              <p className="mt-4 text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed font-light">
+                Switch back to our interactive aerial campus map to fly between Hackathon labs, the amphitheatre lawn, and Star Night stadium grounds.
+              </p>
+
+              <div className="mt-8 flex flex-wrap justify-center gap-4">
+                <button
+                  onClick={() => setViewMode("map")}
+                  className="flex items-center gap-2 rounded-full bg-amber-400 px-8 py-3.5 text-sm font-semibold text-black transition-all hover:bg-amber-300 hover:scale-105 shadow-[0_0_25px_rgba(245,158,11,0.4)]"
+                >
+                  <Compass size={16} />
+                  <span>Launch Interactive Campus Map</span>
+                </button>
+
+                <Link
+                  href="/register"
+                  className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-8 py-3.5 text-sm text-white/80 transition-all hover:border-white/40 hover:text-white"
+                >
+                  <span>Get Digital Pass</span>
+                  <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* Footer bar */}
+          <div className="flex items-center justify-center border-t border-white/[0.06] bg-zinc-950 px-6 py-6">
+            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.25em] text-zinc-500">
+              <CalendarDays size={12} className="text-amber-400" />
+              <span>CGC University, Mohali &bull; 28–29 October 2026 &bull; Official Spatial Schedule</span>
+            </div>
           </div>
         </div>
-      </section>
-
-      <div className="flex items-center justify-center border-t border-black/10 bg-[#f5f2eb] px-6 py-8">
-        <div className="flex items-center gap-2 text-[8px] uppercase tracking-[0.3em] text-black/25">
-          <CalendarDays size={12} />
-          Schedule updates automatically from the live event list
-        </div>
-      </div>
+      )}
     </main>
   );
 }
