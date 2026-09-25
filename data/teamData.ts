@@ -116,6 +116,7 @@ export const EDITORIAL_PRESIDENCY: EditorialSpreadData = {
   signeeName: "Lakshita & Aadit Bhardwaj",
   signeeRole: "President & Vice President // Student Advisory Council (SAC)",
   initials: "LK",
+  image: "/images/SAC/SAC-26-27.png",
   accent: "violet",
   secondarySignees: [
     { name: "Lakshita", role: "President, Student Advisory Council (SAC)", initials: "LK" },

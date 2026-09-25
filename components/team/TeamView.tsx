@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -18,9 +18,14 @@ import {
   ArrowUpRight,
   Crown,
   Layers,
+  Maximize2,
+  X,
+  Download,
 } from "lucide-react";
 
 export default function TeamView() {
+  const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
+
   const telemetryDials = [
     { value: "01", label: "Apex Patron", sub: "Director Student Affairs" },
     { value: "01", label: "Dean Leadership", sub: "Dean Student Affairs" },
@@ -300,31 +305,52 @@ export default function TeamView() {
             </div>
           </div>
 
-          {/* RIGHT — ghost placeholder */}
-          <div className="relative md:w-1/2 min-h-[360px] md:min-h-full bg-zinc-950 flex-shrink-0 self-stretch">
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-bl from-violet-950/30 via-black to-black">
-              <div
-                className="pointer-events-none absolute inset-0 opacity-[0.025]"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.8) 3px,rgba(255,255,255,0.8) 4px)",
-                }}
+          {/* RIGHT — SAC Group Photo */}
+          <div className="relative md:w-1/2 min-h-[420px] md:min-h-full bg-zinc-950 flex-shrink-0 self-stretch group overflow-hidden border-t md:border-t-0 md:border-l border-white/[0.08]">
+            {/* Ambient background glow */}
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.2)_0%,transparent_70%)]"
+              aria-hidden="true"
+            />
+
+            {/* Clickable Image Container */}
+            <div
+              onClick={() => setIsPhotoLightboxOpen(true)}
+              className="relative w-full h-full min-h-[420px] md:min-h-[580px] cursor-pointer overflow-hidden"
+              title="Click to view full SAC 2026-2027 group portrait in high resolution"
+            >
+              <Image
+                src="/images/SAC/SAC-26-27.png"
+                alt="Student Advisory Council (SAC 2026-2027) Group Photo"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover object-center transition-all duration-700 ease-out group-hover:scale-105"
               />
-              <div className="flex flex-col items-center gap-4 select-none">
-                <span
-                  className="font-bold text-violet-300 leading-none tracking-tighter"
-                  style={{ fontSize: "clamp(5rem, 12vw, 10rem)", opacity: 0.07 }}
-                  aria-hidden="true"
-                >
-                  SAC
-                </span>
-                <span className="font-mono text-[10px] tracking-[0.3em] text-violet-400/50 uppercase">
-                  Group Photo — Forthcoming
+
+              {/* Edge Gradient Fades for atmospheric integration */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+              <div className="hidden md:block absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black/90 to-transparent pointer-events-none" />
+
+              {/* Top Tech Badge */}
+              <div className="absolute top-4 right-4 z-10">
+                <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-[9.5px] uppercase tracking-[0.2em] text-violet-300 border border-violet-400/30 bg-black/60 shadow-[0_0_15px_rgba(139,92,246,0.3)] backdrop-blur-md">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>SAC 2026–2027 // OFFICIAL GROUP</span>
+                </div>
+              </div>
+
+              {/* Bottom Expand Prompt */}
+              <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
+                <div className="inline-flex items-center gap-2 rounded-lg bg-black/75 px-3 py-1.5 font-mono text-[10px] tracking-wider text-zinc-300 border border-white/10 backdrop-blur-md">
+                  <Maximize2 size={12} className="text-violet-400" />
+                  <span>53 Student Leaders // Click to Expand</span>
+                </div>
+                <span className="font-mono text-[9px] uppercase tracking-widest text-violet-300 bg-violet-950/60 border border-violet-500/30 px-2 py-1 rounded">
+                  5.7K MASTER
                 </span>
               </div>
             </div>
-            {/* Left-edge fade */}
-            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black/80 to-transparent" />
           </div>
         </div>
       </section>
@@ -375,6 +401,63 @@ export default function TeamView() {
           </div>
         </div>
       </section>
+
+      {/* ── HIGH RESOLUTION SAC GROUP PHOTO LIGHTBOX MODAL ── */}
+      {isPhotoLightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-3 sm:p-6 backdrop-blur-2xl animate-fade-in"
+          onClick={() => setIsPhotoLightboxOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setIsPhotoLightboxOpen(false)}
+            aria-label="Close Lightbox"
+            className="absolute top-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white hover:text-black transition-all"
+          >
+            <X size={20} />
+          </button>
+
+          {/* Modal Header */}
+          <div className="absolute top-5 left-5 z-50 flex items-center gap-3 pointer-events-none">
+            <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-violet-300 border border-violet-400/30 bg-black/80 backdrop-blur-md">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>SAC 2026–2027 // OFFICIAL FULL ARCHITECTURE (53 MEMBERS)</span>
+            </div>
+          </div>
+
+          {/* Modal Image Display */}
+          <div
+            className="relative max-h-[85vh] max-w-[95vw] w-full h-full flex items-center justify-center overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative w-full h-full max-w-6xl max-h-[80vh] rounded-2xl overflow-hidden border border-white/15 shadow-[0_0_50px_rgba(139,92,246,0.3)]">
+              <Image
+                src="/images/SAC/SAC-26-27.png"
+                alt="Student Advisory Council (SAC 2026-2027) High Resolution Master"
+                fill
+                unoptimized
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer Controls */}
+          <div
+            className="absolute bottom-5 inset-x-0 flex items-center justify-center gap-3 z-50"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <a
+              href="/images/SAC/SAC-26-27.png"
+              download="SAC-2026-2027-Full-Group-Photo.png"
+              className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-2 font-mono text-xs uppercase tracking-wider text-white border border-white/20 bg-white/10 hover:bg-white hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+            >
+              <Download size={14} />
+              <span>Download Original 5.7K Master</span>
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

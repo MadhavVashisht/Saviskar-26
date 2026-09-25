@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -33,6 +34,7 @@ const DIGNITARIES = [
     initials: "RD",
     accent: "amber" as const,
     align: "left" as const,
+    image: "/images/legacy/rashpal-singh-dhaliwal.webp",
   },
   {
     id: "md-arsh-dhaliwal",
@@ -49,6 +51,75 @@ const DIGNITARIES = [
     initials: "AD",
     accent: "violet" as const,
     align: "right" as const,
+    image: "/images/legacy/arsh-dhaliwal.webp",
+  },
+  {
+    id: "evp-shushil-prashar",
+    titleBadge: "EXECUTIVE GOVERNANCE // EXECUTIVE VICE PRESIDENT",
+    deskTitle: "DR. SHUSHIL PRASHAR",
+    dropCap: "S",
+    paragraphs: [
+      "trategic vision and administrative excellence form the bedrock upon which world-class educational institutions thrive. Dr. Shushil Prashar, Executive Vice President of CGC University, Mohali, steers institutional operations with an extraordinary blend of visionary acumen and pragmatic leadership.",
+      "His stewardship across academic infrastructure, campus development, and stakeholder synergy ensures CGC University remains at the cutting edge of higher education in North India. In Saviskar 2026: Aevorian Reverie, Dr. Prashar's commitment to creating an unmatched student experience is evident across every competitive arena, grand stage, and delegate facilitation gateway.",
+      "By empowering faculty and student bodies alike to think beyond traditional confines, he champions an institutional environment where innovation is celebrated and collegiate milestones are continually surpassed.",
+    ],
+    signeeName: "Dr. Shushil Prashar",
+    signeeRole: "Executive Vice President // CGC University, Mohali",
+    initials: "SP",
+    accent: "amber" as const,
+    align: "left" as const,
+    image: "/images/legacy/shushil-prashar.webp",
+  },
+  {
+    id: "vc-vinay-goyal",
+    titleBadge: "ACADEMIC APEX // VICE CHANCELLOR",
+    deskTitle: "DR. VINAY GOYAL",
+    dropCap: "E",
+    paragraphs: [
+      "xcellence in academia is not a destination — it is a daily practice, a commitment renewed in every lecture hall, every laboratory, and every competitive arena. Dr. Vinay Goyal, Vice Chancellor of CGC University, embodies this philosophy with quiet, relentless purpose.",
+      "His tenure has been defined by a singular ambition: to align academic rigour with the real demands of a rapidly evolving world. Saviskar 2026 is the most visible expression of that alignment — where students compete not just for prizes, but for the experience of operating at a professional standard.",
+      "In every event at Aevorian Reverie, the standards he has set for CGC University are reflected. The pursuit of excellence is non-negotiable. The opportunity to achieve it, unlimited.",
+    ],
+    signeeName: "Dr. Vinay Goyal",
+    signeeRole: "Vice Chancellor // CGC University, Mohali",
+    initials: "VG",
+    accent: "cyan" as const,
+    align: "right" as const,
+    image: "/images/legacy/vinay-goyal.webp",
+  },
+  {
+    id: "provc-anish-goyal",
+    titleBadge: "ACADEMIC GOVERNANCE // PRO VICE CHANCELLOR",
+    deskTitle: "DR. ANISH GOYAL",
+    dropCap: "T",
+    paragraphs: [
+      "he architecture of a great academic institution is built on two pillars: the rigour of its curriculum and the spirit of its community. Dr. Anish Goyal, Pro Vice Chancellor (Academics), holds both with unwavering dedication and a deep understanding of what it means to lead a modern university.",
+      "His academic governance has ensured that CGC University's programmes evolve in step with industry demands, and that the student experience remains the centrepiece of every institutional decision. Saviskar 2026 is the annual crystallisation of that student-centred philosophy.",
+      "From admissions to alumni, from the classroom to the concert stage, Dr. Goyal's influence shapes the CGC ecosystem that makes an Aevorian Reverie not just possible — but inevitable.",
+    ],
+    signeeName: "Dr. Anish Goyal",
+    signeeRole: "Pro Vice Chancellor (Academics) // CGC University",
+    initials: "AG",
+    accent: "violet" as const,
+    align: "left" as const,
+    image: "/images/legacy/anish-goyal.webp",
+  },
+  {
+    id: "director-simran-dhaliwal",
+    titleBadge: "GLOBAL ENGAGEMENT // DIRECTOR INTERNATIONAL AFFAIRS",
+    deskTitle: "MS. SIMRAN DHALIWAL",
+    dropCap: "G",
+    paragraphs: [
+      "lobal horizons and cross-cultural dialogue define the frontier of contemporary university education. Ms. Simran Dhaliwal, Director of International Affairs, champions this global perspective, connecting CGC University with premier international institutions, research collaboratives, and cultural networks worldwide.",
+      "Her leadership has fostered global partnerships that enrich the academic and creative journey of our students, bringing global benchmarks directly to our campus in Mohali. Saviskar 2026 reflects this internationalized outlook — elevating Aevorian Reverie into a truly cosmopolitan celebration welcoming diverse talents, global delegates, and world-class standards.",
+      "Through her dedication to international immersion, cultural diplomacy, and student empowerment, Ms. Dhaliwal inspires young minds to represent CGC University on the global stage with poise, ambition, and distinction.",
+    ],
+    signeeName: "Ms. Simran Dhaliwal",
+    signeeRole: "Director International Affairs // CGC University, Mohali",
+    initials: "SD",
+    accent: "cyan" as const,
+    align: "right" as const,
+    image: "/images/legacy/simran-dhaliwal.webp",
   },
   {
     id: "director-bismin",
@@ -66,38 +137,6 @@ const DIGNITARIES = [
     accent: "emerald" as const,
     align: "left" as const,
     image: "/images/faculty/bismin-dhaliwal.webp",
-  },
-  {
-    id: "vc-vinay-goyal",
-    titleBadge: "ACADEMIC APEX // VICE CHANCELLOR",
-    deskTitle: "DR. VINAY GOYAL",
-    dropCap: "E",
-    paragraphs: [
-      "xcellence in academia is not a destination — it is a daily practice, a commitment renewed in every lecture hall, every laboratory, and every competitive arena. Dr. Vinay Goyal, Vice Chancellor of CGC University, embodies this philosophy with quiet, relentless purpose.",
-      "His tenure has been defined by a singular ambition: to align academic rigour with the real demands of a rapidly evolving world. Saviskar 2026 is the most visible expression of that alignment — where students compete not just for prizes, but for the experience of operating at a professional standard.",
-      "In every event at Aevorian Reverie, the standards he has set for CGC University are reflected. The pursuit of excellence is non-negotiable. The opportunity to achieve it, unlimited.",
-    ],
-    signeeName: "Dr. Vinay Goyal",
-    signeeRole: "Vice Chancellor // CGC University, Mohali",
-    initials: "VG",
-    accent: "cyan" as const,
-    align: "right" as const,
-  },
-  {
-    id: "provc-anish-goyal",
-    titleBadge: "ACADEMIC GOVERNANCE // PRO VICE CHANCELLOR",
-    deskTitle: "DR. ANISH GOYAL",
-    dropCap: "T",
-    paragraphs: [
-      "he architecture of a great academic institution is built on two pillars: the rigour of its curriculum and the spirit of its community. Dr. Anish Goyal, Pro Vice Chancellor (Academics), holds both with unwavering dedication and a deep understanding of what it means to lead a modern university.",
-      "His academic governance has ensured that CGC University's programmes evolve in step with industry demands, and that the student experience remains the centrepiece of every institutional decision. Saviskar 2026 is the annual crystallisation of that student-centred philosophy.",
-      "From admissions to alumni, from the classroom to the concert stage, Dr. Goyal's influence shapes the CGC ecosystem that makes an Aevorian Reverie not just possible — but inevitable.",
-    ],
-    signeeName: "Dr. Anish Goyal",
-    signeeRole: "Pro Vice Chancellor (Academics) // CGC University",
-    initials: "AG",
-    accent: "amber" as const,
-    align: "left" as const,
   },
 ] as const;
 
@@ -221,7 +260,7 @@ export default function LegacyView() {
         <div className="mt-8 flex items-center gap-4">
           <span className="h-px flex-1 bg-white/[0.05]" />
           <span className="font-mono text-[9px] tracking-[0.3em] text-white/20 uppercase flex-shrink-0">
-            5 Distinguished Patrons // CGC University
+            {DIGNITARIES.length} Distinguished Patrons // CGC University
           </span>
         </div>
       </section>
@@ -239,7 +278,7 @@ export default function LegacyView() {
               titleBadge={person.titleBadge}
               deskTitle={person.deskTitle}
               paragraphs={[
-                person.paragraphs[0],
+                (person.dropCap || "") + person.paragraphs[0],
                 ...person.paragraphs.slice(1),
               ]}
               signeeName={person.signeeName}
@@ -273,9 +312,16 @@ export default function LegacyView() {
           </p>
         </div>
 
-        {/* Full-bleed group photo placeholder */}
+        {/* Full-bleed group photo banner */}
         <div className="relative w-full overflow-hidden bg-zinc-950" style={{ height: "clamp(300px, 45vw, 580px)" }}>
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-950/40 via-black to-black">
+          <Image
+            src="/images/legacy/team-dsa-group.webp"
+            alt="Team DSA — Department of Student Affairs"
+            fill
+            unoptimized
+            className="object-cover object-center opacity-40 hover:opacity-70 transition-opacity duration-700"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-950/40 via-black/60 to-black/80">
             {/* Scan texture */}
             <div
               className="pointer-events-none absolute inset-0 opacity-[0.02]"
@@ -284,17 +330,18 @@ export default function LegacyView() {
                   "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.9) 3px,rgba(255,255,255,0.9) 4px)",
               }}
             />
-            <div className="flex flex-col items-center gap-4 select-none">
+            <div className="flex flex-col items-center gap-4 select-none relative z-10">
               <span
                 className="font-editorial font-black text-white leading-none tracking-tighter"
-                style={{ fontSize: "clamp(4rem, 15vw, 12rem)", opacity: 0.06 }}
+                style={{ fontSize: "clamp(4rem, 15vw, 12rem)", opacity: 0.08 }}
                 aria-hidden="true"
               >
                 DSA
               </span>
-              <span className="font-mono text-[10px] tracking-[0.3em] text-emerald-400/50 uppercase">
-                Team DSA Group Photo — Forthcoming
-              </span>
+              <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-mono tracking-[0.25em] text-emerald-300 uppercase shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Department of Student Affairs // Institutional Engine</span>
+              </div>
             </div>
           </div>
           {/* Bottom gradient fade */}
