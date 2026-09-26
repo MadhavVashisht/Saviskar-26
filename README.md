@@ -2,7 +2,7 @@
 
 Official web platform for North India's premier techno-cultural festival at CGC University, Mohali (October 27–28, 2026).
 
-Built with **Next.js 16.3.4 (App Router)**, **React 19.2.4**, **Supabase PostgreSQL**, **Tailwind CSS v4**, **Three.js / WebGL**, **Motion**, **Resend**, and **Razorpay**.
+Built with **Next.js 16.3.4 (App Router)**, **React 19.2.4**, **Supabase PostgreSQL**, **Tailwind CSS v4**, **Three.js / WebGL**, **Motion**, **Resend**, and **PayU**.
 
 ---
 
@@ -43,7 +43,7 @@ npm run build
 - [ ] Verify Supabase database compute allocation is upgraded for peak traffic (minimum 4 vCPU / 8 GB RAM).
 - [ ] Confirm connection pooler is in Transaction mode (`port 6543`).
 - [ ] Verify Resend domain status reads **Verified** for DKIM, SPF, and DMARC on `saviskar.co.in`.
-- [ ] Confirm Razorpay live API credentials and webhook secret are configured in production environment variables.
+- [ ] Confirm PayU live API credentials and webhook secret are configured in production environment variables.
 - [ ] Run automated health check probe: `curl -I https://saviskar.co.in/api/health` (must return `200 OK`).
 
 ### T-2 Hours (Gate Setup)

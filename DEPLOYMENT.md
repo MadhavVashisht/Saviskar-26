@@ -1,7 +1,7 @@
 # Saviskar 2026 — Production Operations & Deployment Runbook
 
 **System:** Saviskar 2026 (*Aevorian Reverie*)  
-**Architecture:** Next.js 16.3.4 (App Router), React 19.2.4, Supabase (PostgreSQL 15+), Resend, Razorpay, Tailwind CSS v4, Three.js  
+**Architecture:** Next.js 16.3.4 (App Router), React 19.2.4, Supabase (PostgreSQL 15+), Resend, PayU, Tailwind CSS v4, Three.js  
 **Target Horizon:** October 27–28, 2026 (Traffic surge: 25,000+ university attendees, 100+ concurrent scanners)
 
 ---
@@ -15,9 +15,9 @@ All environment variables are strictly categorized by security classification. *
 | `NEXT_PUBLIC_SUPABASE_URL` | Public (Client + Server) | `PUBLIC` | `https://xyzcompany.supabase.co` | Supabase API URL endpoint. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public (Client + Server) | `PUBLIC` | `eyJhbGci...` | Supabase anon key with RLS enforcement. |
 | `SUPABASE_SECRET_KEY` | Server Only | `CRITICAL_SECRET` | `sbp_...` / `eyJ...` | Supabase Service Role Key for elevated backend RPCs & admin actions. |
-| `RAZORPAY_KEY_ID` | Public / Server | `PUBLIC` | `rzp_live_...` | Razorpay public key ID initialized in frontend checkout. |
-| `RAZORPAY_KEY_SECRET` | Server Only | `CRITICAL_SECRET` | `secret_...` | Razorpay API secret key for HMAC signature verification and order creation. |
-| `RAZORPAY_WEBHOOK_SECRET` | Server Only | `CRITICAL_SECRET` | `whsec_...` | Razorpay webhook signature verification secret for `/api/payments/webhook`. |
+| `PayU_KEY_ID` | Public / Server | `PUBLIC` | `rzp_live_...` | PayU public key ID initialized in frontend checkout. |
+| `PayU_KEY_SECRET` | Server Only | `CRITICAL_SECRET` | `secret_...` | PayU API secret key for HMAC signature verification and order creation. |
+| `PayU_WEBHOOK_SECRET` | Server Only | `CRITICAL_SECRET` | `whsec_...` | PayU webhook signature verification secret for `/api/payments/webhook`. |
 | `RESEND_API_KEY` | Server Only | `CRITICAL_SECRET` | `re_...` | Resend API key for transactional emails and delegate passes. |
 | `RESEND_FROM_EMAIL` | Server Only | `INTERNAL_CONFIG` | `Saviskar 2026 <noreply@saviskar.co.in>` | Production verified sender address. |
 | `PRIMARY_ADMIN_USER_ID` | Server Only | `CRITICAL_SECRET` | `usr_...` / UUID | Root super-admin Supabase Auth UID with initial access permissions. |
@@ -84,13 +84,13 @@ To prevent festival confirmation emails and entry QR passes from landing in atte
 
 ---
 
-## 4. Razorpay Webhook Configuration
+## 4. PayU Webhook Configuration
 
 The webhook serves as the secondary verification system if an attendee closes their browser before `/api/payments/verify` completes.
 
-1. Navigate to **Razorpay Dashboard > Settings > Webhooks > Add New Webhook**.
+1. Navigate to **PayU Dashboard > Settings > Webhooks > Add New Webhook**.
 2. **Webhook URL:** `https://saviskar.co.in/api/payments/webhook`
-3. **Secret:** Generate a 32-character high-entropy secret and store in `RAZORPAY_WEBHOOK_SECRET`.
+3. **Secret:** Generate a 32-character high-entropy secret and store in `PayU_WEBHOOK_SECRET`.
 4. **Active Events:**
    - `payment.captured`
    - `payment.failed`
@@ -113,7 +113,7 @@ The webhook serves as the secondary verification system if an attendee closes th
       "database": "healthy",
       "environment": {
         "supabase": true,
-        "razorpay": true,
+        "PayU": true,
         "resend": true,
         "primaryAdmin": true
       }

@@ -17,7 +17,7 @@ This document serves as a **hand-over plan** for any future AI or developer task
 
 The application is **feature-complete** for core event registration. 
 - The Supabase backend is correctly migrated and functional.
-- The Razorpay integration is functional in test mode.
+- The PayU integration is functional in test mode.
 - The Resend email integration (QR codes and PDFs) is functional.
 - The Admin dashboard correctly segregates Master and Normal admins.
 
@@ -28,11 +28,11 @@ The application is **feature-complete** for core event registration.
 Before launching the event to actual students, the following steps must be completed.
 
 ### 3.1 Payment Gateway & Security
-- [ ] Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in production environment (preferred server-side keys).
-- [ ] Set `NEXT_PUBLIC_RAZORPAY_KEY_ID` with the Live key ID (for client overlay fallback).
+- [ ] Set `PayU_KEY_ID` and `PayU_KEY_SECRET` in production environment (preferred server-side keys).
+- [ ] Set `NEXT_PUBLIC_PayU_KEY_ID` with the Live key ID (for client overlay fallback).
 - [ ] Set `PAYMENT_RESUME_TOKEN_SECRET` with a high-entropy secret for stateless email payment resume tokens.
-- [ ] Configure the Razorpay Webhook in the Razorpay Dashboard (Events: `payment.captured`, `payment.failed`).
-- [ ] Set `RAZORPAY_WEBHOOK_SECRET` in the production environment.
+- [ ] Configure the PayU Webhook in the PayU Dashboard (Events: `payment.captured`, `payment.failed`).
+- [ ] Set `PayU_WEBHOOK_SECRET` in the production environment.
 
 ### 3.2 Domain & Email
 - [ ] Finalize the production domain on Vercel.
@@ -92,6 +92,6 @@ When the hand-off is complete or before any major deployment, verify the build:
 ### Manual Verification
 - Deploy to Vercel (Staging environment).
 - Perform a complete test registration (Free event). Check email delivery and QR rendering.
-- Perform a complete test registration (Paid event). Complete Razorpay test flow. Check PDF receipt delivery.
+- Perform a complete test registration (Paid event). Complete PayU test flow. Check PDF receipt delivery.
 - Log in as Master Admin. Verify event creation, audit logs, and MFA prompt.
 - Log in as Normal Admin. Verify lack of access to Master features, and test the check-in toggle.

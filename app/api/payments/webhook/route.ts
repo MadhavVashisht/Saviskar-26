@@ -1,22 +1,20 @@
 /**
  * POST /api/payments/webhook
  *
- * Razorpay webhook handler for backup payment verification.
+ * PayU webhook handler for backup payment verification.
  *
- * Razorpay sends webhooks for events like:
- *   - payment.captured
- *   - payment.failed
+ * PayU sends webhooks (server-to-server) for events like:
+ *   - payment success
+ *   - payment failure
  *
  * This handler:
- *   1. Validates the webhook signature
+ *   1. Validates the webhook signature (reverse hash)
  *   2. Parses the event
  *   3. Updates payment_orders, participant_events, and payments
  *   4. Is fully idempotent (safe to receive duplicate events)
  *
- * Setup in Razorpay Dashboard:
+ * Setup in PayU Dashboard:
  *   URL: https://your-domain.com/api/payments/webhook
- *   Events: payment.captured, payment.failed
- *   Secret: set as RAZORPAY_WEBHOOK_SECRET in .env.local
  */
 
 import { NextRequest } from "next/server";
@@ -30,16 +28,10 @@ export async function POST(
   // ─── Read Raw Body + Signature ──────────────────────────
 
   const rawBody = await request.text();
-  const signature =
-    request.headers.get(
-      "x-razorpay-signature"
-    ) ?? "";
+  const signature = request.headers.get("x-payu-signature") ?? "";
 
-  if (!rawBody || !signature) {
-    return new Response(
-      "Missing body or signature.",
-      { status: 400 }
-    );
+  if (!rawBody) {
+    return new Response("Missing body.", { status: 400 });
   }
 
   // ─── Validate Webhook ──────────────────────────────────
@@ -87,7 +79,7 @@ export async function POST(
     console.error(
       "Webhook handler: Missing Supabase config."
     );
-    // Return 200 so Razorpay doesn't retry
+    // Return 200 so PayU doesn't retry
     return new Response("OK", {
       status: 200,
     });
@@ -194,24 +186,24 @@ export async function POST(
     let capturedAmount = event.amount;
     let capturedCurrency = event.currency;
 
-    // If webhook payload lacks trustworthy amount/currency, fetch server-side from Razorpay
+    // If webhook payload lacks trustworthy amount/currency, fetch server-side from PayU
     if (typeof capturedAmount !== "number" || !capturedCurrency) {
       try {
-        const fetched = await gateway.fetchPaymentDetails(event.gatewayPaymentId);
+        const fetched = await gateway.fetchPaymentDetails(event.gatewayOrderId);
         capturedAmount = fetched.amount;
         capturedCurrency = fetched.currency;
 
         if (fetched.gatewayOrderId !== event.gatewayOrderId) {
-          console.error("Webhook: Razorpay order ID mismatch:", {
+          console.error("Webhook: PayU order ID mismatch:", {
             expected: event.gatewayOrderId,
             actual: fetched.gatewayOrderId,
           });
           return new Response("Order mismatch.", { status: 400 });
         }
 
-        if (fetched.status !== "captured") {
-          console.error("Webhook: Payment status is not captured:", fetched.status);
-          return new Response("Payment not captured.", { status: 400 });
+        if (fetched.status !== "paid") {
+          console.error("Webhook: Payment status is not paid:", fetched.status);
+          return new Response("Payment not paid.", { status: 400 });
         }
       } catch (err) {
         console.error("Webhook: Server-side payment lookup failed:", err);
@@ -378,7 +370,7 @@ export async function POST(
     );
   }
 
-  // Always return 200 so Razorpay doesn't retry
+  // Always return 200 so PayU doesn't retry
   return new Response("OK", {
     status: 200,
   });

@@ -214,9 +214,9 @@ describe("Phase 2A: Multi-Event Payment Receipt", () => {
         },
       ],
       amount: 600,
-      gateway: "razorpay",
-      gatewayOrderId: "order_rzp_single",
-      gatewayPaymentId: "pay_rzp_single",
+      gateway: "payu",
+      gatewayOrderId: "txnid_single",
+      gatewayPaymentId: "mihpayid_single",
     };
 
     const pdfBuffer = await generateReceiptPdf(singleData);
@@ -256,9 +256,9 @@ describe("Phase 2A: Multi-Event Payment Receipt", () => {
         },
       ],
       amount: 1600, // Sum of 800 + 300 + 500
-      gateway: "razorpay",
-      gatewayOrderId: "order_rzp_multi",
-      gatewayPaymentId: "pay_rzp_multi",
+      gateway: "payu",
+      gatewayOrderId: "txnid_multi",
+      gatewayPaymentId: "mihpayid_multi",
     };
 
     const pdfBuffer = await generateReceiptPdf(multiData);

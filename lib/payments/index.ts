@@ -2,7 +2,7 @@
  * Payment Gateway Factory
  *
  * Resolves the active payment gateway implementation.
- * Defaults to Razorpay. Set the PAYMENT_GATEWAY env var
+ * Defaults to PayU. Set the PAYMENT_GATEWAY env var
  * to switch providers (e.g. "cashfree", "stripe").
  *
  * Usage:
@@ -12,7 +12,7 @@
  */
 
 import type { PaymentGateway } from "./types";
-import { RazorpayGateway } from "./razorpay";
+import { PayUGateway } from "./payu";
 
 // Re-export all types for convenience
 export type {
@@ -44,11 +44,7 @@ const gateways: Record<
   string,
   () => PaymentGateway
 > = {
-  razorpay: () => new RazorpayGateway(),
-
-  // Future gateways:
-  // cashfree: () => new CashfreeGateway(),
-  // stripe:   () => new StripeGateway(),
+  payu: () => new PayUGateway(),
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -60,7 +56,7 @@ const gateways: Record<
  *
  * @param name  Explicit gateway name. If omitted, reads
  *              from the PAYMENT_GATEWAY env var, defaulting
- *              to "razorpay".
+ *              to "payu".
  */
 export function getPaymentGateway(
   name?: string
@@ -68,7 +64,7 @@ export function getPaymentGateway(
   const gatewayName = (
     name ??
     process.env.PAYMENT_GATEWAY ??
-    "razorpay"
+    "payu"
   ).toLowerCase();
 
   const factory = gateways[gatewayName];

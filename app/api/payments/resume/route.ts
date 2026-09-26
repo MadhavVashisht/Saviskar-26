@@ -132,27 +132,11 @@ export async function GET(request: NextRequest) {
   }
 
   // 5. Check Order Status
-  if (paymentOrder.status === "paid") {
-    return NextResponse.json(
-      {
-        success: true,
-        status: "paid",
-        orderReference: paymentOrder.order_reference,
-        amount: Number(paymentOrder.amount),
-        currency: paymentOrder.currency || "INR",
-        message: "This payment has already been completed.",
-      },
-      {
-        headers: { "Cache-Control": "no-store" },
-      }
-    );
-  }
-
-  if (paymentOrder.status !== "pending") {
+  if (paymentOrder.status !== "pending" && paymentOrder.status !== "paid") {
     return errorResponse(
-      "This payment order is no longer pending.",
+      "This payment order is no longer valid for resume.",
       400,
-      "ORDER_NOT_PENDING"
+      "ORDER_INVALID_STATE"
     );
   }
 
@@ -209,7 +193,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       success: true,
-      status: "pending",
+      status: paymentOrder.status,
       paymentOrderId: paymentOrder.id,
       orderReference: paymentOrder.order_reference,
       amount: Number(paymentOrder.amount),

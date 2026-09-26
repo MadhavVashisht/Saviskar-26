@@ -12,7 +12,7 @@
 | Styling | Tailwind CSS | v4 |
 | Database | Supabase / PostgreSQL | Supabase hosted |
 | Auth | Supabase Auth | Email/password + TOTP MFA |
-| Payment | Razorpay (via abstraction) | REST API v1 |
+| Payment | PayU (via abstraction) | REST API v1 |
 | Email | Resend SDK | ^6.18.0 |
 | PDF | pdf-lib | ^1.17.1 |
 | QR Code | qrcode (Node) | ^1.5.4 |
@@ -51,7 +51,7 @@ saviskar-2026/
 │       │   ├── create/route.ts       # POST — create gateway order
 │       │   ├── verify/route.ts       # POST — verify payment
 │       │   ├── recover/route.ts      # POST — recover abandoned payment
-│       │   └── webhook/route.ts      # POST — Razorpay webhook
+│       │   └── webhook/route.ts      # POST — PayU webhook
 │       └── admin/
 │           ├── registrations/route.ts  # GET/PATCH/DELETE/POST
 │           ├── events/route.ts       # GET/POST/PATCH/DELETE
@@ -73,7 +73,7 @@ saviskar-2026/
 │   ├── payments/
 │   │   ├── types.ts                  # PaymentGateway interface
 │   │   ├── index.ts                  # Gateway factory
-│   │   ├── razorpay.ts              # RazorpayGateway implementation
+│   │   ├── PayU.ts              # PayUGateway implementation
 │   │   └── post-payment.ts          # ensurePaymentConfirmationSent()
 │   ├── admin.ts                      # Client-side admin helpers
 │   ├── supabase.ts                   # Compatibility export
@@ -123,7 +123,7 @@ Server-side payment verification. HMAC-SHA256 signature check. Updates `payment_
 Recovers abandoned payment. Finds or creates a `payment_orders` row for a participant's unpaid event registration.
 
 #### `POST /api/payments/webhook`
-Razorpay webhook handler. Validates signature, processes `payment.captured` and `payment.failed` events. Fully idempotent. Always returns 200 (to prevent Razorpay retries).
+PayU webhook handler. Validates signature, processes `payment.captured` and `payment.failed` events. Fully idempotent. Always returns 200 (to prevent PayU retries).
 
 ### 3.2 Admin Routes (Auth Required)
 
@@ -347,15 +347,15 @@ interface PaymentGateway {
 ```typescript
 // lib/payments/index.ts
 function getPaymentGateway(gatewayName?: string): PaymentGateway
-// Reads PAYMENT_GATEWAY env var, defaults to 'razorpay'
+// Reads PAYMENT_GATEWAY env var, defaults to 'PayU'
 ```
 
-### 6.3 Razorpay Implementation
+### 6.3 PayU Implementation
 
-- Key resolution precedence: `RAZORPAY_KEY_ID?.trim()` -> `NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim()`.
-- Server-only secrets: `RAZORPAY_KEY_SECRET` (never exposed via `NEXT_PUBLIC_*`).
+- Key resolution precedence: `PayU_KEY_ID?.trim()` -> `NEXT_PUBLIC_PayU_KEY_ID?.trim()`.
+- Server-only secrets: `PayU_KEY_SECRET` (never exposed via `NEXT_PUBLIC_*`).
 - Direct REST API calls via `fetch` (no SDK).
-- Checkout overlay loaded via CDN: `https://checkout.razorpay.com/v1/checkout.js`.
+- Checkout overlay loaded via CDN: `https://checkout.PayU.com/v1/checkout.js`.
 - Payment verification: HMAC-SHA256 of `{order_id}|{payment_id}` with API key secret using `crypto.timingSafeEqual`.
 - Webhook validation: HMAC-SHA256 of raw body with webhook secret.
 
@@ -429,6 +429,6 @@ Resend SDK (`resend` npm package). Direct API calls, no HTTP self-fetch.
 
 - All admin API routes use try-catch at the handler level.
 - Non-fatal errors (e.g., payment record insert fails after order marked paid) are logged but don't block the response.
-- Webhook handler always returns HTTP 200 to prevent Razorpay retries.
+- Webhook handler always returns HTTP 200 to prevent PayU retries.
 - Email sending failures don't fail the registration flow — they release the claim for retry.
 - Registration email errors don't block the registration response.

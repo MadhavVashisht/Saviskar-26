@@ -53,3 +53,30 @@ export function isAdminSessionExpired(
   const maxAgeMs = maxAgeSeconds * 1000;
   return Date.now() - authTime > maxAgeMs;
 }
+
+/**
+ * Transforms cookie options for admin authentication to enforce browser-session scoping.
+ *
+ * For cookie deletion (maxAge <= 0), the deletion maxAge is preserved so the browser clears the cookie.
+ * For active authentication cookies, maxAge and expires are removed (undefined) so that the browser treats
+ * the cookie as a session-only cookie that is discarded when the browser process exits.
+ */
+export function toAdminSessionCookieOptions<
+  T extends { maxAge?: number; expires?: Date | number }
+>(options: T): T;
+export function toAdminSessionCookieOptions<
+  T extends { maxAge?: number; expires?: Date | number }
+>(options?: T): T | undefined;
+export function toAdminSessionCookieOptions<
+  T extends { maxAge?: number; expires?: Date | number }
+>(options?: T): T | undefined {
+  if (!options) return undefined;
+  const isDeletion = typeof options.maxAge === "number" && options.maxAge <= 0;
+  if (isDeletion) {
+    return { ...options };
+  }
+  const sessionOptions = { ...options };
+  delete sessionOptions.maxAge;
+  delete sessionOptions.expires;
+  return sessionOptions;
+}

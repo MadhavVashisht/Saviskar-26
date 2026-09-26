@@ -89,7 +89,7 @@ Represents a single checkout intent (e.g. adding 3 paid events to cart).
 | `order_reference` | `text` | UNIQUE, NOT NULL | Internal reference |
 | `payer_participant_id`| `uuid` | FK to participants (SET NULL) | The person paying |
 | `amount` | `integer` | NOT NULL, DEFAULT 0 | Total checkout amount |
-| `gateway` | `text` | nullable | e.g. `razorpay` |
+| `gateway` | `text` | nullable | e.g. `PayU` |
 | `gateway_order_id` | `text` | nullable | Gateway's order ID |
 | `gateway_payment_id` | `text` | nullable | Gateway's successful payment ID |
 | `status` | `text` | DEFAULT 'pending' | `pending`, `paid`, `failed` |

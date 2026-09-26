@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { parseAuthHash } from "@/lib/utils/auth";
+import { adminBrowserCookieMethods } from "@/lib/supabase/client";
 
 type PageState =
   | "loading"
@@ -25,6 +26,7 @@ export default function ResetPasswordPage() {
       process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co",
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key",
       {
+        cookies: adminBrowserCookieMethods,
         auth: {
           detectSessionInUrl: false,
           persistSession: true,

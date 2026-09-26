@@ -18,8 +18,8 @@ describe("Health Check Endpoint (/api/health)", () => {
       ...originalEnv,
       NEXT_PUBLIC_SUPABASE_URL: "https://mock-supabase.co",
       SUPABASE_SECRET_KEY: "mock_secret_key",
-      RAZORPAY_KEY_ID: "mock_rzp_id",
-      RAZORPAY_KEY_SECRET: "mock_rzp_sec",
+      PAYU_KEY: "mock_rzp_id",
+      PAYU_SALT: "mock_rzp_sec",
       RESEND_API_KEY: "mock_resend_key",
       PRIMARY_ADMIN_USER_ID: "mock_admin_id",
     };
@@ -38,7 +38,7 @@ describe("Health Check Endpoint (/api/health)", () => {
     expect(body.status).toBe("healthy");
     expect(body.checks.database).toBe("healthy");
     expect(body.checks.environment.supabase).toBe(true);
-    expect(body.checks.environment.razorpay).toBe(true);
+    expect(body.checks.environment.payu).toBe(true);
     expect(body.checks.environment.resend).toBe(true);
     expect(body.checks.environment.primaryAdmin).toBe(true);
     expect(body.latencyMs).toBeGreaterThanOrEqual(0);

@@ -4,12 +4,14 @@ import {
   isAdminSessionExpired,
   getAdminSessionMaxAgeSeconds,
   DEFAULT_ADMIN_SESSION_MAX_AGE_SECONDS,
+  toAdminSessionCookieOptions,
 } from "./admin-session";
 
 export {
   isAdminSessionExpired,
   getAdminSessionMaxAgeSeconds,
   DEFAULT_ADMIN_SESSION_MAX_AGE_SECONDS,
+  toAdminSessionCookieOptions,
 };
 
 export type AdminRole = "master" | "admin";
@@ -29,7 +31,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, toAdminSessionCookieOptions(options));
             });
           } catch {
             // Server Components cannot always write cookies.

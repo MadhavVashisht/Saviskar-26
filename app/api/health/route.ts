@@ -9,7 +9,7 @@ export async function GET() {
     database: "healthy" | "unhealthy" | "unconfigured";
     environment: {
       supabase: boolean;
-      razorpay: boolean;
+      payu: boolean;
       resend: boolean;
       primaryAdmin: boolean;
     };
@@ -17,7 +17,7 @@ export async function GET() {
     database: "unconfigured",
     environment: {
       supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SECRET_KEY),
-      razorpay: Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+      payu: Boolean(process.env.PAYU_KEY && process.env.PAYU_SALT),
       resend: Boolean(process.env.RESEND_API_KEY),
       primaryAdmin: Boolean(process.env.PRIMARY_ADMIN_USER_ID),
     },

@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import Link from "next/link";
+
 import {
   AlertCircle,
   Check,
@@ -40,84 +40,7 @@ type ResumeOrderData = {
   code?: string;
 };
 
-type RazorpayResponse = {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-};
-
-type RazorpayFailureResponse = {
-  error?: {
-    description?: string;
-  };
-};
-
-type RazorpayCheckoutOptions = {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill?: {
-    name?: string;
-    email?: string;
-    contact?: string;
-  };
-  theme?: {
-    color?: string;
-  };
-  handler: (response: RazorpayResponse) => void;
-  modal?: {
-    ondismiss?: () => void;
-    escape?: boolean;
-    confirm_close?: boolean;
-  };
-};
-
-type RazorpayCheckoutInstance = {
-  open: () => void;
-  on: (event: string, handler: (resp: RazorpayFailureResponse) => void) => void;
-};
-
-type RazorpayCheckoutConstructor = new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
-
-function loadRazorpayScript(timeoutMs = 6000): Promise<boolean> {
-  return new Promise((resolve) => {
-    const win = typeof window !== "undefined" ? (window as unknown as { Razorpay?: RazorpayCheckoutConstructor }) : null;
-    if (win?.Razorpay) {
-      resolve(true);
-      return;
-    }
-    let finished = false;
-    const timer = setTimeout(() => {
-      if (!finished) {
-        finished = true;
-        console.warn("[RAZORPAY] Script load timed out after", timeoutMs, "ms");
-        resolve(false);
-      }
-    }, timeoutMs);
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => {
-      if (!finished) {
-        finished = true;
-        clearTimeout(timer);
-        resolve(true);
-      }
-    };
-    script.onerror = () => {
-      if (!finished) {
-        finished = true;
-        clearTimeout(timer);
-        resolve(false);
-      }
-    };
-    document.body.appendChild(script);
-  });
-}
+// Removed PayU types and loadScript
 
 function PaymentResumeContent() {
   const searchParams = useSearchParams();
@@ -212,95 +135,37 @@ function PaymentResumeContent() {
         );
       }
 
-      // 2. Load Razorpay script
-      const loaded = await loadRazorpayScript();
-      if (!loaded) {
+      // 2. Submit PayU Hosted Checkout form
+      const checkoutConfig = createJson.checkoutConfig;
+      const options = checkoutConfig?.options ?? {};
+      const postUrl = checkoutConfig?.postUrl;
+
+      if (!postUrl || !options.hash) {
         throw new Error(
-          "Could not load payment gateway. Please refresh and try again."
+          "Payment gateway configuration is missing or invalid."
         );
       }
 
-      // 3. Open Razorpay Checkout overlay
-      const checkoutOptions = createJson.checkoutConfig?.options ?? {};
+      const checkoutForm = document.createElement("form");
+      checkoutForm.method = "POST";
+      checkoutForm.action = postUrl;
+      checkoutForm.style.display = "none";
 
-      await new Promise<void>((resolve, reject) => {
-        const options = {
-          ...checkoutOptions,
-          handler: async (response: {
-            razorpay_payment_id: string;
-            razorpay_order_id: string;
-            razorpay_signature: string;
-          }) => {
-            try {
-              // 4. Verify payment server-side
-              const verifyRes = await fetch("/api/payments/verify", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Accept: "application/json",
-                },
-                body: JSON.stringify({
-                  paymentOrderId: data.paymentOrderId,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
-              });
-
-              const verifyJson = await verifyRes.json();
-
-              if (!verifyRes.ok || !verifyJson.success || !verifyJson.verified) {
-                throw new Error(
-                  verifyJson.error || "Payment verification failed."
-                );
-              }
-
-              // 5. Generate confirmation QR
-              const participantId =
-                data.participant?.participantId ||
-                verifyJson.paymentDetails?.participantId;
-
-              if (participantId) {
-                const qr = await QRCode.toDataURL(participantId, {
-                  width: 500,
-                  margin: 2,
-                  errorCorrectionLevel: "H",
-                });
-                setQrCodeUrl(qr);
-              }
-
-              setPaymentCompleted(true);
-              resolve();
-            } catch (vErr) {
-              reject(vErr);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              resolve();
-            },
-            escape: true,
-            confirm_close: true,
-          },
-        };
-
-        try {
-          const win = window as unknown as { Razorpay?: RazorpayCheckoutConstructor };
-          if (!win.Razorpay) {
-            throw new Error("Razorpay SDK not loaded.");
-          }
-          const rzp = new win.Razorpay(options);
-          rzp.on("payment.failed", (resp: RazorpayFailureResponse) => {
-            setErrorMessage(
-              resp.error?.description || "Payment failed. Please try again."
-            );
-            resolve();
-          });
-          rzp.open();
-        } catch (rzpErr) {
-          reject(rzpErr);
+      for (const [key, value] of Object.entries(options)) {
+        if (value !== undefined && value !== null) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          checkoutForm.appendChild(input);
         }
-      });
+      }
+
+      document.body.appendChild(checkoutForm);
+      checkoutForm.submit();
+      
+      // Keep processingPayment as true because we are navigating away.
+      return;
     } catch (err) {
       console.error("Resume checkout error:", err);
       setErrorMessage(
@@ -531,7 +396,7 @@ function PaymentResumeContent() {
               </button>
 
               <p className="text-center text-[11px] text-white/40">
-                Encrypted and processed securely via Razorpay. Your receipt will be automatically emailed upon confirmation.
+                Encrypted and processed securely via PayU. Your receipt will be automatically emailed upon confirmation.
               </p>
             </div>
           </div>

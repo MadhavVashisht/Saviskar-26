@@ -898,53 +898,14 @@ export default function RegistrationForm() {
   }
 
   /*
-   * RAZORPAY SCRIPT LOADER (With 6-second timeout for ad-blockers / firewalls)
+   * (Removed PayU Script Loader)
    */
-  function loadRazorpayScript(timeoutMs = 6000): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (
-        typeof window !== "undefined" &&
-        Boolean((window as unknown as { Razorpay?: unknown }).Razorpay)
-      ) {
-        resolve(true);
-        return;
-      }
-
-      let finished = false;
-      const timer = setTimeout(() => {
-        if (!finished) {
-          finished = true;
-          console.warn("[RAZORPAY] Script load timed out after", timeoutMs, "ms");
-          resolve(false);
-        }
-      }, timeoutMs);
-
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      script.onload = () => {
-        if (!finished) {
-          finished = true;
-          clearTimeout(timer);
-          resolve(true);
-        }
-      };
-      script.onerror = () => {
-        if (!finished) {
-          finished = true;
-          clearTimeout(timer);
-          resolve(false);
-        }
-      };
-      document.body.appendChild(script);
-    });
-  }
 
   /*
    * PAYMENT CHECKOUT
    *
    * Creates a gateway order via /api/payments/create,
-   * then opens the Razorpay overlay.
+   * then opens the PayU overlay.
    *
    * On success: verifies server-side via /api/payments/verify,
    * then shows QR/success screen.
@@ -978,148 +939,37 @@ export default function RegistrationForm() {
         );
       }
 
-      // 2. Load Razorpay script
-      const scriptLoaded = await loadRazorpayScript();
+      // 2. Submit PayU Hosted Checkout form
+      const checkoutConfig = createResult.checkoutConfig;
+      const options = checkoutConfig?.options ?? {};
+      const postUrl = checkoutConfig?.postUrl;
 
-      if (!scriptLoaded) {
+      if (!postUrl || !options.hash) {
         throw new Error(
-          "Payment gateway script could not be loaded. This typically happens if an ad blocker or campus firewall blocks checkout.razorpay.com. Please pause your ad blocker or complete your payment via another network."
+          "Payment gateway configuration is missing or invalid."
         );
       }
 
-      // 3. Open Razorpay checkout overlay
-      const checkoutOptions = createResult.checkoutConfig?.options ?? {};
+      const checkoutForm = document.createElement("form");
+      checkoutForm.method = "POST";
+      checkoutForm.action = postUrl;
+      checkoutForm.style.display = "none";
 
-      await new Promise<void>((resolve, reject) => {
-        const razorpayOptions = {
-          ...checkoutOptions,
-          handler: async (response: {
-            razorpay_payment_id: string;
-            razorpay_order_id: string;
-            razorpay_signature: string;
-          }) => {
-            try {
-              // 4. Verify payment server-side
-              const verifyResponse = await fetch(
-                "/api/payments/verify",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                  },
-                  body: JSON.stringify({
-                    paymentOrderId,
-                    razorpay_payment_id:
-                      response.razorpay_payment_id,
-                    razorpay_order_id:
-                      response.razorpay_order_id,
-                    razorpay_signature:
-                      response.razorpay_signature,
-                  }),
-                }
-              );
-
-              const verifyResult =
-                await verifyResponse.json();
-
-              if (
-                !verifyResponse.ok ||
-                !verifyResult.success ||
-                !verifyResult.verified
-              ) {
-                throw new Error(
-                  verifyResult.error ||
-                  "Payment verification failed."
-                );
-              }
-
-              // 5. Payment verified — show success
-              const generatedQr =
-                await QRCode.toDataURL(
-                  currentParticipantId,
-                  {
-                    width: 500,
-                    margin: 2,
-                    errorCorrectionLevel: "H",
-                  }
-                );
-
-              setQrCode(generatedQr);
-              setPaymentPending(false);
-              setPendingPaymentOrderId("");
-              setPendingPaymentAmount(0);
-              setSubmitted(true);
-              resolve();
-            } catch (verifyError) {
-              console.error(
-                "Payment verification error:",
-                verifyError
-              );
-              setErrorMessage(
-                verifyError instanceof Error
-                  ? verifyError.message
-                  : "Payment verification failed. Please contact support."
-              );
-              reject(verifyError);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              // User closed the checkout without paying
-              setPaymentPending(true);
-              resolve();
-            },
-            escape: true,
-            confirm_close: true,
-          },
-        };
-
-        try {
-          type RazorpayFailedResponse = {
-            error?: {
-              description?: string;
-              code?: string;
-              source?: string;
-              step?: string;
-              reason?: string;
-            };
-          };
-
-          type RazorpayInstance = {
-            on: (event: string, handler: (response: RazorpayFailedResponse) => void) => void;
-            open: () => void;
-          };
-
-          const RazorpayConstructor = (
-            window as unknown as {
-              Razorpay: new (opts: typeof razorpayOptions) => RazorpayInstance;
-            }
-          ).Razorpay;
-
-          const razorpay = new RazorpayConstructor(razorpayOptions);
-
-          razorpay.on(
-            "payment.failed",
-            (response: RazorpayFailedResponse) => {
-              console.error(
-                "Razorpay payment failed:",
-                response.error
-              );
-              setErrorMessage(
-                response.error?.description ||
-                "Payment failed. Please try again."
-              );
-              setPaymentPending(true);
-              resolve();
-            }
-          );
-
-          razorpay.open();
-        } catch (razorpayError) {
-          reject(razorpayError);
+      for (const [key, value] of Object.entries(options)) {
+        if (value !== undefined && value !== null) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          checkoutForm.appendChild(input);
         }
-      });
+      }
+
+      document.body.appendChild(checkoutForm);
+      checkoutForm.submit();
+      
+      // Do not set paymentProcessing to false, because we are navigating away.
+      return;
     } catch (error) {
       console.error("Payment checkout error:", error);
       setErrorMessage(
@@ -2459,7 +2309,7 @@ export default function RegistrationForm() {
                     <span>Official UGC Certified Passes</span>
                   </span>
                   <span>•</span>
-                  <span>Instant Razorpay Processing</span>
+                  <span>Instant PayU Processing</span>
                   <span>•</span>
                   <span>Live QR Pass Generated</span>
                 </div>

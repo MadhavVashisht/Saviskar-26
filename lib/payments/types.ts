@@ -47,7 +47,7 @@ export type CreateOrderParams = {
 };
 
 export type CreateOrderResult = {
-  /** Gateway-specific order ID (e.g. order_XXXXX for Razorpay). */
+  /** Gateway-specific order ID (e.g. txnid for PayU). */
   gatewayOrderId: string;
 
   /** Current order status from the gateway. */
@@ -103,11 +103,14 @@ export type FetchedPaymentDetails = {
 // ─────────────────────────────────────────────────────────────────
 
 export type CheckoutConfig = {
-  /** Gateway name (for the frontend to know which SDK to load). */
+  /** Gateway name (for the frontend to know which SDK to load/use). */
   gateway: string;
 
   /** Gateway-specific configuration for the checkout overlay/redirect. */
   options: Record<string, unknown>;
+
+  /** URL to POST the checkout form to (for PayU Hosted Checkout). */
+  postUrl?: string;
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -153,7 +156,7 @@ export type WebhookValidationResult = {
 // ─────────────────────────────────────────────────────────────────
 
 export interface PaymentGateway {
-  /** Human-readable gateway name (e.g. "razorpay", "cashfree"). */
+  /** Human-readable gateway name (e.g. "payu", "cashfree"). */
   readonly name: string;
 
   /** Create an order on the gateway. */

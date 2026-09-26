@@ -27,7 +27,7 @@ const mockDbPaymentOrders: Record<string, Record<string, unknown>> = {
     amount: 500,
     currency: "INR",
     status: "paid",
-    gateway: "razorpay",
+    gateway: "payu",
     gateway_order_id: "order_ALREADY_PAID",
   },
   "po-user-bob": {
@@ -90,7 +90,7 @@ let capturedCreateOrderParams: unknown = null;
 
 vi.mock("@/lib/payments", () => ({
   getPaymentGateway: () => ({
-    name: "razorpay",
+    name: "payu",
     createOrder: async (params: unknown) => {
       capturedCreateOrderParams = params;
       return {
@@ -99,9 +99,9 @@ vi.mock("@/lib/payments", () => ({
       };
     },
     getCheckoutConfig: (params: Record<string, unknown>) => ({
-      gateway: "razorpay",
+      gateway: "payu",
       options: {
-        key: "rzp_test_key",
+        key: "payu_test_key",
         amount: params.amount,
         currency: params.currency,
         order_id: params.gatewayOrderId,

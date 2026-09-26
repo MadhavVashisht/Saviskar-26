@@ -56,7 +56,7 @@ Saviskar 2026 is a web-based event registration and management platform for an i
 ### 4.4 Paid Events
 
 - Registration creates a pending payment order.
-- Participant is directed to Razorpay checkout.
+- Participant is directed to PayU checkout.
 - Payment is verified server-side (signature verification).
 - Upon successful payment: status → `paid`, receipt PDF generated, receipt email sent.
 - Payment status: `pending` → `paid`.
@@ -78,13 +78,13 @@ Saviskar 2026 is a web-based event registration and management platform for an i
 
 ## 6. Payment Requirements
 
-- Gateway-agnostic architecture (current implementation: Razorpay).
+- Gateway-agnostic architecture (current implementation: PayU).
 - Payment amount is determined server-side from event configuration, not from client input.
 - Payment orders track: order reference, amount, currency, gateway details, status.
 - Payment order items link orders to specific participant-event registrations.
 - Payment recovery: participants with pending payments can resume/complete payment.
 - Payment verification: HMAC-SHA256 signature check (server-side only).
-- Webhook handler for backup verification (Razorpay `payment.captured` / `payment.failed`).
+- Webhook handler for backup verification (PayU `payment.captured` / `payment.failed`).
 - Idempotent processing: duplicate payment events are handled safely.
 
 ---
@@ -186,7 +186,7 @@ Saviskar 2026 is a web-based event registration and management platform for an i
 1. New participant can register for free and paid events.
 2. Returning participant can register using their Participant ID.
 3. Team registration creates Participant IDs for all members.
-4. Paid registration triggers Razorpay checkout and server-side verification.
+4. Paid registration triggers PayU checkout and server-side verification.
 5. Registration confirmation email arrives with functional QR code.
 6. Payment receipt email arrives with PDF attachment after successful payment.
 7. Duplicate receipt emails are prevented by atomic claim mechanism.

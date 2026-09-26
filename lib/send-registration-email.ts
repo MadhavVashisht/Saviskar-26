@@ -735,7 +735,7 @@ export async function sendRegistrationEmail(
                     color: #555555;
                   "
                 >
-                  Click below to complete your payment with Razorpay and confirm your participation.
+                  Click below to complete your payment with PayU and confirm your participation.
                 </p>
                 <a
                   href="${escapeHtml(paymentResumeUrl)}"

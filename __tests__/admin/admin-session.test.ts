@@ -3,7 +3,18 @@ import {
   isAdminSessionExpired,
   getAdminSessionMaxAgeSeconds,
   DEFAULT_ADMIN_SESSION_MAX_AGE_SECONDS,
+  toAdminSessionCookieOptions,
 } from "@/lib/supabase/admin-session";
+import {
+  adminBrowserCookieMethods,
+  parseBrowserCookies,
+  serializeBrowserCookie,
+} from "@/lib/supabase/client";
+import {
+  createRegistrationSessionToken,
+  verifyRegistrationSessionToken,
+  DEFAULT_SESSION_EXP_MS,
+} from "@/lib/auth/session";
 import * as serverLib from "@/lib/supabase/server";
 import { updateSession } from "@/lib/supabase/proxy";
 import { NextRequest } from "next/server";
@@ -404,6 +415,263 @@ describe("Admin Session Expiration and Lifecycle Authority", () => {
         expect(auth.status).toBe(401);
         expect(auth.error).toBe("Session expired");
       }
+    });
+  });
+
+  describe("Browser-Session Scoped Authentication Policy & Invariants", () => {
+    describe("Cookie Option Transformer (toAdminSessionCookieOptions)", () => {
+      it("strips maxAge and expires from persistent cookie options to create session cookie", () => {
+        const persistentOptions = {
+          path: "/",
+          sameSite: "lax" as const,
+          httpOnly: true,
+          secure: true,
+          maxAge: 400 * 24 * 60 * 60, // 400 days default from @supabase/ssr
+          expires: new Date(Date.now() + 400 * 24 * 60 * 60 * 1000),
+        };
+
+        const sessionOptions = toAdminSessionCookieOptions(persistentOptions);
+        expect(sessionOptions.maxAge).toBeUndefined();
+        expect(sessionOptions.expires).toBeUndefined();
+        expect(sessionOptions.path).toBe("/");
+        expect(sessionOptions.sameSite).toBe("lax");
+        expect(sessionOptions.httpOnly).toBe(true);
+        expect(sessionOptions.secure).toBe(true);
+      });
+
+      it("preserves maxAge: 0 for cookie deletion so logout and expiration clear cookies", () => {
+        const deletionOptions = {
+          path: "/",
+          sameSite: "lax" as const,
+          maxAge: 0,
+        };
+
+        const result = toAdminSessionCookieOptions(deletionOptions);
+        expect(result.maxAge).toBe(0);
+        expect(result.path).toBe("/");
+      });
+
+      it("preserves negative maxAge for cookie deletion", () => {
+        const deletionOptions = {
+          path: "/",
+          maxAge: -1,
+        };
+
+        const result = toAdminSessionCookieOptions(deletionOptions);
+        expect(result.maxAge).toBe(-1);
+      });
+
+      it("safely returns undefined when options are undefined", () => {
+        expect(toAdminSessionCookieOptions(undefined)).toBeUndefined();
+      });
+    });
+
+    describe("Browser Cookie Parser and Serializer (lib/supabase/client)", () => {
+      it("serializeBrowserCookie outputs cookie without Max-Age or Expires for session-scoped cookies", () => {
+        const serialized = serializeBrowserCookie("sb-auth-token", "jwt-token-value", {
+          path: "/",
+          sameSite: "lax",
+          secure: false,
+        });
+
+        expect(serialized).toContain("sb-auth-token=jwt-token-value");
+        expect(serialized).toContain("Path=/");
+        expect(serialized).toContain("SameSite=Lax");
+        expect(serialized).not.toContain("Max-Age");
+        expect(serialized).not.toContain("Expires");
+      });
+
+      it("serializeBrowserCookie preserves Max-Age=0 when explicitly deleting a cookie", () => {
+        const serialized = serializeBrowserCookie("sb-auth-token", "", {
+          path: "/",
+          maxAge: 0,
+        });
+
+        expect(serialized).toContain("sb-auth-token=");
+        expect(serialized).toContain("Max-Age=0");
+        expect(serialized).toContain("Path=/");
+      });
+
+      it("parseBrowserCookies correctly extracts key-value pairs from cookie string", () => {
+        const raw = "sb-access-token=token123; sb-refresh-token=refresh456; theme=dark";
+        const parsed = parseBrowserCookies(raw);
+
+        expect(parsed).toEqual([
+          { name: "sb-access-token", value: "token123" },
+          { name: "sb-refresh-token", value: "refresh456" },
+          { name: "theme", value: "dark" },
+        ]);
+      });
+
+      it("parseBrowserCookies handles empty, whitespace, and quoted cookie values gracefully", () => {
+        expect(parseBrowserCookies("")).toEqual([]);
+        expect(parseBrowserCookies("   ")).toEqual([]);
+
+        const withQuotes = 'session="abc%20123"; empty=';
+        const parsed = parseBrowserCookies(withQuotes);
+        expect(parsed).toEqual([
+          { name: "session", value: "abc 123" },
+          { name: "empty", value: "" },
+        ]);
+      });
+
+      it("adminBrowserCookieMethods.setAll strips maxAge on write to enforce session cookie semantics", () => {
+        let fakeDocumentCookie = "";
+        const originalDocument = globalThis.document;
+
+        // Mock document.cookie
+        globalThis.document = {
+          get cookie() {
+            return fakeDocumentCookie;
+          },
+          set cookie(val: string) {
+            fakeDocumentCookie = val;
+          },
+        } as unknown as Document;
+
+        try {
+          adminBrowserCookieMethods.setAll([
+            {
+              name: "sb-auth",
+              value: "test-token",
+              options: { path: "/", maxAge: 34560000, sameSite: "lax" },
+            },
+          ]);
+
+          expect(fakeDocumentCookie).toContain("sb-auth=test-token");
+          expect(fakeDocumentCookie).not.toContain("Max-Age");
+          expect(fakeDocumentCookie).not.toContain("Expires");
+
+          // When clearing the cookie
+          adminBrowserCookieMethods.setAll([
+            {
+              name: "sb-auth",
+              value: "",
+              options: { path: "/", maxAge: 0 },
+            },
+          ]);
+
+          expect(fakeDocumentCookie).toContain("Max-Age=0");
+        } finally {
+          globalThis.document = originalDocument;
+        }
+      });
+    });
+
+    describe("Browser Session Lifecycle & Invariants", () => {
+      it("Page refresh: admin remains authenticated across requests when session cookie persists", async () => {
+        const validSignIn = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 min ago
+        mockGetUser.mockResolvedValue({
+          data: {
+            user: { id: "admin-active", email: "admin@test.com", last_sign_in_at: validSignIn },
+          },
+          error: null,
+        });
+
+        // Request 1: Initial page load
+        const req1 = new NextRequest("http://localhost/admin");
+        const res1 = await updateSession(req1);
+        expect(res1.status).toBe(200);
+
+        // Request 2: Page refresh (F5) with session cookie intact
+        const req2 = new NextRequest("http://localhost/admin");
+        const res2 = await updateSession(req2);
+        expect(res2.status).toBe(200);
+      });
+
+      it("Navigation: admin remains authenticated navigating across different admin pages", async () => {
+        const validSignIn = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+        mockGetUser.mockResolvedValue({
+          data: {
+            user: { id: "admin-nav", email: "admin@test.com", last_sign_in_at: validSignIn },
+          },
+          error: null,
+        });
+
+        const pages = [
+          "http://localhost/admin",
+          "http://localhost/admin/events",
+          "http://localhost/admin/scanner",
+          "http://localhost/admin/logs",
+        ];
+
+        for (const pageUrl of pages) {
+          const req = new NextRequest(pageUrl);
+          const res = await updateSession(req);
+          expect(res.status).toBe(200);
+        }
+      });
+
+      it("Browser closed & reopened: discarded session cookie causes redirect to /admin/login", async () => {
+        // When the browser process exits, session cookies are discarded.
+        // Upon reopening, request arrives with no session cookies (user: null).
+        mockGetUser.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
+
+        const req = new NextRequest("http://localhost/admin");
+        const res = await updateSession(req);
+
+        // Must redirect to login
+        expect(res.status).toBe(307);
+        expect(res.headers.get("location")).toContain("/admin/login");
+      });
+
+      it("Manual logout: immediately terminates session and requires new login", async () => {
+        mockGetUser.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
+
+        const auth = await serverLib.requireAdmin();
+        expect(auth.status).toBe(401);
+        expect(auth.error).toBe("Unauthorized");
+      });
+
+      it("8-hour absolute maximum lifetime cannot be extended by session cookies or token refreshes", async () => {
+        // User logged in 8 hours and 1 minute ago.
+        const eightHoursOneMinAgo = new Date(Date.now() - (8 * 3600 + 60) * 1000).toISOString();
+
+        mockGetUser.mockResolvedValue({
+          data: {
+            user: {
+              id: "admin-expired",
+              email: "admin@test.com",
+              last_sign_in_at: eightHoursOneMinAgo,
+            },
+          },
+          error: null,
+        });
+
+        // requireAdmin rejects with 401 Session expired
+        const auth = await serverLib.requireAdmin();
+        expect(auth.status).toBe(401);
+        expect(auth.error).toBe("Session expired");
+
+        // Edge proxy terminates session and redirects to /admin/login
+        const req = new NextRequest("http://localhost/admin/events");
+        const res = await updateSession(req);
+        expect(res.status).toBe(307);
+        expect(res.headers.get("location")).toContain("/admin/login");
+      });
+
+      it("Registration auth remains persistent with 48h expiration and is independent of admin session", () => {
+        const token = createRegistrationSessionToken("participant@example.com");
+        const verification = verifyRegistrationSessionToken(token);
+
+        expect(verification.valid).toBe(true);
+        expect(verification.payload?.email).toBe("participant@example.com");
+
+        // Registration session has 48 hour lifetime
+        const expectedMinExp = Date.now() + DEFAULT_SESSION_EXP_MS - 5000;
+        expect(verification.payload?.exp).toBeGreaterThan(expectedMinExp);
+      });
+
+      it("Confirms NO inactivity timeout or idle timer is configured", () => {
+        // Verifies no idle timer env var exists or is relied upon
+        expect(process.env.ADMIN_SESSION_IDLE_TIMEOUT_SECONDS).toBeUndefined();
+      });
     });
   });
 });

@@ -22,7 +22,7 @@ Saviskar 2026 is an **event registration and management platform** for an inter-
 | Styling | Tailwind CSS v4, tw-animate-css |
 | Database | Supabase / PostgreSQL |
 | Authentication | Supabase Auth (email/password + TOTP MFA for Master Admin) |
-| Payment Gateway | Razorpay (gateway-agnostic abstraction in `lib/payments/`) |
+| Payment Gateway | PayU (gateway-agnostic abstraction in `lib/payments/`) |
 | Email | Resend SDK (transactional email) |
 | PDF Generation | pdf-lib |
 | QR Generation | qrcode (Node.js) |
@@ -45,7 +45,7 @@ The following have been built and tested:
 | Returning participant registration | ✅ Working |
 | Free event registration | ✅ Working |
 | Paid event registration | ✅ Working |
-| Razorpay test payment | ✅ Working |
+| PayU test payment | ✅ Working |
 | Server-side payment verification (HMAC-SHA256) | ✅ Working |
 | Payment recovery for abandoned payments | ✅ Working |
 | Registration confirmation email with QR | ✅ Working |
@@ -77,7 +77,7 @@ The following have been built and tested:
 ### 4.2 Registration Model
 
 - **Free events**: Registration → confirmation email with QR → done.
-- **Paid events**: Registration → confirmation email (payment pending) → Razorpay checkout → server-side verification → status = `paid` → receipt PDF → receipt email.
+- **Paid events**: Registration → confirmation email (payment pending) → PayU checkout → server-side verification → status = `paid` → receipt PDF → receipt email.
 
 ### 4.3 Two-Email System (Paid Events)
 
@@ -102,15 +102,15 @@ The payment system is **intentionally gateway-agnostic**.
 | File | Purpose |
 |---|---|
 | `lib/payments/types.ts` | `PaymentGateway` interface (createOrder, verifyPayment, getCheckoutConfig, validateWebhook) |
-| `lib/payments/index.ts` | Gateway factory — reads `PAYMENT_GATEWAY` env var, defaults to `razorpay` |
-| `lib/payments/razorpay.ts` | `RazorpayGateway` class (the only current implementation) |
+| `lib/payments/index.ts` | Gateway factory — reads `PAYMENT_GATEWAY` env var, defaults to `PayU` |
+| `lib/payments/PayU.ts` | `PayUGateway` class (the only current implementation) |
 | `lib/payments/post-payment.ts` | `ensurePaymentConfirmationSent()` — idempotent receipt PDF + email |
 
 ### 5.2 Payment Flow
 
 ```
 Registration → payment_orders row (status=pending) → /api/payments/create (gateway order) →
-Frontend Razorpay overlay → /api/payments/verify (HMAC signature check) →
+Frontend PayU overlay → /api/payments/verify (HMAC signature check) →
 payment_orders.status=paid → participant_events.payment_status=paid →
 payments row → ensurePaymentConfirmationSent() → PDF receipt → receipt email
 ```
@@ -128,8 +128,8 @@ payments row → ensurePaymentConfirmationSent() → PDF receipt → receipt ema
 
 Payment is **NEVER** marked `paid` by the frontend alone. Two server-side paths:
 
-1. **`/api/payments/verify`** — Called after Razorpay checkout overlay completes.
-2. **`/api/payments/webhook`** — Called by Razorpay server-to-server.
+1. **`/api/payments/verify`** — Called after PayU checkout overlay completes.
+2. **`/api/payments/webhook`** — Called by PayU server-to-server.
 
 Both call `ensurePaymentConfirmationSent()` which uses an **atomic claim mechanism** on `payment_orders` to prevent duplicate receipt emails.
 
@@ -203,7 +203,7 @@ events (event catalog)
 | Admin API routes | Server-side `requireAdmin()` / `requireMasterAdmin()` |
 | Permanent deletion | Server-side Master Admin check + database-level `SECURITY DEFINER` function |
 | Payment verification | HMAC-SHA256 signature verification, server-side only |
-| Payment secrets | `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` — server-only, never exposed to client |
+| Payment secrets | `PayU_KEY_SECRET`, `PayU_WEBHOOK_SECRET` — server-only, never exposed to client |
 | Receipt data | Generated from database-backed data, not client-supplied amounts |
 | QR content | Participant ID only — no secrets or PII |
 | Audit logs | RLS policy: only master admins can SELECT |
@@ -244,15 +244,15 @@ events (event catalog)
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Client + Server |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/publishable key | Client + Server |
 | `SUPABASE_SECRET_KEY` | Supabase service role key | Server only |
-| `RAZORPAY_KEY_ID` | Razorpay API key ID (preferred server key) | Server only |
-| `RAZORPAY_KEY_SECRET` | Razorpay API key secret | Server only |
-| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay key for checkout overlay / fallback | Client + Server |
-| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook signature secret | Server only |
+| `PayU_KEY_ID` | PayU API key ID (preferred server key) | Server only |
+| `PayU_KEY_SECRET` | PayU API key secret | Server only |
+| `NEXT_PUBLIC_PayU_KEY_ID` | PayU key for checkout overlay / fallback | Client + Server |
+| `PayU_WEBHOOK_SECRET` | PayU webhook signature secret | Server only |
 | `PAYMENT_RESUME_TOKEN_SECRET` | HMAC-SHA256 secret for payment resume tokens (falls back to SUPABASE_SECRET_KEY) | Server only |
 | `RESEND_API_KEY` | Resend email API key | Server only |
 | `RESEND_FROM_EMAIL` | Sender address (pre-formatted) | Server only |
 | `NEXT_PUBLIC_SITE_URL` | Site URL for email resume links & auth redirects | Client + Server |
-| `PAYMENT_GATEWAY` | Active gateway name (default: `razorpay`) | Server only |
+| `PAYMENT_GATEWAY` | Active gateway name (default: `PayU`) | Server only |
 
 ---
 
@@ -273,7 +273,7 @@ events (event catalog)
 - **Hosting**: Vercel
 - **Domain**: `saviskar-2026.vercel.app`
 - **Database**: Supabase Cloud (production)
-- **Payment**: Razorpay (test keys configured; switch to live keys for production payments)
+- **Payment**: PayU (test keys configured; switch to live keys for production payments)
 - **Build**: `npm run build` passes
 
 ---
