@@ -5,11 +5,12 @@ import { motion, useInView } from "motion/react";
 import Link from "next/link";
 import { ArrowUpRight, Sparkles, Eye, Camera } from "lucide-react";
 import DomeGallery, { DomeGalleryImage } from "@/components/ui/DomeGallery";
+import { GLIMPSE_175_UNIQUE_TILES } from "@/data/gdriveManifest";
 
-// 175 distinct, authentic festival photos extracted from 8K source scenes across all realms - strictly zero repeats
-const DOME_175_TILES: DomeGalleryImage[] = Array.from({ length: 175 }, (_, i) => ({
-  src: `/gallery/tiles/tile_${String(i + 1).padStart(3, "0")}.jpg`,
-  alt: `Saviskar 2026 Festival Realm Frame ${i + 1}`
+// 175 distinct, authentic festival photos streamed directly from Google Drive CDN (zero local storage)
+const DOME_175_TILES: DomeGalleryImage[] = GLIMPSE_175_UNIQUE_TILES.map((tile, i) => ({
+  src: tile.thumbnailSrc ? tile.thumbnailSrc.replace(/=s\d+$/, "=s400") : tile.src,
+  alt: `Saviskar 2026 Festival Realm Frame ${i + 1}`,
 }));
 
 export default function GalleryGlimpse() {

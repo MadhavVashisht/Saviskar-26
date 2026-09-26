@@ -31,16 +31,12 @@ export interface DomeGalleryProps {
   grayscale?: boolean;
 }
 
-const DEFAULT_IMAGES: DomeGalleryImage[] = [
-  { src: '/gallery/crowd.webp', alt: 'Saviskar Stadium Concert' },
-  { src: '/gallery/cultural.webp', alt: 'Choreography & Cultural Realm' },
-  { src: '/gallery/technical.webp', alt: 'Robotics & Hackathon Realm' },
-  { src: '/gallery/star 1.webp', alt: 'Star Night Performance' },
-  { src: '/gallery/car.webp', alt: 'Automotive & Design Expo' },
-  { src: '/gallery/gallery-3.webp', alt: 'Midnight Stadium Lights' },
-  { src: '/gallery/dance.webp', alt: 'Dance & Stage Showcase' },
-  { src: '/gallery/sports.webp', alt: 'National Sports Arena' },
-];
+import { GLIMPSE_175_UNIQUE_TILES } from '@/data/gdriveManifest';
+
+const DEFAULT_IMAGES: DomeGalleryImage[] = GLIMPSE_175_UNIQUE_TILES.slice(0, 8).map((tile, i) => ({
+  src: tile.thumbnailSrc ? tile.thumbnailSrc.replace(/=s\d+$/, "=s400") : tile.src,
+  alt: `Saviskar 2026 Festival Moment ${i + 1}`,
+}));
 
 const DEFAULTS = {
   maxVerticalRotationDeg: 5,
@@ -191,17 +187,10 @@ export default function DomeGallery({
         if (isFacingCamera) {
           if (itemEl.style.visibility === "hidden") {
             itemEl.style.visibility = "visible";
-            const img = itemEl.querySelector("img");
-            if (img && !img.getAttribute("src")) {
-              const src = itemEl.dataset.src;
-              if (src) img.src = src;
-            }
           }
         } else {
           if (itemEl.style.visibility !== "hidden") {
             itemEl.style.visibility = "hidden";
-            const img = itemEl.querySelector("img");
-            if (img) img.removeAttribute("src");
           }
         }
       }
@@ -555,8 +544,9 @@ export default function DomeGallery({
       overlay.style.transformOrigin = 'top left';
       overlay.style.transition = `transform ${enlargeTransitionMs}ms ease, opacity ${enlargeTransitionMs}ms ease`;
       const rawSrc = parent.dataset.src || el.querySelector('img')?.src || '';
+      const enlargedSrc = rawSrc.includes('googleusercontent.com') ? rawSrc.replace(/=s\d+$/, '=s1600') : rawSrc;
       const img = document.createElement('img');
-      img.src = rawSrc;
+      img.src = enlargedSrc;
       overlay.appendChild(img);
       viewerRef.current?.appendChild(overlay);
       const tx0 = tileR.left - frameR.left;

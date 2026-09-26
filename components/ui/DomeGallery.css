@@ -141,6 +141,8 @@ main.sphere-main {
   pointer-events: none;
   backface-visibility: hidden;
   filter: var(--image-filter, none);
+  color: transparent;
+  font-size: 0;
 }
 
 .viewer {
