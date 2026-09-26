@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -15,14 +15,8 @@ import {
   ArrowUpRight,
   X,
   Search,
-  Layers,
-  Sparkles,
   ChevronRight,
-  Maximize2,
   Building2,
-  Users,
-  Eye,
-  SlidersHorizontal,
 } from "lucide-react";
 import {
   CampusVenue,
@@ -537,7 +531,7 @@ export default function CampusMap({ onSelectEvent, externalEvents }: CampusMapPr
 
               <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase text-violet-400 mb-2">
                 <Building2 size={13} />
-                <span>{activeVenue.buildingCode} // {activeVenue.pinBadge}</span>
+                <span>{activeVenue.buildingCode} {"//"} {activeVenue.pinBadge}</span>
               </div>
               <h3 className="font-editorial text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 {activeVenue.name}

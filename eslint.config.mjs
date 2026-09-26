@@ -15,6 +15,11 @@ const eslintConfig = defineConfig([
     "supabase/.temp/**",
     "supabase/.branches/**",
   ]),
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

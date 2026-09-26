@@ -9,7 +9,6 @@ import {
   Zap,
   Sparkles,
   Lock,
-  Unlock,
   CheckCircle2,
   Music,
   Send,
@@ -557,7 +556,7 @@ export default function GuessArtist() {
 
                   <div className="mt-8 border border-white/15 bg-black/60 p-4 font-mono">
                     <span className="text-[10px] uppercase text-white/40">
-                      // OFFICIAL STATUS
+                      {"// OFFICIAL STATUS"}
                     </span>
                     <p className="mt-1 text-xs text-emerald-400">
                       CONTRACT EXECUTED • VAULT SEALED TILL OFFICIAL SOCIAL DROP
@@ -608,7 +607,7 @@ export default function GuessArtist() {
 
                   <div className="mt-8 border border-white/15 bg-black/60 p-4 font-mono">
                     <span className="text-[10px] uppercase text-white/40">
-                      // OFFICIAL STATUS
+                      {"// OFFICIAL STATUS"}
                     </span>
                     <p className="mt-1 text-xs text-emerald-400">
                       STADIUM AUDIO PLUG-IN VERIFIED • LIVE AIRING ON YOUTUBE

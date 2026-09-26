@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import { Terminal, Radio, Activity, Cpu, Sparkles } from "lucide-react";
+import { Terminal, Radio, Cpu } from "lucide-react";
 import ArtistCard from "./ArtistCard";
 import { festivalEditions } from "@/data/starnightArtists";
 

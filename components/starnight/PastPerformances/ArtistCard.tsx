@@ -6,13 +6,10 @@ import {
   Activity,
   Cpu,
   Radio,
-  Sparkles,
   Volume2,
   Zap,
-  Disc,
   Terminal,
   Shield,
-  Layers,
 } from "lucide-react";
 import type { FestivalEdition } from "@/data/starnightArtists";
 
@@ -157,7 +154,6 @@ export default function ArtistCard({
         <div className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-2">
           {days.map((day, idx) => {
             const isDay1 = day.dayNumber.includes("01");
-            const accentColor = isDay1 ? "violet" : "cyan";
 
             return (
               <motion.div
