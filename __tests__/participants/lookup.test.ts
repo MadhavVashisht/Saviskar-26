@@ -24,6 +24,114 @@ const mockDbParticipants: Record<string, Record<string, unknown>> = {
       },
     ],
   },
+  "SVK26-D917882D": {
+    participant_id: "SVK26-D917882D",
+    name: "Anand",
+    college: "CGC University",
+    email: "anand.j4072@cgcuniversity.in",
+    phone: "9876500000",
+    participant_events: [],
+    participant_event_members: [
+      {
+        id: "pem-1",
+        participant_event_id: "pe-chords-1",
+        participant_events: {
+          id: "pe-chords-1",
+          event_id: "evt-chords",
+          payment_status: "paid",
+          payment_amount: 15,
+          events: { name: "Clash of Chords" },
+        },
+      },
+    ],
+  },
+  "SVK26-MULTI001": {
+    participant_id: "SVK26-MULTI001",
+    name: "Priya Patel",
+    college: "NIT Trichy",
+    email: "priya.patel@example.com",
+    phone: "9876511111",
+    participant_events: [],
+    participant_event_members: [
+      {
+        id: "pem-m1",
+        participant_event_id: "pe-chords-1",
+        participant_events: {
+          id: "pe-chords-1",
+          event_id: "evt-chords",
+          payment_status: "paid",
+          payment_amount: 15,
+          events: { name: "Clash of Chords" },
+        },
+      },
+      {
+        id: "pem-m2",
+        participant_event_id: "pe-hack-1",
+        participant_events: {
+          id: "pe-hack-1",
+          event_id: "evt-hackathon",
+          payment_status: "pending",
+          payment_amount: 300,
+          events: { name: "HackSaviskar" },
+        },
+      },
+    ],
+  },
+  "SVK26-NOREG001": {
+    participant_id: "SVK26-NOREG001",
+    name: "Rahul Verma",
+    college: "BITS Pilani",
+    email: "rahul.verma@example.com",
+    phone: "9876522222",
+    participant_events: [],
+    participant_event_members: [],
+  },
+  "SVK26-LEADER01": {
+    participant_id: "SVK26-LEADER01",
+    name: "Vikram Singh",
+    college: "IIT Delhi",
+    email: "vikram.singh@example.com",
+    phone: "9876533333",
+    participant_events: [
+      {
+        id: "pe-lead-1",
+        event_id: "evt-robotics",
+        payment_status: "paid",
+        payment_amount: 500,
+        events: { name: "RoboWars" },
+      },
+    ],
+    participant_event_members: [
+      {
+        id: "pem-lead-1",
+        participant_event_id: "pe-lead-1",
+        participant_events: {
+          id: "pe-lead-1",
+          event_id: "evt-robotics",
+          payment_status: "paid",
+          payment_amount: 500,
+          events: { name: "RoboWars" },
+        },
+      },
+    ],
+  },
+  "SVK26-ARCHIVED": {
+    participant_id: "SVK26-ARCHIVED",
+    name: "Archived User",
+    college: "IIT Bombay",
+    email: "archived.user@example.com",
+    phone: "9876544444",
+    participant_events: [
+      {
+        id: "pe-archived-1",
+        event_id: "evt-robotics",
+        payment_status: "paid",
+        payment_amount: 500,
+        is_archived: true,
+        events: { name: "RoboWars" },
+      },
+    ],
+  },
 };
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -195,5 +303,72 @@ describe("P1-03: Participant Lookup API Ownership Challenge & PII Masking", () =
       expect(evt.gateway_payment_id).toBeUndefined();
       expect(evt.secret).toBeUndefined();
     }
+  });
+
+  it("K. Case B: Team-member participant retrieves team event via participant_event_members", async () => {
+    const [req, ctx] = makeRequest("SVK26-D917882D", "anand.j4072@cgcuniversity.in");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.participant.participantId).toBe("SVK26-D917882D");
+    expect(body.participant.name).toBe("Anand");
+    expect(body.participant.college).toBe("CGC University");
+    expect(body.participant.email).toBe("a***@cgcuniversity.in");
+
+    // Events must include the team event
+    expect(body.events).toHaveLength(1);
+    expect(body.events[0].participantEventId).toBe("pe-chords-1");
+    expect(body.events[0].eventId).toBe("evt-chords");
+    expect(body.events[0].eventName).toBe("Clash of Chords");
+    expect(body.events[0].paymentStatus).toBe("paid");
+    expect(body.events[0].paymentAmount).toBe(15);
+  });
+
+  it("L. Case E: Participant belonging to multiple team events retrieves all applicable events", async () => {
+    const [req, ctx] = makeRequest("SVK26-MULTI001", "priya.patel@example.com");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.events).toHaveLength(2);
+
+    const eventNames = body.events.map((e: { eventName: string }) => e.eventName);
+    expect(eventNames).toContain("Clash of Chords");
+    expect(eventNames).toContain("HackSaviskar");
+  });
+
+  it("M. Case F: Participant with no registrations returns an empty events list", async () => {
+    const [req, ctx] = makeRequest("SVK26-NOREG001", "rahul.verma@example.com");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.events).toEqual([]);
+  });
+
+  it("N. Deduplication: Team leader present in both participant_events and participant_event_members has no duplicates", async () => {
+    const [req, ctx] = makeRequest("SVK26-LEADER01", "vikram.singh@example.com");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.events).toHaveLength(1);
+    expect(body.events[0].participantEventId).toBe("pe-lead-1");
+    expect(body.events[0].eventName).toBe("RoboWars");
+  });
+
+  it("O. Soft-deleted/archived registrations (is_archived = true) are excluded from active events", async () => {
+    const [req, ctx] = makeRequest("SVK26-ARCHIVED", "archived.user@example.com");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.events).toEqual([]);
   });
 });

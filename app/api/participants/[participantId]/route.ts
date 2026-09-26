@@ -137,17 +137,35 @@ export async function GET(
     .from("participants")
     .select(
       `
+      id,
       participant_id,
       name,
       college,
       email,
       phone,
-      participant_events(
+      participant_events (
         id,
         event_id,
         payment_status,
         payment_amount,
-        events(name)
+        is_archived,
+        events (
+          name
+        )
+      ),
+      participant_event_members (
+        id,
+        participant_event_id,
+        participant_events (
+          id,
+          event_id,
+          payment_status,
+          payment_amount,
+          is_archived,
+          events (
+            name
+          )
+        )
       )
     `
     )
@@ -178,17 +196,74 @@ export async function GET(
   }
 
   // ─── Format Events (Minimizing to only UI-required fields) ───
-  const rawParticipantEvents =
-    (data.participant_events as Array<{
+  type RawEventRecord = {
+    id: string;
+    event_id: string;
+    payment_status: string | null;
+    payment_amount: number | null;
+    is_archived?: boolean | null;
+    events:
+      | { name: string | null }
+      | { name: string | null }[]
+      | null;
+  };
+
+  const directEvents = (data.participant_events as RawEventRecord[] | null) ?? [];
+  const memberRows =
+    (data.participant_event_members as Array<{
       id: string;
-      event_id: string;
-      payment_status: string | null;
-      payment_amount: number | null;
-      events:
-        | { name: string | null }
-        | { name: string | null }[]
-        | null;
+      participant_event_id: string;
+      participant_events: RawEventRecord | RawEventRecord[] | null;
     }> | null) ?? [];
+
+  const eventsByParticipantEventId = new Map<
+    string,
+    {
+      participantEventId: string;
+      eventId: string;
+      eventName: string;
+      paymentStatus: string | null;
+      paymentAmount: number | null;
+    }
+  >();
+
+  // 1. Process direct events (individual or team events where this participant is the registrant/leader)
+  for (const event of directEvents) {
+    if (!event || event.is_archived === true) continue;
+    const eventName =
+      (Array.isArray(event.events) ? event.events[0] : event.events)?.name ??
+      "Unknown event";
+
+    eventsByParticipantEventId.set(event.id, {
+      participantEventId: event.id,
+      eventId: event.event_id,
+      eventName,
+      paymentStatus: event.payment_status,
+      paymentAmount: event.payment_amount,
+    });
+  }
+
+  // 2. Process team member events (events where this participant is registered as a team member)
+  for (const memberRow of memberRows) {
+    const event = Array.isArray(memberRow.participant_events)
+      ? memberRow.participant_events[0]
+      : memberRow.participant_events;
+
+    if (!event || event.is_archived === true) continue;
+    if (eventsByParticipantEventId.has(event.id)) continue;
+
+    const eventName =
+      (Array.isArray(event.events) ? event.events[0] : event.events)?.name ??
+      "Unknown event";
+
+    eventsByParticipantEventId.set(event.id, {
+      participantEventId: event.id,
+      eventId: event.event_id,
+      eventName,
+      paymentStatus: event.payment_status,
+      paymentAmount: event.payment_amount,
+    });
+  }
 
   return jsonResponse({
     success: true,
@@ -199,16 +274,6 @@ export async function GET(
       email: maskEmail(data.email),
       phone: maskPhone(data.phone),
     },
-    events: rawParticipantEvents.map((event) => ({
-      participantEventId: event.id,
-      eventId: event.event_id,
-      eventName:
-        (Array.isArray(event.events)
-          ? event.events[0]
-          : event.events
-        )?.name ?? "Unknown event",
-      paymentStatus: event.payment_status,
-      paymentAmount: event.payment_amount,
-    })),
+    events: Array.from(eventsByParticipantEventId.values()),
   });
 }

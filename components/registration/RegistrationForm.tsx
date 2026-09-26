@@ -111,9 +111,19 @@ class ValidationError extends Error {
   }
 }
 
-export default function RegistrationForm() {
+interface RegistrationFormProps {
+  sessionEmail?: string;
+  onSignOut?: () => void;
+}
+
+export default function RegistrationForm({
+  sessionEmail = "",
+  onSignOut,
+}: RegistrationFormProps = {}) {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const normalizedSessionEmail = sessionEmail.trim().toLowerCase();
 
   const selectedEventParam = searchParams.get("event") ?? "";
   const fromAdmin = searchParams.get("from") === "admin";
@@ -152,7 +162,14 @@ export default function RegistrationForm() {
    * has a Saviskar participant ID and wants to add another event.
    */
   const [existingParticipantId, setExistingParticipantId] = useState("");
-  const [existingParticipantEmail, setExistingParticipantEmail] = useState("");
+  const [existingParticipantEmail, setExistingParticipantEmail] = useState(normalizedSessionEmail);
+
+  useEffect(() => {
+    if (normalizedSessionEmail) {
+      setExistingParticipantEmail(normalizedSessionEmail);
+    }
+  }, [normalizedSessionEmail]);
+
   const [participantLookupLoading, setParticipantLookupLoading] = useState(false);
   const [participantLookup, setParticipantLookup] = useState<
     ParticipantLookupResponse["participant"] | null
@@ -307,7 +324,7 @@ export default function RegistrationForm() {
 
   async function findParticipant() {
     const cleanId = existingParticipantId.trim().toUpperCase();
-    const cleanEmail = existingParticipantEmail.trim().toLowerCase();
+    const cleanEmail = (normalizedSessionEmail || existingParticipantEmail).trim().toLowerCase();
 
     if (!cleanId) {
       setParticipantLookup(null);
@@ -320,6 +337,19 @@ export default function RegistrationForm() {
       setParticipantLookup(null);
       setParticipantLookupEvents([]);
       setErrorMessage("Enter your registered email address.");
+      return;
+    }
+
+    if (
+      normalizedSessionEmail &&
+      existingParticipantEmail.trim() &&
+      existingParticipantEmail.trim().toLowerCase() !== normalizedSessionEmail
+    ) {
+      setParticipantLookup(null);
+      setParticipantLookupEvents([]);
+      setErrorMessage(
+        `Participant lookup must match your authenticated session email (${normalizedSessionEmail}).`
+      );
       return;
     }
 
@@ -674,9 +704,10 @@ export default function RegistrationForm() {
         .toLowerCase();
 
       const email =
-        existingParticipantId.trim() && existingParticipantEmail.trim()
+        normalizedSessionEmail ||
+        (existingParticipantId.trim() && existingParticipantEmail.trim()
           ? existingParticipantEmail.trim().toLowerCase()
-          : rawEmail;
+          : rawEmail);
 
       const phone = String(
         formData.get("phone") ?? ""
@@ -1353,6 +1384,28 @@ export default function RegistrationForm() {
           </div>
 
           <form onSubmit={handleSubmit} className="relative z-10 space-y-12">
+            {/* VERIFIED SESSION BANNER */}
+            {normalizedSessionEmail && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/30 bg-violet-950/30 px-5 py-3.5 backdrop-blur-xl">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs text-white/60">Verified Registration Session:</span>
+                  <span className="font-mono text-xs font-semibold text-violet-300">
+                    {normalizedSessionEmail}
+                  </span>
+                </div>
+                {onSignOut && (
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="text-xs font-medium text-violet-400 hover:text-violet-200 transition-colors underline"
+                  >
+                    Switch Account
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* EXISTING PARTICIPANT ID (ACCREDITATION SYNC) */}
             <div className="rounded-[24px] border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-6 md:p-8 backdrop-blur-xl transition-all hover:border-violet-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
               <div className="flex items-start gap-4 sm:gap-5">
@@ -1424,15 +1477,21 @@ export default function RegistrationForm() {
                               void findParticipant();
                             }
                           }}
+                          readOnly={Boolean(normalizedSessionEmail)}
                           placeholder="name@example.com"
-                          className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
+                          className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-80"
                         />
+                        {normalizedSessionEmail && (
+                          <p className="mt-1 font-mono text-[10px] text-white/40">
+                            Locked to verified email session.
+                          </p>
+                        )}
                       </div>
 
                       <button
                         type="button"
                         onClick={() => void findParticipant()}
-                        disabled={participantLookupLoading || !existingParticipantId.trim() || !existingParticipantEmail.trim()}
+                        disabled={participantLookupLoading || !existingParticipantId.trim() || !(existingParticipantEmail || normalizedSessionEmail).trim()}
                         className="inline-flex h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-6 text-xs font-semibold text-black transition-all hover:bg-violet-100 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {participantLookupLoading ? (
@@ -2007,10 +2066,10 @@ export default function RegistrationForm() {
                                     key={`team-email-${participantLookup?.participantId ?? "new"}`}
                                     type="email"
                                     name="email"
-                                    defaultValue={participantLookup?.email ?? ""}
+                                    defaultValue={normalizedSessionEmail || participantLookup?.email || ""}
                                     placeholder="you@example.com"
                                     required
-                                    readOnly={Boolean(participantLookup)}
+                                    readOnly={Boolean(normalizedSessionEmail || participantLookup)}
                                     className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                                   />
                                 </Field>
@@ -2217,10 +2276,10 @@ export default function RegistrationForm() {
                       key={`email-${participantLookup?.participantId ?? "new"}`}
                       type="email"
                       name="email"
-                      defaultValue={participantLookup?.email ?? ""}
+                      defaultValue={normalizedSessionEmail || participantLookup?.email || ""}
                       placeholder="you@example.com"
                       required
-                      readOnly={Boolean(participantLookup)}
+                      readOnly={Boolean(normalizedSessionEmail || participantLookup)}
                       className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-60"
                     />
                   </Field>

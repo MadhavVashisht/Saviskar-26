@@ -25,6 +25,17 @@ export default function RegistrationFlowManager({
     router.refresh();
   };
 
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/session", { method: "DELETE" });
+    } catch (err) {
+      console.error("Sign out failed:", err);
+    }
+    setVerifiedEmail("");
+    setIsAuthenticated(false);
+    router.refresh();
+  };
+
   if (!isAuthenticated) {
     return (
       <RegistrationAuthGate
@@ -34,5 +45,10 @@ export default function RegistrationFlowManager({
     );
   }
 
-  return <RegistrationForm />;
+  return (
+    <RegistrationForm
+      sessionEmail={verifiedEmail}
+      onSignOut={handleSignOut}
+    />
+  );
 }

@@ -196,4 +196,75 @@ describe("Section 5: Registration API Authentication Boundary", () => {
     expect(data.participantId).toBe("SVK26-TEST1234");
     expect(mockRpc).toHaveBeenCalledWith("register_participant_events", expect.anything());
   });
+
+  it("7. Case C: Same email with harmless casing and whitespace differences -> normalizes and succeeds", async () => {
+    const validToken = createRegistrationSessionToken("legitimate@example.com", 60_000);
+    mockCookieStore.set(SESSION_COOKIE_NAME, validToken);
+
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          participant_id: "SVK26-TEST1234",
+          participant_event_id: "pe-uuid-1",
+          event_id: "a0000000-0000-4000-8000-000000000001",
+          event_name: "Code Wars",
+          status: "success",
+        },
+      ],
+      error: null,
+    });
+
+    const req = makeRegisterRequest({
+      name: "Legit User",
+      email: "  LeGiTiMaTe@ExAmPlE.CoM  ",
+      phone: "9876543210",
+      college: "Test College",
+      events: [{ eventId: "a0000000-0000-4000-8000-000000000001" }],
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(mockRpc).toHaveBeenCalledWith("register_participant_events", expect.anything());
+  });
+
+  it("8. Case F & G: Existing participant with matching session email -> registers new events with participantId", async () => {
+    const validToken = createRegistrationSessionToken("anand.j4072@cgcuniversity.in", 60_000);
+    mockCookieStore.set(SESSION_COOKIE_NAME, validToken);
+
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          participant_id: "SVK26-D917882D",
+          participant_event_id: "pe-uuid-new",
+          event_id: "b0000000-0000-4000-8000-000000000002",
+          event_name: "Solo Singing",
+          status: "success",
+        },
+      ],
+      error: null,
+    });
+
+    const req = makeRegisterRequest({
+      participantId: "SVK26-D917882D",
+      name: "Anand",
+      email: "anand.j4072@cgcuniversity.in",
+      phone: "9876500000",
+      college: "CGC University",
+      events: [{ eventId: "b0000000-0000-4000-8000-000000000002" }],
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(data.participantId).toBe("SVK26-D917882D");
+    expect(mockRpc).toHaveBeenCalledWith("register_participant_events", expect.objectContaining({
+      p_participant_id: "SVK26-D917882D",
+      p_email: "anand.j4072@cgcuniversity.in",
+    }));
+  });
 });
