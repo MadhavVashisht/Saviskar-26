@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOtp } from "@/lib/auth/otp";
-import { setRegistrationSessionCookie } from "@/lib/auth/session";
+import {
+  setRegistrationSessionCookie,
+  getSessionSecret,
+  SESSION_COOKIE_NAME,
+  DEFAULT_SESSION_EXP_MS,
+} from "@/lib/auth/session";
 import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,6 +53,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Pre-flight check: ensure session signing infrastructure is operational
+    // before verifying or consuming the participant's OTP.
+    try {
+      getSessionSecret();
+    } catch (secretErr) {
+      console.error("[VERIFY OTP FATAL] Session signing infrastructure unavailable:", secretErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Authentication service is temporarily unavailable. Please try again later.",
+        },
+        { status: 500, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     const result = await verifyOtp(email, otp);
 
     if (!result.success) {
@@ -61,9 +81,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Establish secure HTTP-only session cookie
-    await setRegistrationSessionCookie(email);
+    const token = await setRegistrationSessionCookie(email);
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         email,
@@ -74,6 +94,17 @@ export async function POST(req: NextRequest) {
         headers: { "Cache-Control": "no-store" },
       }
     );
+
+    // Explicitly attach to response headers for multi-runtime compatibility
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: Math.floor(DEFAULT_SESSION_EXP_MS / 1000),
+    });
+
+    return response;
   } catch (err) {
     console.error("[VERIFY OTP ERROR]", err);
     return NextResponse.json(

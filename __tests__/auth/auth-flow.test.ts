@@ -26,6 +26,22 @@ import { NextRequest } from "next/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 let lastDispatchedOtp: string | null = null;
+const mockCookieStore: Map<string, string> = new Map();
+
+vi.mock("next/headers", () => ({
+  cookies: async () => ({
+    get: (name: string) => {
+      const val = mockCookieStore.get(name);
+      return val ? { name, value: val } : undefined;
+    },
+    set: (name: string, val: string) => {
+      mockCookieStore.set(name, val);
+    },
+    delete: (name: string) => {
+      mockCookieStore.delete(name);
+    },
+  }),
+}));
 
 vi.mock("@/lib/auth/send-otp-email", () => ({
   sendOtpEmail: vi.fn(async (_toEmail: string, otp: string) => {
@@ -43,6 +59,8 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
 
   beforeEach(() => {
     lastDispatchedOtp = null;
+    mockCookieStore.clear();
+    process.env.SESSION_SECRET = TEST_SECRET;
     _clearOtpStoreForTesting();
     setOtpStoreOverride(new MemoryOtpStore());
   });
@@ -645,6 +663,240 @@ describe("Passwordless Registration Auth Flow & Persistent Storage", () => {
       expect(res.status).toBe(400);
       expect(json.success).toBe(false);
       expect(json.error).toContain("6 numeric digits");
+    });
+
+    it("1 & 7. Correct OTP -> 200 + valid session token created and verified", async () => {
+      const email = "correct.otp@example.com";
+      await requestOtp(email, "127.0.0.1");
+      expect(lastDispatchedOtp).toBeTruthy();
+
+      const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp: lastDispatchedOtp }),
+      });
+
+      const res = await verifyOtpHandler(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.email).toBe(email);
+
+      // Verify cookie was set in mockCookieStore
+      const sessionCookie = mockCookieStore.get(SESSION_COOKIE_NAME);
+      expect(sessionCookie).toBeTruthy();
+
+      const verified = verifyRegistrationSessionToken(sessionCookie!, TEST_SECRET);
+      expect(verified.valid).toBe(true);
+      expect(verified.payload?.email).toBe(email);
+    });
+
+    it("2. Wrong OTP -> 400 rejected with remaining attempts", async () => {
+      const email = "wrong.otp@example.com";
+      await requestOtp(email, "127.0.0.1");
+
+      const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp: "999999" }),
+      });
+
+      const res = await verifyOtpHandler(req);
+      expect(res.status).toBe(400);
+
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error).toContain("Invalid verification code");
+      expect(mockCookieStore.get(SESSION_COOKIE_NAME)).toBeUndefined();
+    });
+
+    it("3. Expired OTP -> 400 rejected with expired message", async () => {
+      const email = "expired.otp@example.com";
+      await requestOtp(email, "127.0.0.1");
+
+      // Advance time beyond expiration in store
+      const store = getOtpStore();
+      const active = await store.getActiveOtp(email);
+      expect(active).toBeTruthy();
+      if (active) {
+        // Expire by updating expiresAt to past
+        active.expiresAt = Date.now() - 1000;
+      }
+
+      const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp: lastDispatchedOtp }),
+      });
+
+      const res = await verifyOtpHandler(req);
+      expect(res.status).toBe(400);
+
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error).toContain("expired");
+    });
+
+    it("4 & 9. Used OTP / OTP replay -> 400 rejected", async () => {
+      const email = "replay.otp@example.com";
+      await requestOtp(email, "127.0.0.1");
+      const otp = lastDispatchedOtp!;
+
+      // First verification: succeeds
+      const req1 = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp }),
+      });
+      const res1 = await verifyOtpHandler(req1);
+      expect(res1.status).toBe(200);
+
+      // Second verification using same code: rejected
+      const req2 = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp }),
+      });
+      const res2 = await verifyOtpHandler(req2);
+      expect(res2.status).toBe(400);
+
+      const json2 = await res2.json();
+      expect(json2.success).toBe(false);
+      expect(json2.error).toMatch(/already been used|No verification code found/);
+    });
+
+    it("5. OTP attempt limit -> locked out after max attempts", async () => {
+      const email = "bruteforce@example.com";
+      await requestOtp(email, "127.0.0.1");
+
+      for (let i = 0; i < MAX_VERIFY_ATTEMPTS; i++) {
+        const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+          method: "POST",
+          body: JSON.stringify({ email, otp: "000000" }),
+        });
+        const res = await verifyOtpHandler(req);
+        expect(res.status).toBe(400);
+      }
+
+      // Next attempt should report too many attempts
+      const finalReq = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp: "000000" }),
+      });
+      const finalRes = await verifyOtpHandler(finalReq);
+      expect(finalRes.status).toBe(400);
+      const json = await finalRes.json();
+      expect(json.error).toMatch(/Too many incorrect attempts|No verification code found/);
+    });
+
+    it("6 & 11. Missing SESSION_SECRET in production -> fail closed without burning valid OTP", async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalSecret = process.env.SESSION_SECRET;
+
+      try {
+        (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+        delete process.env.SESSION_SECRET;
+
+        const email = "failclosed.prod@example.com";
+        // Create OTP manually in store
+        const store = getOtpStore();
+        const now = Date.now();
+        const code = "654321";
+        const otpHash = hashOtp(email, code, now);
+        await store.createOtp({
+          email,
+          otpHash,
+          issuedAt: now,
+          expiresAt: now + 600000,
+        });
+
+        const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+          method: "POST",
+          body: JSON.stringify({ email, otp: code }),
+        });
+
+        const res = await verifyOtpHandler(req);
+        // Pre-flight check fails closed with 500
+        expect(res.status).toBe(500);
+
+        const json = await res.json();
+        expect(json.success).toBe(false);
+        expect(json.error).toContain("Authentication service is temporarily unavailable");
+
+        // CRITICAL: The OTP was NOT burned because pre-flight checked SESSION_SECRET first!
+        const activeOtp = await store.getActiveOtp(email);
+        expect(activeOtp).not.toBeNull();
+        expect(activeOtp?.consumedAt).toBeNull();
+      } finally {
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
+        process.env.SESSION_SECRET = originalSecret;
+      }
+    });
+
+    it("8. Session cookie has correct production security properties", async () => {
+      const email = "cookie.props@example.com";
+      await requestOtp(email, "127.0.0.1");
+
+      const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp: lastDispatchedOtp }),
+      });
+
+      const res = await verifyOtpHandler(req);
+      expect(res.status).toBe(200);
+
+      // Verify response cookie headers
+      const setCookie = res.cookies.get(SESSION_COOKIE_NAME);
+      expect(setCookie).toBeDefined();
+      expect(setCookie?.httpOnly).toBe(true);
+      expect(setCookie?.sameSite).toBe("lax");
+      expect(setCookie?.path).toBe("/");
+      expect(setCookie?.maxAge).toBe(48 * 60 * 60);
+    });
+
+    it("10. Request OTP + verify OTP with whitespace and casing differences succeeds", async () => {
+      const emailInput = "  Student.Capital@Example.COM  ";
+      const normalized = "student.capital@example.com";
+
+      const req1 = new NextRequest("http://localhost:3000/api/auth/request-otp", {
+        method: "POST",
+        body: JSON.stringify({ email: emailInput }),
+      });
+      const res1 = await requestOtpHandler(req1);
+      expect(res1.status).toBe(200);
+
+      const req2 = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email: "  sTUDENT.cAPITAL@eXAMPLE.com ", otp: `  ${lastDispatchedOtp}  ` }),
+      });
+      const res2 = await verifyOtpHandler(req2);
+      expect(res2.status).toBe(200);
+
+      const json2 = await res2.json();
+      expect(json2.email).toBe(normalized);
+    });
+
+    it("12. 500 verification failure surfaces safe structured message", async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalSecret = process.env.SESSION_SECRET;
+
+      try {
+        (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+        delete process.env.SESSION_SECRET;
+
+        const req = new NextRequest("http://localhost:3000/api/auth/verify-otp", {
+          method: "POST",
+          body: JSON.stringify({ email: "safe.error@example.com", otp: "123456" }),
+        });
+
+        const res = await verifyOtpHandler(req);
+        expect(res.status).toBe(500);
+
+        const json = await res.json();
+        // Never leaks stack trace, env names, or internal secrets
+        expect(json.error).toBe("Authentication service is temporarily unavailable. Please try again later.");
+        expect(json.stack).toBeUndefined();
+        expect(JSON.stringify(json)).not.toContain("SESSION_SECRET");
+      } finally {
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
+        process.env.SESSION_SECRET = originalSecret;
+      }
     });
   });
 });

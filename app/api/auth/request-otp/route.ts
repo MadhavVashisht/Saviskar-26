@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requestOtp } from "@/lib/auth/otp";
+import { getSessionSecret } from "@/lib/auth/session";
 import { getClientIp } from "@/lib/rate-limit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,6 +22,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Please enter a valid email address." },
         { status: 400, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    // Pre-flight session infrastructure verification:
+    // Do not issue an OTP to the user if the server cannot verify it or sign a session.
+    try {
+      getSessionSecret();
+    } catch (secretErr) {
+      console.error("[REQUEST OTP FATAL] Session signing infrastructure unavailable:", secretErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Authentication service is temporarily unavailable. Please try again later.",
+        },
+        { status: 500, headers: { "Cache-Control": "no-store" } }
       );
     }
 
