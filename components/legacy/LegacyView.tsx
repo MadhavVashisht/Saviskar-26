@@ -26,7 +26,7 @@ const DIGNITARIES = [
     initials: "RD",
     accent: "amber" as const,
     align: "left" as const,
-    image: "/images/legacy/rashpal-singh-dhaliwal.png",
+    image: "/images/legacy/rashpal-singh-dhaliwal.webp",
   },
   {
     id: "md-arsh-dhaliwal",
@@ -43,7 +43,7 @@ const DIGNITARIES = [
     initials: "AD",
     accent: "violet" as const,
     align: "right" as const,
-    image: "/images/legacy/arsh-dhaliwal.png",
+    image: "/images/legacy/arsh-dhaliwal.webp",
   },
   {
     id: "director-bismin",
@@ -60,7 +60,7 @@ const DIGNITARIES = [
     initials: "BD",
     accent: "emerald" as const,
     align: "left" as const,
-    image: "/images/legacy/bismin-dhaliwal.png",
+    image: "/images/legacy/bismin-dhaliwal.webp",
   },
   {
     id: "director-simran-dhaliwal",
@@ -77,7 +77,7 @@ const DIGNITARIES = [
     initials: "SD",
     accent: "cyan" as const,
     align: "right" as const,
-    image: "/images/legacy/simran-dhaliwal.png",
+    image: "/images/legacy/simran-dhaliwal.webp",
   },
   {
     id: "evp-shushil-prashar",
@@ -94,7 +94,7 @@ const DIGNITARIES = [
     initials: "SP",
     accent: "amber" as const,
     align: "left" as const,
-    image: "/images/legacy/shushil-prashar.png",
+    image: "/images/legacy/shushil-prashar.webp",
   },
   {
     id: "vc-vinay-goyal",
@@ -111,7 +111,7 @@ const DIGNITARIES = [
     initials: "VG",
     accent: "cyan" as const,
     align: "right" as const,
-    image: "/images/legacy/vinay-goyal.png",
+    image: "/images/legacy/vinay-goyal.webp",
   },
   {
     id: "provc-anish-goyal",
@@ -128,7 +128,7 @@ const DIGNITARIES = [
     initials: "AG",
     accent: "violet" as const,
     align: "left" as const,
-    image: "/images/legacy/anish-goyal.png",
+    image: "/images/legacy/anish-goyal.webp",
   },
 ] as const;
 
@@ -174,6 +174,8 @@ const ALUMNI_DIGNITARIES = [
     initials: "SAC",
     accent: "violet" as const,
     align: "right" as const,
+    image: "/images/legacy/sac-2024-2025.webp",
+    imageAspect: "group" as const,
   },
   {
     id: "alumni-sac-2023-2024",
@@ -189,6 +191,8 @@ const ALUMNI_DIGNITARIES = [
     initials: "SAC",
     accent: "cyan" as const,
     align: "left" as const,
+    image: "/images/legacy/sac-2023-2024.webp",
+    imageAspect: "group" as const,
   },
 ] as const;
 
@@ -279,7 +283,7 @@ export default function LegacyView() {
         {/* Full-bleed group photo banner */}
         <div className="relative w-full overflow-hidden bg-zinc-950" style={{ height: "clamp(300px, 45vw, 580px)" }}>
           <Image
-            src="/images/legacy/team-dsa-group.png"
+            src="/images/legacy/team-dsa-group.webp"
             alt="Team DSA — Department of Student Affairs"
             fill
             unoptimized
@@ -384,9 +388,10 @@ export default function LegacyView() {
                 signeeName={person.signeeName}
                 signeeRole={person.signeeRole}
                 initials={person.initials}
-                image=""
+                image={"image" in person && person.image ? person.image : ""}
                 accentColor={person.accent ?? "amber"}
                 align={person.align}
+                imageAspect={"imageAspect" in person ? person.imageAspect : "portrait"}
               />
             </div>
           ))}

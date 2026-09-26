@@ -15,6 +15,7 @@ export interface DeskEditorialSpreadProps {
   accentColor?: "violet" | "cyan" | "emerald" | "amber";
   align?: "left" | "right";
   secondarySignees?: { name: string; role: string; initials?: string }[];
+  imageAspect?: "portrait" | "group";
 }
 
 const ACCENT_TOKENS_MAP = {
@@ -63,6 +64,7 @@ export default function DeskEditorialSpread({
   accentColor = "violet",
   align = "left",
   secondarySignees,
+  imageAspect = "portrait",
 }: DeskEditorialSpreadProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -123,9 +125,9 @@ export default function DeskEditorialSpread({
     </div>
   );
 
-  // ── Portrait column ───────────────────────────────────────────────────────
+  // ── Portrait / Group column ───────────────────────────────────────────────
   const VisualContent = (
-    <div className="relative flex items-stretch justify-center">
+    <div className="relative flex items-stretch justify-center w-full">
       {/* Ambient glow orb behind portrait */}
       <div
         className="pointer-events-none absolute inset-0 -inset-x-8"
@@ -137,34 +139,66 @@ export default function DeskEditorialSpread({
       />
 
       {hasValidImage ? (
-        <div
-          className="relative w-full h-[480px] sm:h-[560px] overflow-hidden"
-          style={{
-            WebkitMaskImage: [
-              "linear-gradient(to bottom, black 40%, transparent 100%)",
-              align === "left"
-                ? "linear-gradient(to right, black 75%, transparent 100%)"
-                : "linear-gradient(to left, black 75%, transparent 100%)",
-            ].join(", "),
-            WebkitMaskComposite: "destination-in",
-            maskImage: [
-              "linear-gradient(to bottom, black 40%, transparent 100%)",
-              align === "left"
-                ? "linear-gradient(to right, black 75%, transparent 100%)"
-                : "linear-gradient(to left, black 75%, transparent 100%)",
-            ].join(", "),
-            maskComposite: "intersect",
-          }}
-        >
-          <Image
-            src={image!}
-            alt={signeeName}
-            fill
-            unoptimized
-            className="object-cover object-top"
-            onError={() => setImageError(true)}
-          />
-        </div>
+        imageAspect === "group" ? (
+          <div className="relative w-full my-auto flex flex-col justify-center">
+            {/* Ambient backdrop glow */}
+            <div
+              className="pointer-events-none absolute -inset-4 rounded-3xl opacity-40 blur-2xl"
+              style={{
+                background: `radial-gradient(ellipse at center, ${accentTokens.glow} 0%, transparent 70%)`,
+              }}
+            />
+            {/* Framed Group Archive Card */}
+            <div className="relative w-full aspect-[16/10] sm:aspect-[16/10.5] rounded-2xl border border-white/15 bg-zinc-950/90 overflow-hidden shadow-2xl group transition-all duration-500 hover:border-white/30">
+              <Image
+                src={image!}
+                alt={signeeName}
+                fill
+                unoptimized
+                className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-700"
+                onError={() => setImageError(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent pointer-events-none" />
+
+              {/* Corner badge overlay */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                <div className="liquid-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[9px] font-mono tracking-widest text-white/80 uppercase">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>COUNCIL ARCHIVE // CGC UNIVERSITY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="relative w-full h-[480px] sm:h-[560px] overflow-hidden"
+            style={{
+              WebkitMaskImage: [
+                "linear-gradient(to bottom, black 40%, transparent 100%)",
+                align === "left"
+                  ? "linear-gradient(to right, black 75%, transparent 100%)"
+                  : "linear-gradient(to left, black 75%, transparent 100%)",
+              ].join(", "),
+              WebkitMaskComposite: "destination-in",
+              maskImage: [
+                "linear-gradient(to bottom, black 40%, transparent 100%)",
+                align === "left"
+                  ? "linear-gradient(to right, black 75%, transparent 100%)"
+                  : "linear-gradient(to left, black 75%, transparent 100%)",
+              ].join(", "),
+              maskComposite: "intersect",
+            }}
+          >
+            <Image
+              src={image!}
+              alt={signeeName}
+              fill
+              unoptimized
+              className="object-cover object-top"
+              onError={() => setImageError(true)}
+            />
+          </div>
+        )
       ) : (
         /* Ghost initials placeholder */
         <div className="flex flex-col items-center justify-center py-20 sm:py-28 w-full">
@@ -218,7 +252,16 @@ export default function DeskEditorialSpread({
         <span className="h-px w-20 sm:w-32 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <span
           className="h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: accentColor === "violet" ? "rgba(139,92,246,0.6)" : accentColor === "cyan" ? "rgba(34,211,238,0.6)" : "rgba(52,211,153,0.6)" }}
+          style={{
+            backgroundColor:
+              accentColor === "violet"
+                ? "rgba(139,92,246,0.6)"
+                : accentColor === "cyan"
+                ? "rgba(34,211,238,0.6)"
+                : accentColor === "amber"
+                ? "rgba(245,158,11,0.6)"
+                : "rgba(52,211,153,0.6)",
+          }}
         />
         <span className="h-px w-20 sm:w-32 bg-gradient-to-l from-transparent via-white/10 to-transparent" />
       </div>
@@ -234,15 +277,15 @@ export default function DeskEditorialSpread({
       {Header}
 
       {/* Two-column spread — items-stretch keeps both columns equal height */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-stretch">
+      <div className={`grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 ${imageAspect === "group" ? "items-center" : "items-stretch"}`}>
         {align === "left" ? (
           <>
             <div className="md:col-span-7 h-full">{TextContent}</div>
-            <div className="md:col-span-5 h-full self-stretch">{VisualContent}</div>
+            <div className={`md:col-span-5 ${imageAspect === "group" ? "" : "h-full self-stretch"}`}>{VisualContent}</div>
           </>
         ) : (
           <>
-            <div className="md:col-span-5 order-2 md:order-1 h-full self-stretch">{VisualContent}</div>
+            <div className={`md:col-span-5 order-2 md:order-1 ${imageAspect === "group" ? "" : "h-full self-stretch"}`}>{VisualContent}</div>
             <div className="md:col-span-7 order-1 md:order-2 h-full">{TextContent}</div>
           </>
         )}
