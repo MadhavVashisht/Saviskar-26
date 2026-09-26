@@ -26,7 +26,7 @@ const DIGNITARIES = [
     initials: "RD",
     accent: "amber" as const,
     align: "left" as const,
-    image: "/images/legacy/rashpal-singh-dhaliwal.webp",
+    image: "/images/legacy/rashpal-singh-dhaliwal-v2.webp",
   },
   {
     id: "md-arsh-dhaliwal",
@@ -43,7 +43,7 @@ const DIGNITARIES = [
     initials: "AD",
     accent: "violet" as const,
     align: "right" as const,
-    image: "/images/legacy/arsh-dhaliwal.webp",
+    image: "/images/legacy/arsh-dhaliwal-v2.webp",
   },
   {
     id: "director-bismin",
@@ -60,7 +60,7 @@ const DIGNITARIES = [
     initials: "BD",
     accent: "emerald" as const,
     align: "left" as const,
-    image: "/images/legacy/bismin-dhaliwal.webp",
+    image: "/images/legacy/bismin-dhaliwal-v2.webp",
   },
   {
     id: "director-simran-dhaliwal",
@@ -77,7 +77,7 @@ const DIGNITARIES = [
     initials: "SD",
     accent: "cyan" as const,
     align: "right" as const,
-    image: "/images/legacy/simran-dhaliwal.webp",
+    image: "/images/legacy/simran-dhaliwal-v2.webp",
   },
   {
     id: "evp-shushil-prashar",
@@ -94,7 +94,7 @@ const DIGNITARIES = [
     initials: "SP",
     accent: "amber" as const,
     align: "left" as const,
-    image: "/images/legacy/shushil-prashar.webp",
+    image: "/images/legacy/shushil-prashar-v2.webp",
   },
   {
     id: "vc-vinay-goyal",
@@ -111,7 +111,7 @@ const DIGNITARIES = [
     initials: "VG",
     accent: "cyan" as const,
     align: "right" as const,
-    image: "/images/legacy/vinay-goyal.webp",
+    image: "/images/legacy/vinay-goyal-v2.webp",
   },
   {
     id: "provc-anish-goyal",
@@ -128,7 +128,7 @@ const DIGNITARIES = [
     initials: "AG",
     accent: "violet" as const,
     align: "left" as const,
-    image: "/images/legacy/anish-goyal.webp",
+    image: "/images/legacy/anish-goyal-v2.webp",
   },
 ] as const;
 
@@ -174,7 +174,7 @@ const ALUMNI_DIGNITARIES = [
     initials: "SAC",
     accent: "violet" as const,
     align: "right" as const,
-    image: "/images/legacy/sac-2024-2025.webp",
+    image: "/images/legacy/sac-2024-2025-v2.webp",
     imageAspect: "group" as const,
   },
   {
@@ -191,7 +191,7 @@ const ALUMNI_DIGNITARIES = [
     initials: "SAC",
     accent: "cyan" as const,
     align: "left" as const,
-    image: "/images/legacy/sac-2023-2024.webp",
+    image: "/images/legacy/sac-2023-2024-v2.webp",
     imageAspect: "group" as const,
   },
 ] as const;
@@ -283,7 +283,7 @@ export default function LegacyView() {
         {/* Full-bleed group photo banner */}
         <div className="relative w-full overflow-hidden bg-zinc-950" style={{ height: "clamp(300px, 45vw, 580px)" }}>
           <Image
-            src="/images/legacy/team-dsa-group.webp"
+            src="/images/legacy/team-dsa-group-v2.webp"
             alt="Team DSA — Department of Student Affairs"
             fill
             unoptimized
