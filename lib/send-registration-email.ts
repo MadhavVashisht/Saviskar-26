@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import QRCode from "qrcode";
+import { getEmailSender } from "@/lib/email-sender";
 
 export type TeamMember = {
   participantId: string;
@@ -71,8 +72,8 @@ export async function sendRegistrationEmail(
   data: RegistrationEmailData
 ): Promise<SendResult> {
   console.log("[REGISTER EMAIL] send-registration-email function entered");
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const senderResult = getEmailSender();
   console.log(`[REGISTER EMAIL] RESEND_API_KEY present: ${!!apiKey}`);
 
   if (!apiKey) {
@@ -87,10 +88,8 @@ export async function sendRegistrationEmail(
     };
   }
 
-  if (!fromEmail) {
-    console.error(
-      "sendRegistrationEmail: RESEND_FROM_EMAIL is missing."
-    );
+  if (!senderResult.success) {
+    console.error(senderResult.internalLog);
     return {
       success: false,
       emailsSent: 0,
@@ -98,6 +97,8 @@ export async function sendRegistrationEmail(
       error: "Sender email is not configured.",
     };
   }
+
+  const fromEmail = senderResult.from;
 
   const {
     participantId,
@@ -934,26 +935,13 @@ export async function sendRegistrationEmail(
           ]
         : undefined;
 
-      let { data, error } = await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: fromEmail,
         to: [recipient.email],
         subject: subjectLine,
         html: emailHtml,
         ...(attachments ? { attachments } : {}),
       });
-
-      if (error && (error as { statusCode?: number; message?: string }).statusCode === 403 && String((error as { message?: string }).message || "").includes("domain is not verified")) {
-        console.warn(`[REGISTER EMAIL] Domain not verified in Resend. Retrying with onboarding fallback for ${recipient.email}...`);
-        const fallbackRes = await resend.emails.send({
-          from: "Saviskar 2026 <onboarding@resend.dev>",
-          to: [recipient.email],
-          subject: subjectLine,
-          html: emailHtml,
-          ...(attachments ? { attachments } : {}),
-        });
-        data = fallbackRes.data;
-        error = fallbackRes.error;
-      }
 
       if (error) {
         console.error(

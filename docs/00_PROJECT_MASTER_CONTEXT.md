@@ -148,7 +148,7 @@ If email fails, the claim is released (set to `null`) so it can be retried.
 | Provider | Resend SDK |
 |---|---|
 | API Key | `RESEND_API_KEY` (env) |
-| Sender | `RESEND_FROM_EMAIL` (env) — already formatted as `Saviskar 2026 <noreply@amadhav.com>` |
+| Sender | `RESEND_FROM_EMAIL` (env) — formatted as `Saviskar 2026 <noreply@saviskar.co.in>` |
 
 **Important**: The sender is used **directly**. Do NOT wrap it in another `Saviskar 2026 <...>` layer.
 
