@@ -9,10 +9,13 @@ import {
   MapPin,
   Users,
   Trophy,
+  Lock,
 } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/ui/Navbar";
+import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 export const revalidate = 300;
 
@@ -57,6 +60,19 @@ export default async function EventPage({
   }>;
 }) {
   const { category, event } = await params;
+
+  if (!SITE_ACCESS.EVENT_DETAILS_ENABLED) {
+    return (
+      <TerminalPlaceholder
+        moduleCode="EVENT.DOSSIER"
+        moduleName="Competition Dossier & Registration"
+        category="REALM EVENT GATEWAY"
+        classification="ACCESS LOCKED // IMMINENT LAUNCH"
+        estimatedRelease="PHASE 2 ACCREDITATION"
+        summary={`Detailed competition problem statements, judging rubrics, round schedules, and team accreditation gateways for Saviskar 2026 at CGC University, Mohali will unlock shortly. Explore verified realm competitions and rulebooks in the meantime.`}
+      />
+    );
+  }
 
   // Fetch event directly from Supabase
   const { data: currentEvent, error } = await supabase
@@ -189,7 +205,7 @@ const heroImage =
 
             </div>
 
-            {currentEvent.registration_open ? (
+            {currentEvent.registration_open && SITE_ACCESS.REGISTRATIONS_ENABLED ? (
               <a
                 href="#register"
                 className="flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-transform hover:scale-[1.03]"
@@ -197,6 +213,11 @@ const heroImage =
                 Register
                 <ArrowUpRight size={15} />
               </a>
+            ) : !SITE_ACCESS.REGISTRATIONS_ENABLED ? (
+              <span className="flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-5 py-2.5 text-xs sm:text-sm font-medium text-violet-300">
+                <Lock size={13} className="text-violet-400" />
+                Registrations Opening Soon
+              </span>
             ) : (
               <span className="rounded-full border border-white/15 px-6 py-3 text-sm text-white/40">
                 Registration closed
@@ -355,7 +376,35 @@ const heroImage =
 
           <div className="mt-14 flex flex-col gap-8 border-t border-white/15 pt-8 md:flex-row md:items-center md:justify-between">
 
-            {currentEvent.registration_open ? (
+            {!SITE_ACCESS.REGISTRATIONS_ENABLED ? (
+              <>
+                <div className="max-w-md">
+                  <p className="text-sm leading-6 text-white/60 md:text-base">
+                    Online accreditation for {currentEvent.name} will open soon for Saviskar 2026. Review competition guidelines and rulebooks in the meantime.
+                  </p>
+                  <p className="mt-3 text-sm font-medium text-white/75">
+                    Registration fee:{" "}
+                    {currentEvent.payment_type === "paid"
+                      ? `₹${Number(
+                          currentEvent.registration_fee || 0
+                        ).toLocaleString("en-IN")} ${
+                          currentEvent.payment_unit === "per_team"
+                            ? "per team"
+                            : "per student"
+                        }`
+                      : "Free"}
+                  </p>
+                </div>
+
+                <Link
+                  href="/register"
+                  className="flex w-fit items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/15 px-7 py-4 text-sm font-medium text-violet-200 transition-colors hover:border-violet-400 hover:bg-violet-500/25"
+                >
+                  <Lock size={15} className="text-violet-400" />
+                  <span>Registrations Opening Soon</span>
+                </Link>
+              </>
+            ) : currentEvent.registration_open ? (
               <>
                 <div className="max-w-md">
                   <p className="text-sm leading-6 text-white/40 md:text-base">

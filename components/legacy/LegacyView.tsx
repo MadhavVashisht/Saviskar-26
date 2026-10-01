@@ -159,6 +159,7 @@ const ALUMNI_DIGNITARIES = [
     initials: "AN",
     accent: "amber" as const,
     align: "left" as const,
+    image: "/images/legacy/Abrar-Nazir.png",
   },
   {
     id: "alumni-sac-2024-2025",

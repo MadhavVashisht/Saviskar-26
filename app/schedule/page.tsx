@@ -13,6 +13,8 @@ import {
 import { motion, useScroll, useSpring } from "motion/react";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/ui/Navbar";
+import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 import ScheduleTimeline from "@/components/schedule/ScheduleTimeline";
 import ThomsoReplicaMap from "@/components/schedule/ThomsoReplicaMap";
 import {
@@ -36,7 +38,7 @@ type Event = {
   registration_open: boolean;
 };
 
-export default function SchedulePage() {
+function ScheduleView() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"map" | "timeline">("map");
@@ -294,4 +296,21 @@ export default function SchedulePage() {
       )}
     </main>
   );
+}
+
+export default function SchedulePage() {
+  if (!SITE_ACCESS.SCHEDULE_ENABLED) {
+    return (
+      <TerminalPlaceholder
+        moduleCode="CHRONO.SYS"
+        moduleName="Festival Schedule & Spatial Radar"
+        category="TIMELINE PROTOCOL"
+        classification="CLASSIFIED // CLEARANCE LEVEL 4"
+        estimatedRelease="PHASE 2 RELEASE"
+        summary="Hourly competition schedules, campus stage coordinates, syndicate paper slots, and stadium headline concert timelines for Saviskar 2026 at CGC University, Mohali are undergoing final operational synchronization."
+      />
+    );
+  }
+
+  return <ScheduleView />;
 }

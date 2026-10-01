@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, FileDown, Search, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, FileDown, Lock, Search, Sparkles, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/ui/Navbar";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 const categories = {
   technical: {
@@ -202,6 +203,8 @@ export default function CategoryPage() {
 
             <a
               href={categoryInfo.rulebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               download
               className="liquid-glass flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium text-violet-300 transition hover:bg-white/10"
             >
@@ -243,6 +246,8 @@ export default function CategoryPage() {
 
               <a
                 href={categoryInfo.rulebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 download
                 className="liquid-glass flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium text-white transition hover:bg-white/15"
               >
@@ -304,7 +309,16 @@ export default function CategoryPage() {
             )}
           </div>
 
-          <div className="mt-16 space-y-4">
+          {!SITE_ACCESS.EVENT_DETAILS_ENABLED && (
+            <div className="liquid-glass mt-8 flex items-center gap-3 rounded-2xl border border-violet-500/30 bg-violet-950/25 px-5 py-3.5 text-xs text-violet-200">
+              <Lock size={14} className="shrink-0 text-violet-400" />
+              <span>
+                Official competition lineup for {categoryInfo.title}. Individual dossiers, round parameters, and registration gateways will unlock closer to the festival.
+              </span>
+            </div>
+          )}
+
+          <div className="mt-12 space-y-4">
             {/* Loading */}
             {loading && (
               <div className="py-20 text-center">
@@ -318,59 +332,92 @@ export default function CategoryPage() {
             {/* Events List */}
             {!loading &&
               filteredEvents.length > 0 &&
-              filteredEvents.map((item, index) => (
-                <Link
-                  key={item.id}
-                  href={`/events/${category}/${item.slug}`}
-                  className="liquid-glass group flex flex-col md:flex-row md:items-center md:justify-between gap-6 rounded-[24px] border border-white/10 p-7 transition-all hover:border-violet-500/40 hover:bg-white/[0.05] hover:shadow-[0_15px_40px_rgba(168,85,247,0.15)] md:p-8"
-                >
-                  <div className="flex items-start gap-6 md:gap-10">
-                    <span className="font-mono text-sm tracking-widest text-violet-400/80 mt-1">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
+              filteredEvents.map((item, index) => {
+                const cardInner = (
+                  <>
+                    <div className="flex items-start gap-6 md:gap-10">
+                      <span className="font-mono text-sm tracking-widest text-violet-400/80 mt-1">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
 
-                    <div>
-                      <h3 className="text-2xl font-medium tracking-tight text-white transition-colors group-hover:text-violet-200 md:text-3xl">
-                        {item.name}
-                      </h3>
+                      <div>
+                        <h3 className="text-2xl font-medium tracking-tight text-white transition-colors group-hover:text-violet-200 md:text-3xl">
+                          {item.name}
+                        </h3>
 
-                      {item.description && (
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
-                          {item.description}
-                        </p>
-                      )}
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {item.registration_open ? (
-                          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-emerald-300">
-                            Registration Open
-                          </span>
-                        ) : (
-                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white/40">
-                            Registration Closed
-                          </span>
+                        {item.description && (
+                          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
+                            {item.description}
+                          </p>
                         )}
 
-                        {item.registration_type && (
-                          <span className="liquid-glass rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-violet-300">
-                            {item.registration_type}
-                          </span>
-                        )}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {!SITE_ACCESS.EVENT_DETAILS_ENABLED ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-violet-300">
+                              <Lock size={10} />
+                              Dossier Locked
+                            </span>
+                          ) : item.registration_open ? (
+                            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-emerald-300">
+                              Registration Open
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white/40">
+                              Registration Closed
+                            </span>
+                          )}
 
-                        {item.venue && (
-                          <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/40">
-                            {item.venue}
-                          </span>
-                        )}
+                          {item.registration_type && (
+                            <span className="liquid-glass rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-violet-300">
+                              {item.registration_type}
+                            </span>
+                          )}
+
+                          {item.venue && (
+                            <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/40">
+                              {item.venue}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 text-white transition-all duration-300 group-hover:scale-110 group-hover:border-white group-hover:bg-white group-hover:text-black">
-                    <ArrowUpRight size={18} className="transition-transform group-hover:rotate-45" />
+                    <div className="flex items-center gap-2.5">
+                      {!SITE_ACCESS.EVENT_DETAILS_ENABLED ? (
+                        <>
+                          <span className="hidden sm:inline font-mono text-[10px] tracking-wider uppercase text-violet-300/60">
+                            Releasing Soon
+                          </span>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300">
+                            <Lock size={16} />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 text-white transition-all duration-300 group-hover:scale-110 group-hover:border-white group-hover:bg-white group-hover:text-black">
+                          <ArrowUpRight size={18} className="transition-transform group-hover:rotate-45" />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+
+                return SITE_ACCESS.EVENT_DETAILS_ENABLED ? (
+                  <Link
+                    key={item.id}
+                    href={`/events/${category}/${item.slug}`}
+                    className="liquid-glass group flex flex-col md:flex-row md:items-center md:justify-between gap-6 rounded-[24px] border border-white/10 p-7 transition-all hover:border-violet-500/40 hover:bg-white/[0.05] hover:shadow-[0_15px_40px_rgba(168,85,247,0.15)] md:p-8"
+                  >
+                    {cardInner}
+                  </Link>
+                ) : (
+                  <div
+                    key={item.id}
+                    className="liquid-glass group flex flex-col md:flex-row md:items-center md:justify-between gap-6 rounded-[24px] border border-white/10 p-7 transition-all hover:border-white/20 hover:bg-white/[0.03] md:p-8"
+                  >
+                    {cardInner}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
 
             {/* Empty Search State */}
             {!loading && categoryEvents.length > 0 && filteredEvents.length === 0 && (

@@ -36,7 +36,7 @@ export const festivalEditions: FestivalEdition[] = [
     year: "2025",
     edition: "Saviskar 2025",
     subtitle: "The Electric Double-Header",
-    attendance: "25,000+ Crowd",
+    attendance: "35,000+ Crowd",
     tagline:
       "Two monumental nights that ignited CGC University into Northern India's loudest stadium chorus.",
     heroImage: "/images/concert.webp",
@@ -48,7 +48,7 @@ export const festivalEditions: FestivalEdition[] = [
         artists: "Kushagra Thakur & Sunanda Sharma",
         genre: "Indie Rock • Acoustic Melodies • Powerhouse Punjabi Folk",
         description:
-          "Opening night electrified the stadium, starting with Kushagra Thakur's intimate acoustic anthems and soulful indie melodies, escalating into Sunanda Sharma's high-octane Punjabi folk set that had 25,000 voices singing every lyric at the top of their lungs.",
+          "Opening night electrified the stadium, starting with Kushagra Thakur's intimate acoustic anthems and soulful indie melodies, escalating into Sunanda Sharma's high-octane Punjabi folk set that had 35,000 voices singing every lyric at the top of their lungs.",
         badge: "OPENING NIGHT",
         image: "/images/artists/artist-3-kushagra-sunanda.webp",
         highlights: [
@@ -64,7 +64,7 @@ export const festivalEditions: FestivalEdition[] = [
         artists: "Salim-Sulaiman",
         genre: "Bollywood Symphony • Sufi Anthems • Live Orchestra & Dhol",
         description:
-          "The iconic composer duo orchestrated an unforgettable stadium finale with sweeping Bollywood classics, soaring Sufi rhythms, live dhol percussion, and 25,000 voices echoing under the night sky.",
+          "The iconic composer duo orchestrated an unforgettable stadium finale with sweeping Bollywood classics, soaring Sufi rhythms, live dhol percussion, and 35,000 voices echoing under the night sky.",
         badge: "GRAND FINALE",
         image: "/images/artists/artist-4-salim-sulaiman.webp",
         highlights: [

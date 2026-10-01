@@ -112,7 +112,7 @@ export default function PastPerformances() {
               transition={{ delay: 0.1, duration: 0.75 }}
               className="mt-7 max-w-[500px] font-mono text-sm leading-7 text-white/60 sm:text-base"
             >
-              &gt; Archival telemetry confirms: Every Star Night sends seismic sonic waves through CGC University. Relive the multi-day festival transmissions that united 25,000+ voices beneath the mainstage sky.
+              &gt; Archival telemetry confirms: Every Star Night sends seismic sonic waves through CGC University. Relive the multi-day festival transmissions that united 35,000+ voices beneath the mainstage sky.
             </motion.p>
 
             <div className="mt-10 flex items-center gap-4 font-mono text-[9px] uppercase tracking-[0.35em] text-white/35">

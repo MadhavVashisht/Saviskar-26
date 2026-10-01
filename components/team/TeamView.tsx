@@ -22,7 +22,9 @@ import {
   Maximize2,
   X,
   Download,
+  Lock,
 } from "lucide-react";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 export default function TeamView() {
   const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
@@ -359,13 +361,23 @@ export default function TeamView() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/register"
-              className="liquid-glass inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white border-violet-500/50 bg-violet-600/30 transition-all hover:bg-violet-600/40 hover:scale-105 shadow-[0_0_25px_rgba(168,85,247,0.35)]"
-            >
-              <span>Fast-Track Registration</span>
-              <ArrowUpRight size={14} />
-            </Link>
+            {SITE_ACCESS.REGISTRATIONS_ENABLED ? (
+              <Link
+                href="/register"
+                className="liquid-glass inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white border-violet-500/50 bg-violet-600/30 transition-all hover:bg-violet-600/40 hover:scale-105 shadow-[0_0_25px_rgba(168,85,247,0.35)]"
+              >
+                <span>Fast-Track Registration</span>
+                <ArrowUpRight size={14} />
+              </Link>
+            ) : (
+              <Link
+                href="/register"
+                className="liquid-glass inline-flex items-center gap-2 rounded-full border border-violet-500/30 px-6 py-3 text-sm font-semibold text-violet-200 transition-all hover:border-violet-400 hover:bg-white/10"
+              >
+                <Lock size={14} className="text-violet-400" />
+                <span>Registrations Opening Soon</span>
+              </Link>
+            )}
 
             <Link
               href="/events"

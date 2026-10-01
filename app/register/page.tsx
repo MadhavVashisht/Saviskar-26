@@ -8,6 +8,8 @@ import RegistrationFlowManager from "@/components/registration/RegistrationFlowM
 import { getRegistrationSession } from "@/lib/auth/session";
 import Footer from "@/components/ui/Footer";
 import Navbar from "@/components/ui/Navbar";
+import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 export const metadata: Metadata = {
   title: "Official Registration Portal",
@@ -36,6 +38,19 @@ export default async function RegisterPage({
 }: {
   searchParams: Promise<{ from?: string }>;
 }) {
+  if (!SITE_ACCESS.REGISTRATIONS_ENABLED) {
+    return (
+      <TerminalPlaceholder
+        moduleCode="ACCREDITATION.SYS"
+        moduleName="Official Registration Portal"
+        category="ACCREDITATION PROTOCOL"
+        classification="ACCESS RESTRICTED // PHASE 2 OPENING"
+        estimatedRelease="REGISTRATIONS OPENING SOON"
+        summary="Online registrations and digital accreditation passes for 50+ competitions across Technical, Non-Technical, Cultural, and AIvishkar realms at CGC University, Mohali will go live shortly. Explore the competitive realms and download rulebooks in the meantime."
+      />
+    );
+  }
+
   const params = await searchParams;
   const fromAdmin = params.from === "admin";
   const session = await getRegistrationSession();

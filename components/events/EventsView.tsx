@@ -18,9 +18,11 @@ import {
   CheckCircle2,
   X,
   Compass,
+  Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/ui/Navbar";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 export interface EventItem {
   id: string;
@@ -69,7 +71,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-cyan-400",
     accentBorder: "hover:border-cyan-500/50",
     accentGlow: "rgba(6,182,212,0.25)",
-    prizePool: "₹3,50,000",
+    prizePool: "₹8,00,000+",
   },
   {
     id: "non-technical",
@@ -86,7 +88,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-amber-400",
     accentBorder: "hover:border-amber-500/50",
     accentGlow: "rgba(245,158,11,0.25)",
-    prizePool: "₹2,50,000",
+    prizePool: "₹4,00,000",
   },
   {
     id: "cultural",
@@ -103,7 +105,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-fuchsia-400",
     accentBorder: "hover:border-fuchsia-500/50",
     accentGlow: "rgba(217,70,239,0.25)",
-    prizePool: "₹4,00,000",
+    prizePool: "₹8,00,000+",
   },
   {
     id: "aivishkar",
@@ -133,7 +135,7 @@ export const REALMS_DATA: Realm[] = [
 export const METRICS = [
   { label: "PREMIER REALMS", value: "04", subtitle: "Technical, Non-Tech, Cultural, AIvishkar" },
   { label: "COMPETITIONS", value: "50+", subtitle: "Certified Inter-University Events" },
-  { label: "PRIZE POOL", value: "₹10L+", subtitle: "Cash Rewards, Trophies & AI Grants" },
+  { label: "PRIZE POOL", value: "₹25L+", subtitle: "Cash Rewards, Trophies & AI Grants" },
   { label: "COLLEGES", value: "500+", subtitle: "Universities Across All India" },
 ];
 
@@ -349,14 +351,14 @@ export default function EventsView() {
       </section>
 
       {/* 5. INTERACTIVE REALM FILTER & SEARCH BAR */}
-      <section className="sticky top-4 z-30 mx-auto max-w-[1440px] px-5 py-4 md:px-10">
-        <div className="liquid-glass flex flex-col gap-3 rounded-2xl border border-white/15 p-2.5 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.7)] sm:flex-row sm:items-center sm:justify-between">
+      <section className="sticky top-20 md:top-24 z-30 mx-auto max-w-[1440px] px-5 py-3 md:px-10">
+        <div className="liquid-glass flex flex-col gap-3 rounded-2xl border border-white/15 bg-black/80 p-2 sm:p-2.5 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] sm:flex-row sm:items-center sm:justify-between">
           {/* Realm Switcher Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all ${
+              className={`rounded-full px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-medium tracking-wide transition-all whitespace-nowrap ${
                 selectedCategory === "all"
                   ? "bg-white text-black font-semibold shadow-[0_0_15px_rgba(255,255,255,0.4)]"
                   : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -368,26 +370,27 @@ export default function EventsView() {
             {REALMS_DATA.map((realm) => {
               const isSelected = selectedCategory === realm.id;
               const Icon = realm.icon;
+              const tabLabel = realm.id === "aivishkar" ? "AIvishkar" : realm.title;
               return (
                 <button
                   key={realm.id}
                   type="button"
                   onClick={() => setSelectedCategory(realm.id)}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium tracking-wide transition-all ${
+                  className={`inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium tracking-wide transition-all whitespace-nowrap ${
                     isSelected
                       ? "bg-white text-black font-semibold shadow-[0_0_15px_rgba(255,255,255,0.4)]"
                       : "text-white/70 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Icon size={13} className={isSelected ? "text-black" : realm.accentColor} />
-                  <span>{realm.title}</span>
+                  <span>{tabLabel}</span>
                 </button>
               );
             })}
           </div>
 
           {/* Quick Search */}
-          <div className="relative flex items-center">
+          <div className="relative flex items-center shrink-0">
             <Search size={14} className="pointer-events-none absolute left-3.5 text-white/40" />
             <input
               type="text"
@@ -395,7 +398,7 @@ export default function EventsView() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search competitions, robotics, dance, AI..."
               aria-label="Search events"
-              className="w-full rounded-full border border-white/10 bg-black/40 pl-9 pr-8 py-1.5 text-xs text-white placeholder-white/40 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400/50 sm:w-64"
+              className="w-full rounded-full border border-white/10 bg-white/[0.04] pl-9 pr-8 py-1.5 text-xs text-white placeholder-white/40 focus:border-violet-400 focus:bg-black/60 focus:outline-none focus:ring-1 focus:ring-violet-400/50 sm:w-60 lg:w-72 transition-colors"
             />
             {searchQuery && (
               <button
@@ -561,7 +564,11 @@ export default function EventsView() {
                               realm.displayedChips.map((event) => (
                                 <Link
                                   key={event.id}
-                                  href={`/events/${realm.slug}/${event.slug}`}
+                                  href={
+                                    SITE_ACCESS.EVENT_DETAILS_ENABLED
+                                      ? `/events/${realm.slug}/${event.slug}`
+                                      : `/events/${realm.slug}#competitions`
+                                  }
                                   className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs text-white/75 transition-colors hover:border-violet-400/50 hover:bg-white/10 hover:text-white"
                                 >
                                   {event.name}
@@ -579,31 +586,48 @@ export default function EventsView() {
 
                         {/* CTAs & Metrics */}
                         <div className="mt-8 sm:mt-10 flex flex-wrap items-center gap-4 pt-6 border-t border-white/10">
-                          <Link
-                            href={`/events/${realm.slug}`}
-                            className="group/btn inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-black transition-all hover:scale-105 hover:bg-violet-100 shadow-[0_10px_25px_rgba(255,255,255,0.2)]"
-                          >
-                            <span>Explore {realm.title.split(":")[0]} Events</span>
-                            <ArrowUpRight
-                              size={16}
-                              className="transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5"
-                            />
-                          </Link>
+                          {realm.id !== "aivishkar" ? (
+                            <>
+                              <Link
+                                href={`/events/${realm.slug}`}
+                                className="group/btn inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-black transition-all hover:scale-105 hover:bg-violet-100 shadow-[0_10px_25px_rgba(255,255,255,0.2)]"
+                              >
+                                <span>Explore {realm.title.split(":")[0]} Events</span>
+                                <ArrowUpRight
+                                  size={16}
+                                  className="transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5"
+                                />
+                              </Link>
 
-                          <a
-                            href={realm.rulebookUrl}
-                            download
-                            className="liquid-glass inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium text-white transition-all hover:bg-white/10 hover:border-violet-400"
-                          >
-                            <FileDown size={15} />
-                            <span>Download Rulebook</span>
-                          </a>
+                              <a
+                                href={realm.rulebookUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download
+                                className="liquid-glass inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium text-white transition-all hover:bg-white/10 hover:border-violet-400"
+                              >
+                                <FileDown size={15} />
+                                <span>Download Rulebook</span>
+                              </a>
 
-                          <div className="ml-auto hidden xl:flex items-center gap-4 text-xs font-mono text-white/50">
-                            <span>{realm.dynamicEventCount}</span>
-                            <span>•</span>
-                            <span className="text-violet-300">{realm.prizePool}</span>
-                          </div>
+                              <div className="ml-auto flex items-center gap-4 text-xs font-mono text-white/50">
+                                <span>{realm.dynamicEventCount}</span>
+                                <span>•</span>
+                                <span className="text-violet-300 font-semibold">{realm.prizePool}</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+                              <span className="liquid-glass inline-flex items-center gap-2 rounded-full border border-violet-500/30 px-5 py-2.5 text-xs font-mono tracking-wider text-violet-300">
+                                <Sparkles size={13} className="text-violet-400" />
+                                <span>Flagship Exposition Tracks Announced Above</span>
+                              </span>
+                              <div className="flex items-center gap-2 font-mono text-xs text-white/60">
+                                <span>Grant Pool:</span>
+                                <span className="text-violet-300 font-semibold text-sm">{realm.prizePool}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -659,13 +683,23 @@ export default function EventsView() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black transition-all hover:scale-105 hover:bg-violet-100 shadow-[0_10px_25px_rgba(255,255,255,0.3)]"
-            >
-              <span>Register Your Squad</span>
-              <ArrowUpRight size={16} />
-            </Link>
+            {SITE_ACCESS.REGISTRATIONS_ENABLED ? (
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black transition-all hover:scale-105 hover:bg-violet-100 shadow-[0_10px_25px_rgba(255,255,255,0.3)]"
+              >
+                <span>Register Your Squad</span>
+                <ArrowUpRight size={16} />
+              </Link>
+            ) : (
+              <Link
+                href="/register"
+                className="liquid-glass inline-flex items-center gap-2 rounded-full border border-violet-500/30 px-8 py-3.5 text-sm font-semibold text-violet-200 transition-all hover:border-violet-400 hover:bg-white/10"
+              >
+                <Lock size={15} className="text-violet-400" />
+                <span>Registrations Opening Soon</span>
+              </Link>
+            )}
 
             <Link
               href="/starnight"

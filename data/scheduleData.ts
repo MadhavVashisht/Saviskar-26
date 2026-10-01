@@ -605,7 +605,7 @@ export function formatDatabaseTime(timeStr: string | null | undefined, fallback 
 
   const parts = timeStr.split(":");
   if (parts.length >= 2) {
-    let hour = parseInt(parts[0], 10);
+    const hour = parseInt(parts[0], 10);
     const minute = parts[1];
     if (!isNaN(hour)) {
       // Fest competitions between 1:00 and 7:00 are PM (afternoon/evening), not 3:00 AM

@@ -1252,8 +1252,8 @@ export default function RegistrationForm({
                 </p>
                 <p className="mt-2 text-[11px] text-zinc-400">
                   Save this ID. If your network blocks online checkout, support can verify your fee using this ID at{" "}
-                  <a href="mailto:support@saviskar.co.in" className="text-violet-300 underline underline-offset-2">
-                    support@saviskar.co.in
+                  <a href="mailto:saviskar@cgcuniversity.in" className="text-violet-300 underline underline-offset-2">
+                    saviskar@cgcuniversity.in
                   </a>
                   .
                 </p>

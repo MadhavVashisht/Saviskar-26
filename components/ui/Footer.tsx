@@ -204,20 +204,10 @@ export default function Footer() {
                 </a>
 
                 <a
-                  href="https://www.linkedin.com/company/cgcuniversitymohali/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-zinc-400 transition-colors hover:text-white flex items-center gap-1"
-                >
-                  <span>LinkedIn</span>
-                  <ArrowUpRight size={13} className="opacity-70" />
-                </a>
-
-                <a
                   href="mailto:saviskar@cgcuniversity.in"
                   className="text-sm text-zinc-400 transition-colors hover:text-white flex items-center gap-1"
                 >
-                  <span>Email Helpline</span>
+                  <span>Email: saviskar@cgcuniversity.in</span>
                   <ArrowUpRight size={13} className="opacity-70" />
                 </a>
               </div>
@@ -398,7 +388,7 @@ export default function Footer() {
 
                   {/* Campus Venue Footnote */}
                   <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center text-[11px] text-zinc-400">
-                    Campus Venue: CGC University, Sector 112, Landran, Mohali, Punjab - 140307, India
+                    Campus Venue: CGC University, Mohali, State Highway 12A, Chandigarh-Sirhind Road, Sahibzada Ajit Singh Nagar, Punjab 140307
                   </div>
                 </motion.div>
               </motion.div>

@@ -19,6 +19,7 @@ import {
   MapPin,
   Flame,
   Volume2,
+  Maximize2,
 } from "lucide-react";
 
 function YoutubeIcon({ size = 16, className = "" }: { size?: number; className?: string }) {
@@ -349,7 +350,7 @@ export default function RedesignedGalleryPage() {
             <div className="text-xs uppercase tracking-wider text-white/40">Realms Captured</div>
           </div>
           <div className="border-l border-amber-500/40 pl-4">
-            <div className="font-mono text-2xl font-bold text-white md:text-3xl">25K+</div>
+            <div className="font-mono text-2xl font-bold text-white md:text-3xl">35K+</div>
             <div className="text-xs uppercase tracking-wider text-white/40">Audience Pulse</div>
           </div>
         </div>
@@ -547,7 +548,7 @@ export default function RedesignedGalleryPage() {
                         alt={img.title}
                         className="object-cover group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent transition-opacity group-hover:opacity-90 z-20 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-20 pointer-events-none" />
 
                       {/* Top Badges */}
                       <div className="absolute left-5 top-5 z-30 flex items-center gap-2">
@@ -562,14 +563,9 @@ export default function RedesignedGalleryPage() {
                         )}
                       </div>
 
-                      {/* Bottom Info */}
-                      <div className="absolute inset-x-0 bottom-0 p-6 z-30">
-                        <h3 className="text-xl font-semibold text-white transition-colors group-hover:text-violet-200">
-                          {img.title}
-                        </h3>
-                        <p className="mt-1.5 line-clamp-2 text-xs text-white/60">
-                          {img.description}
-                        </p>
+                      {/* Hover Zoom Icon */}
+                      <div className="absolute right-5 bottom-5 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white/80 opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 group-hover:scale-110">
+                        <Maximize2 size={14} />
                       </div>
                     </div>
                   </motion.div>
@@ -691,7 +687,7 @@ export default function RedesignedGalleryPage() {
                       alt={img.title}
                       className="object-cover group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent transition-opacity group-hover:opacity-90 z-20 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-20 pointer-events-none" />
 
                     <div className="absolute left-5 top-5 z-30 flex items-center gap-2">
                       <span className="rounded-full border border-white/20 bg-black/60 px-3 py-1 font-mono text-[10px] tracking-wider text-violet-300 backdrop-blur-md">
@@ -705,13 +701,9 @@ export default function RedesignedGalleryPage() {
                       )}
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 p-6 z-30">
-                      <h3 className="text-xl font-semibold text-white transition-colors group-hover:text-violet-200">
-                        {img.title}
-                      </h3>
-                      <p className="mt-1.5 line-clamp-2 text-xs text-white/60">
-                        {img.description}
-                      </p>
+                    {/* Hover Zoom Icon */}
+                    <div className="absolute right-5 bottom-5 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white/80 opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 group-hover:scale-110">
+                      <Maximize2 size={14} />
                     </div>
                   </div>
                 </motion.div>
@@ -1038,12 +1030,18 @@ export default function RedesignedGalleryPage() {
                       </>
                     )}
                   </div>
-                  <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">
-                    {activePhoto.title}
-                  </h2>
-                  <p className="text-xs text-white/60">
-                    {activePhoto.description}
-                  </p>
+                  {!activePhoto.title?.startsWith("Saviskar Archive") && (
+                    <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">
+                      {activePhoto.title}
+                    </h2>
+                  )}
+                  {!activePhoto.description?.includes("DSC") &&
+                    !activePhoto.description?.includes("SMT") &&
+                    !activePhoto.description?.includes("DJI") && (
+                      <p className="text-xs text-white/60">
+                        {activePhoto.description}
+                      </p>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">

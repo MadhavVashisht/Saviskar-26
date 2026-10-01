@@ -3,6 +3,8 @@ import dynamic from "next/dynamic";
 import Navbar from "@/components/ui/Navbar";
 import Hero from "@/components/starnight/Hero/Hero";
 import PastPerformances from "@/components/starnight/PastPerformances/PastPerformances";
+import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 const GuessArtist = dynamic(
   () => import("@/components/starnight/GuessArtist/GuessArtist")
@@ -26,6 +28,19 @@ export const metadata: Metadata = {
 };
 
 export default function StarNightPage() {
+  if (!SITE_ACCESS.STARNIGHT_ENABLED) {
+    return (
+      <TerminalPlaceholder
+        moduleCode="STARNIGHT.SYS"
+        moduleName="Star Night Concerts"
+        category="ARTIST PROTOCOL"
+        classification="TOP SECRET // ARTIST LOCKDOWN"
+        estimatedRelease="HEADLINER DROP STAGE"
+        summary="Chart-topping headline concert reveals, celebrity artists, stadium lights, and stadium pass allocations for Saviskar 2026 at CGC University, Mohali will be decrypted soon."
+      />
+    );
+  }
+
   return (
     <main className="w-full overflow-x-hidden bg-black">
       <Navbar />

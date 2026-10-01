@@ -4,6 +4,7 @@ import { sendRegistrationEmail } from "@/lib/send-registration-email";
 import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 import { generatePaymentResumeUrl } from "@/lib/payments/resume-token";
 import { getRegistrationSession } from "@/lib/auth/session";
+import { SITE_ACCESS } from "@/lib/config/site-access";
 
 type MemberInput = {
   name?: unknown;
@@ -141,6 +142,16 @@ function normalizeMembers(
 export async function POST(
   request: NextRequest
 ) {
+  // =====================================================
+  // 0. FEATURE GATE / SITE ACCESS CHECK
+  // =====================================================
+  if (!SITE_ACCESS.REGISTRATIONS_ENABLED) {
+    return errorResponse(
+      "Registrations are currently closed. Portal will open in Phase 2 for Saviskar 2026.",
+      403
+    );
+  }
+
   // =====================================================
   // 1. REGISTRATION SESSION AUTHENTICATION
   // =====================================================
