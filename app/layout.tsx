@@ -33,28 +33,68 @@ export const metadata: Metadata = {
   applicationName: "Saviskar 2026",
   referrer: "origin-when-cross-origin",
   title: {
-    default: "Saviskar 2026 | Aevorian Reverie — Annual National University Fest | CGC University, Mohali",
-    template: "%s | Saviskar 2026 — Aevorian Reverie | CGC University, Mohali",
+    default: "Saviskar 2026 | CGC University Mohali Fest — Aevorian Reverie | Official Portal",
+    template: "%s | Saviskar 2026 (CGC Fest) — Aevorian Reverie | CGC University, Mohali",
   },
   description:
-    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ competitive realms, ₹25L+ prize pool, national hackathons, RoboWars, cultural battlefields, and headline Star Night concerts.",
+    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ competitive realms, ₹25L+ prize pool, national hackathons, RoboWars, cultural battlefields, and headline Star Night concerts.",
   keywords: [
+    // Primary Brand & Common Misspellings / Phonetic Variations
     "Saviskar 2026",
     "Saviskar",
     "Savishkar",
     "Savishkar 2026",
-    "Saviskar CGC",
+    "Sawiskar",
+    "Sawishkar",
+    "Saviskar '26",
+    "Saviskar26",
+    "Savishkar26",
+    "Saviskar-26",
     "Saviskar Fest",
-    "Saviskar CGC University",
+    "Savishkar Fest",
+
+    // Theme, Meaning, Etymology & Common Theme Misspellings
     "Aevorian Reverie",
+    "Aevorian Reviere",
+    "Aevorian Revire",
+    "Aevorian Revrie",
+    "Aevorian Reveire",
+    "Evorian Reverie",
+    "Aeovorian Reverie",
+    "Aevorian Reverie meaning",
+    "Aevorian Reverie theme",
     "Where Tomorrow Dreams Awake",
     "A future imagined so vividly it begins to exist",
+    "Saviskar theme meaning",
+    "Saviskar etymology",
     "Srijan",
     "Avishkar",
-    "CGC University Mohali",
+
+    // CGC / University Specific High-Traffic Queries
+    "CGC",
+    "CGC Fest",
+    "CGC Fest 2026",
+    "CGC University",
+    "CGC University Fest",
+    "CGC Mohali",
     "CGC Mohali fest",
+    "CGC Landran",
     "CGC Landran fest",
+    "CGC Chandigarh",
+    "Chandigarh Group of Colleges",
     "Chandigarh Group of Colleges annual fest",
+    "CGC Saviskar",
+    "Saviskar CGC",
+    "CGC Annual Fest",
+    "CGC Tech Fest",
+    "CGC Cultural Fest",
+    "CGC Star Night",
+    "CGC Hackathon",
+    "CGC Events",
+    "CGC Campus",
+    "CGC University Mohali Fest 2026",
+
+    // Regional & College Fest Queries
     "Annual National University Festival",
     "North India biggest university fest",
     "Techno-Cultural Fest 2026",
@@ -98,11 +138,11 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
+    title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali (CGC Fest)",
     description:
       "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, 500+ Colleges, 35,000+ Participants, ₹25L+ Prize Pool.",
     url: "https://saviskar.co.in",
-    siteName: "Saviskar 2026 — Aevorian Reverie",
+    siteName: "Saviskar 2026 — CGC University",
     locale: "en_IN",
     type: "website",
     images: [
@@ -116,7 +156,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
+    title: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali (CGC Fest)",
     description:
       "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, ₹25L+ Prize Pool.",
     images: ["/images/concert-stadium.webp"],
@@ -135,6 +175,8 @@ export const metadata: Metadata = {
 };
 
 // Rich Structured Data (JSON-LD) Schemas
+
+// 1. Festival / Event Schema (With Typos & Alternate Names)
 const jsonLdFestival = {
   "@context": "https://schema.org",
   "@type": "Festival",
@@ -143,15 +185,34 @@ const jsonLdFestival = {
   alternateName: [
     "Saviskar 2026",
     "Saviskar",
-    "Savishkar 2026",
     "Savishkar",
-    "Aevorian Reverie",
+    "Savishkar 2026",
+    "Sawiskar",
+    "Sawishkar",
+    "Saviskar '26",
+    "Saviskar26",
+    "Saviskar-26",
     "Saviskar Fest",
+    "Savishkar Fest",
+    "Aevorian Reverie",
+    "Aevorian Reviere",
+    "Aevorian Revire",
+    "Aevorian Revrie",
+    "Where Tomorrow Dreams Awake",
+    "CGC Fest",
+    "CGC Fest 2026",
     "CGC University Fest",
     "CGC Mohali Fest",
+    "CGC Landran Fest",
+    "CGC Annual Fest",
+    "CGC Tech Fest",
+    "CGC Cultural Fest",
+    "CGC Star Night",
+    "CGC Saviskar",
+    "Saviskar CGC",
   ],
   description:
-    "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. Featuring 50+ competitive realms across technology, cultural arts, national hackathons, combat robotics, and headline Star Night concerts.",
+    "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). A future imagined so vividly, it begins to exist. Featuring 50+ competitive realms across technology, cultural arts, national hackathons, combat robotics, and headline Star Night concerts.",
   url: "https://saviskar.co.in",
   image: [
     "https://saviskar.co.in/images/concert-stadium.webp",
@@ -164,6 +225,7 @@ const jsonLdFestival = {
   location: {
     "@type": "Place",
     name: "CGC University, Mohali",
+    alternateName: ["CGC", "CGC Mohali", "CGC Landran", "Chandigarh Group of Colleges"],
     address: {
       "@type": "PostalAddress",
       streetAddress: "State Highway 12A, Chandigarh-Sirhind Road",
@@ -181,6 +243,7 @@ const jsonLdFestival = {
   organizer: {
     "@type": "CollegeOrUniversity",
     name: "CGC University, Mohali",
+    alternateName: ["CGC", "CGC Mohali", "CGC Landran", "Chandigarh Group of Colleges"],
     url: "https://cgcuniversity.in",
     sameAs: [
       "https://www.instagram.com/saviskar_cgc/",
@@ -236,16 +299,25 @@ const jsonLdFestival = {
   ],
 };
 
+// 2. Definitive Institutional University Entity (Dominate "CGC" Searches)
 const jsonLdUniversity = {
   "@context": "https://schema.org",
   "@type": "CollegeOrUniversity",
-  "@id": "https://cgcuniversity.in/#university",
+  "@id": "https://cgcuniversity.in/#cgc-university",
   name: "CGC University, Mohali",
   alternateName: [
-    "Chandigarh Group of Colleges University, Mohali",
+    "CGC",
+    "CGC University",
     "CGC Mohali",
     "CGC Landran",
+    "CGC Chandigarh",
+    "Chandigarh Group of Colleges",
+    "Chandigarh Group of Colleges University, Mohali",
+    "CGC Campus",
+    "CGC Fest Host",
   ],
+  disambiguatingDescription:
+    "CGC (Chandigarh Group of Colleges / CGC University, Mohali) is a leading higher education institution in North India, host of the annual national techno-cultural university fest Saviskar 2026: Aevorian Reverie.",
   url: "https://cgcuniversity.in",
   logo: "https://saviskar.co.in/images/saviskar-logo.png",
   address: {
@@ -269,18 +341,93 @@ const jsonLdUniversity = {
   ],
 };
 
+// 3. DefinedTerm Schema: Aevorian Reverie (Theme Meaning & Typo Disambiguation)
+const jsonLdDefinedTermTheme = {
+  "@context": "https://schema.org",
+  "@type": "DefinedTerm",
+  "@id": "https://saviskar.co.in/#aevorian-reverie",
+  name: "Aevorian Reverie",
+  alternateName: [
+    "Aevorian Reviere",
+    "Aevorian Revire",
+    "Aevorian Revrie",
+    "Aevorian Reveire",
+    "Evorian Reverie",
+    "Aeovorian Reverie",
+    "Where Tomorrow Dreams Awake",
+    "A future imagined so vividly it begins to exist",
+  ],
+  termCode: "AEVORIAN-REVERIE",
+  description:
+    "The official conceptual theme of Saviskar 2026 at CGC University, Mohali. Philosophy: 'A future imagined so vividly, it begins to exist.' Etymology: 'Aevorian' evokes aeon (eternity, timeless endurance) and aurora (a new dawn of luminous intelligence). 'Reverie' signifies a state of waking dream where bold human imagination crosses into physical reality. For Saviskar's third edition, it manifests as a dream core orbiting through luminous intelligence, uniting human creativity, AI, art, and technology in one dreamscape under the banner 'Where Tomorrow Dreams Awake'.",
+  inDefinedTermSet: {
+    "@type": "DefinedTermSet",
+    name: "Saviskar Conceptual Lexicon",
+    url: "https://saviskar.co.in",
+  },
+};
+
+// 4. FAQPage Schema: Google AI Overviews & Featured Snippets Accelerator
+const jsonLdFAQ = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What is the meaning and story behind Aevorian Reverie (or Aevorian Reviere)?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Aevorian Reverie is the official conceptual theme of Saviskar 2026, North India's premier annual national techno-cultural festival hosted at CGC University, Mohali. Its guiding philosophy is 'A future imagined so vividly, it begins to exist.' Etymologically, 'Aevorian' evokes aeon (eternity, timeless endurance) and aurora (a luminous new dawn of intelligence). 'Reverie' is a state of waking dream where visionary human imagination crosses into physical reality. For Saviskar's 3rd landmark edition, it represents a world where every cycle births a more evolved reality—unifying human creativity, artificial intelligence, artistic expression, and advanced engineering into one transcendent dreamscape under the motto 'Where Tomorrow Dreams Awake'.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How is Saviskar spelled, and is it Saviskar or Savishkar?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "The official name of the festival is Saviskar (also written as Saviskar 2026 or Saviskar '26), commonly searched and phonetically written as Savishkar or Sawiskar. The name is historically derived from the fusion of 'Srijan' (creation) and 'Avishkar' (invention), celebrating the spirit of collegiate innovation, technology, and culture at CGC University, Mohali.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What is CGC's annual fest and how is CGC University connected to Saviskar?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Saviskar is the official, flagship Annual National Techno-Cultural University Festival of CGC (CGC University, Mohali / Chandigarh Group of Colleges / CGC Landran). Held annually across CGC's sprawling Mohali campus on State Highway 12A, Saviskar is organized by Team DSA (Department of Student Affairs) and the Student Advisory Council (SAC), welcoming 35,000+ student delegates from 500+ colleges across India.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What are the competitive realms and prize pool at CGC Saviskar 2026?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "CGC Saviskar 2026 features an overall ₹25,00,000+ (25 Lakhs+) prize pool spanning 50+ national competitions across 4 signature realms: 1. Technical Realm (Hackathons, Combat Robotics RoboWars, Web3, AI challenges with ₹5L+ prizes); 2. Cultural Realm (Battle of the Bands, Group Dance Choreonite, Fashion Show, Drama with ₹5L+ prizes); 3. AIvishkar (Flagship AI Tech Expo & Startup Venture Grants); 4. Non-Technical Realm (Esports tournaments including BGMI, Valorant, FIFA, Strategy, and Youth Parliament with ₹4L+ prizes); plus stadium-scale Star Night celebrity concerts.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "When and where is Saviskar 2026 held?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Saviskar 2026 takes place on October 28 and October 29, 2026 at CGC University, Mohali, located on State Highway 12A, Chandigarh-Sirhind Road, Sahibzada Ajit Singh Nagar, Punjab 140307, India. Official helpdesk contact: saviskar@cgcuniversity.in.",
+      },
+    },
+  ],
+};
+
+// 5. WebSite Schema with SearchAction
 const jsonLdWebSite = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "@id": "https://saviskar.co.in/#website",
   url: "https://saviskar.co.in",
-  name: "Saviskar 2026: Aevorian Reverie",
-  alternateName: ["Saviskar", "Savishkar 2026", "Aevorian Reverie", "CGC Fest"],
+  name: "Saviskar 2026: Aevorian Reverie | CGC Fest",
+  alternateName: ["Saviskar", "Savishkar 2026", "Aevorian Reverie", "CGC Fest", "CGC University Fest"],
   description:
-    "Official Web Portal for Saviskar 2026: Annual National Techno-Cultural University Festival at CGC University, Mohali.",
+    "Official Web Portal for Saviskar 2026: Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC).",
   inLanguage: "en-IN",
   publisher: {
-    "@id": "https://cgcuniversity.in/#university",
+    "@id": "https://cgcuniversity.in/#cgc-university",
   },
   potentialAction: {
     "@type": "SearchAction",
@@ -314,6 +461,14 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdDefinedTermTheme) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFAQ) }}
+        />
+        <script
+          type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebSite) }}
         />
       </head>
@@ -324,6 +479,45 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
+
+        {/* Semantic Knowledge Graph & Search Accessibility Block for Web Crawlers, AI Assistants & Assistive Devices */}
+        <section
+          aria-label="Saviskar 2026 Festival Overview and CGC Entity Index"
+          className="sr-only"
+        >
+          <h1>Saviskar 2026: Aevorian Reverie — Official Portal of CGC University, Mohali</h1>
+          <p>
+            Saviskar 2026 (also commonly written and searched as Savishkar, Sawiskar, or Saviskar &apos;26) is the premier Annual National Techno-Cultural University Festival organized by CGC (CGC University, Mohali / Chandigarh Group of Colleges / CGC Landran).
+          </p>
+
+          <h2>Theme Meaning &amp; Origin: Aevorian Reverie (Aevorian Reviere)</h2>
+          <p>
+            The official festival theme is <strong>Aevorian Reverie</strong> (commonly searched with phonetic spellings such as <em>aevorian reviere</em>, <em>aevorian revire</em>, <em>evorian reverie</em>, or <em>where tomorrow dreams awake</em>). The guiding philosophy of the theme is: &ldquo;A future imagined so vividly, it begins to exist.&rdquo;
+          </p>
+          <p>
+            Etymology &amp; Concept: <strong>Aevorian</strong> blends <em>aeon</em> (eternity, boundless time, and enduring legacy) with <em>aurora</em> (a luminous new dawn of human and artificial intelligence). <strong>Reverie</strong> represents a state of waking dream where visionary creative imagination transforms into physical reality. For Saviskar&apos;s 3rd landmark edition, it manifests as a dream core orbiting through luminous intelligence, uniting human creativity, artificial intelligence (AI), music, stage arts, combat robotics, and engineering into one transcendent dreamscape.
+          </p>
+          <p>
+            The festival name <strong>Saviskar</strong> originates from the linguistic fusion of <em>Srijan</em> (creation) and <em>Avishkar</em> (invention).
+          </p>
+
+          <h2>CGC University, Mohali (CGC Fest 2026)</h2>
+          <p>
+            Hosted by CGC University Mohali across State Highway 12A, Chandigarh-Sirhind Road, Punjab 140307. Organized by the Department of Student Affairs (Team DSA) and the Student Advisory Council (SAC). Welcoming 35,000+ student attendees from 500+ colleges across India.
+          </p>
+
+          <h2>Competitive Realms &amp; ₹25 Lakhs+ Prize Pool</h2>
+          <ul>
+            <li><strong>Technical Realm:</strong> National Hackathons, Combat Robotics (RoboWars), Web3, AI challenges with ₹5,00,000+ prize pool.</li>
+            <li><strong>Cultural Realm:</strong> Battle of the Bands, Mega Choreography, Runway Fashion Show, Drama with ₹5,00,000+ prize pool.</li>
+            <li><strong>AIvishkar:</strong> Flagship AI Tech Expo, Innovation Grants, Angel Pitches.</li>
+            <li><strong>Non-Technical Realm:</strong> Esports (BGMI, Valorant, FIFA), Business Management, Youth Parliament with ₹4,00,000+ prize pool.</li>
+            <li><strong>Star Night:</strong> Stadium celebrity concerts, laser pyrotechnics, and 35,000+ voices singing under the night sky.</li>
+          </ul>
+
+          <p>Dates: October 28 &ndash; October 29, 2026. Official Helpdesk Email: saviskar@cgcuniversity.in.</p>
+        </section>
+
         <SmoothScrollProvider>
           <div id="main-content" className="flex min-h-full flex-1 flex-col">
             {children}
