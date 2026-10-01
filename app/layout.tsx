@@ -14,11 +14,13 @@ export const viewport: Viewport = {
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -26,6 +28,7 @@ const instrumentSerif = Instrument_Serif({
   weight: "400",
   style: ["normal", "italic"],
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -484,6 +487,17 @@ export default function RootLayout({
         <section
           aria-label="Saviskar 2026 Festival Overview and CGC Entity Index"
           className="sr-only"
+          style={{
+            position: "absolute",
+            width: "1px",
+            height: "1px",
+            padding: 0,
+            margin: "-1px",
+            overflow: "hidden",
+            clip: "rect(0, 0, 0, 0)",
+            whiteSpace: "nowrap",
+            borderWidth: 0,
+          }}
         >
           <h1>Saviskar 2026: Aevorian Reverie — Official Portal of CGC University, Mohali</h1>
           <p>

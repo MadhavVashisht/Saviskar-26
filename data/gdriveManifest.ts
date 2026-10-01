@@ -23,7 +23,7 @@ export interface GDriveMediaItem {
 /**
  * 145 Unique High-Resolution Photos for Main Gallery (Zero repeats)
  */
-export const MAIN_GALLERY_GDRIVE_IMAGES: GDriveMediaItem[] = [
+const RAW_MAIN_GALLERY_GDRIVE_IMAGES: GDriveMediaItem[] = [
   {
     "id": "gdrive-main-1lOwxvnL3m_Y_3DkwdyBFftgzoTwozOhs",
     "fileId": "1lOwxvnL3m_Y_3DkwdyBFftgzoTwozOhs",
@@ -2782,11 +2782,36 @@ export const GLIMPSE_GALLERY_GDRIVE_IMAGES: GDriveMediaItem[] = [
   }
 ];
 
+export const MAIN_GALLERY_GDRIVE_IMAGES: GDriveMediaItem[] = new Proxy(RAW_MAIN_GALLERY_GDRIVE_IMAGES, {
+  get(target, prop, receiver) {
+    if (prop === "map") {
+      return function (
+        callback: (value: GDriveMediaItem, index: number, array: GDriveMediaItem[]) => unknown,
+        thisArg?: unknown
+      ) {
+        if (target.length === 0) return [];
+        const sample = callback.call(thisArg, target[0], 0, target);
+        if (typeof sample === "string" && typeof window !== "undefined") {
+          // If we're on the landing page (not /gallery), do not preload 145 gallery photos!
+          if (!window.location.pathname.startsWith("/gallery")) {
+            return [];
+          }
+          // If the user IS navigating directly to /gallery, preload only 8 items
+          return target.slice(0, 8).map(callback as any, thisArg);
+        }
+        return target.map(callback as any, thisArg);
+      };
+    }
+    const val = Reflect.get(target, prop, receiver);
+    return typeof val === "function" ? val.bind(target) : val;
+  },
+});
+
 /**
  * Exactly 175 Unique High-Resolution Items for the 3D Dome Gallery (Zero repeats)
  * Each of the 175 tiles corresponds to a distinct high-resolution original file.
  */
-export const GLIMPSE_175_UNIQUE_TILES: GDriveMediaItem[] = [
+const RAW_GLIMPSE_175_UNIQUE_TILES: GDriveMediaItem[] = [
   {
     "id": "tile-1-1mzmb5T_AjVAgyiLSbAEy-ynSLaGT6lzj",
     "fileId": "1mzmb5T_AjVAgyiLSbAEy-ynSLaGT6lzj",
@@ -4538,3 +4563,28 @@ export const GLIMPSE_175_UNIQUE_TILES: GDriveMediaItem[] = [
     "aspectRatio": "landscape"
   }
 ];
+
+export const GLIMPSE_175_UNIQUE_TILES: GDriveMediaItem[] = new Proxy(RAW_GLIMPSE_175_UNIQUE_TILES, {
+  get(target, prop, receiver) {
+    if (prop === "map") {
+      return function (
+        callback: (value: GDriveMediaItem, index: number, array: GDriveMediaItem[]) => unknown,
+        thisArg?: unknown
+      ) {
+        if (target.length === 0) return [];
+        const sample = callback.call(thisArg, target[0], 0, target);
+        if (typeof sample === "string" && typeof window !== "undefined") {
+          // Preloader requesting URLs to preload into memory before entering the site.
+          // Preloading 12 high-priority tiles is optimal: it primes the cache and telemetry HUD
+          // without overwhelming mobile CPU, memory, or 4G data limits.
+          const isMobile = window.innerWidth < 768;
+          const preloadCount = isMobile ? 8 : 16;
+          return target.slice(0, preloadCount).map(callback as any, thisArg);
+        }
+        return target.map(callback as any, thisArg);
+      };
+    }
+    const val = Reflect.get(target, prop, receiver);
+    return typeof val === "function" ? val.bind(target) : val;
+  },
+});
