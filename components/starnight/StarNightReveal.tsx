@@ -22,20 +22,20 @@ function YoutubeIcon({ size = 16, className = "" }: { size?: number; className?:
 const headliners2026Teaser = [
   {
     dayBadge: "DAY 01 HEADLINER",
-    artist: "GLOBAL STREAMING SENSATION",
-    genre: "High-Voltage Stadium Anthems & Pop Rock Fusion",
+    artist: "ASEES KAUR",
+    genre: "Bollywood Playback Superstar • Soulful Anthems & Romantic Waves",
     tagline:
-      "Over 2 Billion+ global streams. Turning 30,000+ voices into an electric ocean under the stadium sky.",
-    status: "CLASSIFIED • REVEAL IMMINENT",
+      "Vocal powerhouse behind multi-million streaming hits 'Raataan Lambiyan', 'Makhna', and 'Ve Maahi'. Live at the CGC Concert Arena.",
+    status: "OFFICIAL HEADLINER",
     stage: "CGC MAINSTAGE ARENA",
   },
   {
     dayBadge: "DAY 02 GRAND FINALE",
-    artist: "BOLLYWOOD & SUFI SYMPHONY ICON",
-    genre: "Master Composer Orchestra • Timeless Stadium Classics",
+    artist: "RANJIT BAWA",
+    genre: "Punjabi Folk Legend • High-Voltage Bhangra & Stadium Anthems",
     tagline:
-      "A monumental live orchestra, pulsating dhol, and iconic melodies echoing across college corridors.",
-    status: "CLASSIFIED • REVEAL IMMINENT",
+      "The voice of Punjab behind 'Jatt Di Akal', 'Yaar Jari Da', and 'Jean'. Igniting Northern India's biggest collegiate concert night.",
+    status: "OFFICIAL GRAND FINALE",
     stage: "CGC MAINSTAGE ARENA",
   },
 ];

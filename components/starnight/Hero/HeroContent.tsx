@@ -74,11 +74,11 @@ export default function HeroContent() {
         className="mt-10 max-w-xl"
       >
         <p className="text-lg leading-8 text-white/70">
-          35,000+ collegiate voices singing as one.
+          25,000+ collegiate voices singing as one with Asees Kaur & Ranjit Bawa.
           <br />
           Ground-shaking bass. Towering pyrotechnics.
           <br />
-          One unforgettable headline night at CGC University Mohali.
+          Two monumental headline nights at CGC University Mohali.
         </p>
       </motion.div>
 

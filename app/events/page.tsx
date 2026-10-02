@@ -4,9 +4,9 @@ import EventsView from "@/components/events/EventsView";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "50+ Events & Realms (₹25L+ Prize Pool) | CGC Saviskar 2026 — CGC University Mohali",
+  title: "50+ Events & Realms (₹20 LACS Prize Pool) | CGC Saviskar 2026 — CGC University Mohali",
   description:
-    "Explore 50+ national collegiate competitions at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Featuring Metal Mayhem RoboWars, CodePulse 24h Hackathon, Symphony of Chaos Battle of the Bands, Footloose Dance, BGMI & Valorant Esports, and the flagship AIvishkar AI Tech Expo with ₹25,00,000+ prize pool.",
+    "Explore 50+ national collegiate competitions across 500+ universities with endless possibilities at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Cash prizes upto ₹20 LACS across Technical, Cultural, Non-Technical, and AIvishkar realms. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
   keywords: [
     // Brand & College Queries
     "CGC Fest Events",
@@ -21,7 +21,10 @@ export const metadata: Metadata = {
     "Chandigarh College Fests",
     "Punjab Inter-College Competitions",
     "Tricity College Fests 2026",
-    "Saviskar Prize Pool 25 Lakhs",
+    "Saviskar Prize Pool 20 Lakhs",
+    "Cash Prizes Upto 20 Lacs",
+    "500+ Universities",
+    "Endless Possibilities",
 
     // Technical Events
     "RoboWars",
@@ -68,16 +71,16 @@ export const metadata: Metadata = {
     canonical: "/events",
   },
   openGraph: {
-    title: "50+ Events & Realms (₹25L+ Prize Pool) | CGC Saviskar 2026",
+    title: "50+ Events & Realms (₹20 LACS Prize Pool) | CGC Saviskar 2026",
     description:
-      "Combat RoboWars, 24h Hackathons, Battle of the Bands, Western Dance, Esports, and AIvishkar AI Tech Expo at CGC University, Mohali. ₹25,00,000+ Total Prize Pool.",
+      "50+ competitions across 500+ universities with endless possibilities at CGC University, Mohali. Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹20 LACS.",
     images: ["/images/realms-page-bg.webp"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "50+ Events & Realms (₹25L+ Prize Pool) | CGC Saviskar 2026",
+    title: "50+ Events & Realms (₹20 LACS Prize Pool) | CGC Saviskar 2026",
     description:
-      "Combat RoboWars, 24h Hackathons, Battle of the Bands, Western Dance, Esports, and AIvishkar AI Tech Expo at CGC University, Mohali. ₹25,00,000+ Total Prize Pool.",
+      "50+ competitions across 500+ universities with endless possibilities at CGC University, Mohali. Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹20 LACS.",
     images: ["/images/realms-page-bg.webp"],
   },
 };

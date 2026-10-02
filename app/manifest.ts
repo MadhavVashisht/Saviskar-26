@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Saviskar 2026: Aevorian Reverie | CGC University, Mohali",
     short_name: "Saviskar 2026",
     description:
-      "North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, ₹25L+ prize pool, 35,000+ students, national hackathons, and star night concerts.",
+      "North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS, and Headline Star Night Concerts with Asees Kaur & Ranjit Bawa.",
     start_url: "/",
     display: "standalone",
     background_color: "#000000",

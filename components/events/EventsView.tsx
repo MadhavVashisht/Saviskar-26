@@ -62,7 +62,7 @@ export const REALMS_DATA: Realm[] = [
     number: "REALM 01",
     badge: "COMPUTATION & HARDWARE",
     title: "Technical",
-    tagline: "Build. Invent. Compete.",
+    tagline: "Think. Build. Challenge. Conquer.",
     description:
       "Where algorithmic brilliance clashes with high-torque combat robotics and mechanical adrenaline. Compete inside illuminated battle arenas and hackathons engineered for builders, hackers, and cybernetic innovators.",
     image: "/images/realm-technical-v2.webp",
@@ -71,7 +71,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-cyan-400",
     accentBorder: "hover:border-cyan-500/50",
     accentGlow: "rgba(6,182,212,0.25)",
-    prizePool: "₹8,00,000+",
+    prizePool: "₹7,00,000+",
   },
   {
     id: "non-technical",
@@ -79,7 +79,7 @@ export const REALMS_DATA: Realm[] = [
     number: "REALM 02",
     badge: "STRATEGY & CREATIVE EXPRESSION",
     title: "Non-Technical",
-    tagline: "Create. Think. Express.",
+    tagline: "Create without limits. Play beyond the ordinary.",
     description:
       "High-stakes mock stock trading floors, intense parliamentary debate chambers, live graffiti mural battles, digital cinema filmmaking, and unfiltered creative visual storytelling beyond the classroom.",
     image: "/images/realm-nontech-v2.webp",
@@ -88,7 +88,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-amber-400",
     accentBorder: "hover:border-amber-500/50",
     accentGlow: "rgba(245,158,11,0.25)",
-    prizePool: "₹4,00,000",
+    prizePool: "₹3,00,000",
   },
   {
     id: "cultural",
@@ -96,7 +96,7 @@ export const REALMS_DATA: Realm[] = [
     number: "REALM 03",
     badge: "PERFORMANCE & MAINSTAGE",
     title: "Cultural",
-    tagline: "Dance. Music. Performance.",
+    tagline: "Own the stage. Set the rhythm. Make your moment.",
     description:
       "Thunderous stadium sound rigs, blazing pyrotechnic fountains, battle of the bands rock face-offs, synchronized Western & traditional crew choreography, and solo vocal showdowns rocking the central Saviskar amphitheater.",
     image: "/images/realm-cultural-v2.webp",
@@ -105,7 +105,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-fuchsia-400",
     accentBorder: "hover:border-fuchsia-500/50",
     accentGlow: "rgba(217,70,239,0.25)",
-    prizePool: "₹8,00,000+",
+    prizePool: "₹6,00,000+",
   },
   {
     id: "aivishkar",
@@ -122,7 +122,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-violet-400",
     accentBorder: "hover:border-violet-500/60",
     accentGlow: "rgba(168,85,247,0.35)",
-    prizePool: "₹5,00,000+ in Grants",
+    prizePool: "₹4,00,000+ in Grants",
     highlightChips: [
       "Autonomous Humanoid Robotics Arena",
       "Generative AI & LLM Agent Showcase",
@@ -133,10 +133,11 @@ export const REALMS_DATA: Realm[] = [
 ];
 
 export const METRICS = [
-  { label: "PREMIER REALMS", value: "04", subtitle: "Technical, Non-Tech, Cultural, AIvishkar" },
-  { label: "COMPETITIONS", value: "50+", subtitle: "Certified Inter-University Events" },
-  { label: "PRIZE POOL", value: "₹25L+", subtitle: "Cash Rewards, Trophies & AI Grants" },
-  { label: "COLLEGES", value: "500+", subtitle: "Universities Across All India" },
+  { label: "EXPERIENCES", value: "50+", subtitle: "Realm of Experiences" },
+  { label: "UNIVERSITIES", value: "500+", subtitle: "Universities Across India" },
+  { label: "STUDENTS", value: "25,000", subtitle: "Creators & Innovators" },
+  { label: "EPIC DAYS", value: "2", subtitle: "28th–29th October 2026" },
+  { label: "POSSIBILITIES", value: "ENDLESS", subtitle: "Infinite Ways To Make Your Mark" },
 ];
 
 export function matchesRealm(eventCategory: string | null | undefined, realmId: string): boolean {
@@ -313,21 +314,20 @@ export default function EventsView() {
           className="mt-8 flex flex-col justify-between gap-6 border-t border-white/12 pt-8 md:flex-row md:items-end"
         >
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-300 md:text-lg font-normal">
-            Four competitive horizons uniting 35,000+ creators, builders, and performers.
-            From battlebot cages and hackathons to electric stadium dance stages, market strategy floors, and the flagship{" "}
-            <span className="text-white font-medium">AIvishkar AI Tech Expo</span>.
+            Four competitive horizons uniting 25,000+ creators, builders, and performers across 500+ universities with endless possibilities.
+            Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.
           </p>
 
           <div className="flex items-center gap-3 font-mono text-xs text-white/50">
             <ShieldCheck size={16} className="text-violet-400" />
-            <span>Official UGC Certified Rulebooks Included</span>
+            <span>Cash Prizes Upto ₹20 LACS • Certified Rulebooks Included</span>
           </div>
         </motion.div>
       </section>
 
       {/* 4. REALM METRICS STRIP */}
       <section className="relative z-20 mx-auto max-w-[1440px] px-5 py-4 md:px-10">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-4">
           {METRICS.map((metric, idx) => (
             <motion.div
               key={metric.label}

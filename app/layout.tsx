@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     template: "%s | CGC Saviskar 2026 — CGC University, Mohali",
   },
   description:
-    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ national competitions including RoboWars, 24h Hackathon, Battle of the Bands, BGMI, AI Expo, and stadium Star Night concerts with ₹25L+ prize pool.",
+    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS, and Headline Star Night Concerts starring Asees Kaur & Ranjit Bawa. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
   keywords: [
     // 1. Primary Fest Brands & Typo / Phonetic Search Variations
     "Saviskar 2026",
@@ -106,6 +106,20 @@ export const metadata: Metadata = {
     "Aevorian Reverie etymology",
     "Where Tomorrow Dreams Awake",
     "A future imagined so vividly it begins to exist",
+    "Two Days Countless Stories",
+    "One Campus Infinite Ways To Make Your Mark",
+    "Endless Possibilities",
+    "500+ Universities",
+    "25000 Students",
+    "Cash Prizes Upto 20 Lacs",
+    "Asees Kaur",
+    "Asees Kaur Live",
+    "Asees Kaur CGC Mohali",
+    "Ranjit Bawa",
+    "Ranjit Bawa Live",
+    "Ranjit Bawa CGC Mohali",
+    "Ms Lakshita 8572815510",
+    "Mr Saaransh Sharma 6239124013",
     "Saviskar theme meaning",
     "Saviskar etymology",
     "Srijan",
@@ -209,7 +223,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CGC University Mohali | Saviskar 2026 (Official CGC Fest) — Aevorian Reverie",
     description:
-      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, 500+ Colleges, 35,000+ Participants, ₹25L+ Prize Pool.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS.",
     url: "https://saviskar.co.in",
     siteName: "Saviskar 2026 — CGC University Mohali",
     locale: "en_IN",
@@ -227,7 +241,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CGC University Mohali | Saviskar 2026 (Official CGC Fest) — Aevorian Reverie",
     description:
-      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms, ₹25L+ Prize Pool.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS.",
     images: ["/images/concert-stadium.webp"],
   },
   robots: {
@@ -277,7 +291,7 @@ const jsonLdSiteNavigation = {
       "@id": "https://saviskar.co.in/#nav-events",
       name: "50+ Events & Realms",
       description:
-        "Explore 50+ competitions across Technical (RoboWars, Hackathons), Cultural (Dance, Bands), Non-Technical (Esports), and AIvishkar with ₹25L+ prize pool.",
+        "Explore 50+ competitions across Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹20 LACS across 500+ universities.",
       url: "https://saviskar.co.in/events",
     },
     {
@@ -291,9 +305,9 @@ const jsonLdSiteNavigation = {
     {
       "@type": "SiteNavigationElement",
       "@id": "https://saviskar.co.in/#nav-starnight",
-      name: "Star Night Concerts",
+      name: "Star Night: Asees Kaur & Ranjit Bawa",
       description:
-        "Headline celebrity concerts, laser pyrotechnics, and stadium pro-nights under the Mohali night sky.",
+        "Headline celebrity concerts starring Asees Kaur and Ranjit Bawa with laser pyrotechnics and 25,000+ voices under the Mohali night sky.",
       url: "https://saviskar.co.in/starnight",
     },
     {
@@ -301,7 +315,7 @@ const jsonLdSiteNavigation = {
       "@id": "https://saviskar.co.in/#nav-gallery",
       name: "Dome Gallery & Archives",
       description:
-        "Interactive 3D Dome Gallery and visual archive capturing 35,000+ creators, hackers, and performers.",
+        "Interactive 3D Dome Gallery and visual archive capturing 25,000+ creators, hackers, and performers across 500+ universities.",
       url: "https://saviskar.co.in/gallery",
     },
     {
@@ -539,14 +553,22 @@ const jsonLdFestival = {
     },
     {
       "@type": "MusicEvent",
-      name: "Star Night (Day 1) — Sufi & Indie Fusion Stadium Concert",
-      description: "Headline concert in the CGC Concert Arena featuring celebrated vocalists, live instrumental bands, and 35,000+ attendee crowd.",
+      name: "Star Night (Day 1) — Asees Kaur Live Concert",
+      description: "Headline concert in the CGC Concert Arena featuring celebrated Bollywood playback icon Asees Kaur and 25,000+ attendee crowd.",
+      performer: {
+        "@type": "Person",
+        name: "Asees Kaur",
+      },
       url: "https://saviskar.co.in/starnight",
     },
     {
       "@type": "MusicEvent",
-      name: "Star Night (Day 2) — Bollywood & EDM Grand Finale Concert",
-      description: "Grand stadium finale with chart-topping celebrity singers, EDM DJs, pyrotechnic displays, and laser lighting.",
+      name: "Star Night (Day 2) — Ranjit Bawa Live Grand Finale Concert",
+      description: "Grand stadium finale starring Punjabi folk superstar Ranjit Bawa with pyrotechnic displays, laser lighting, and 25,000+ voices.",
+      performer: {
+        "@type": "Person",
+        name: "Ranjit Bawa",
+      },
       url: "https://saviskar.co.in/starnight",
     },
   ],
@@ -664,7 +686,7 @@ const jsonLdFAQ = {
       name: "What is CGC and why is CGC University Mohali famous for Saviskar?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 35,000 students from 500+ universities across India, Saviskar features ₹25 Lakhs+ in prize pools, national combat robotics (RoboWars), 24h coding hackathons, battle of the bands, and stadium-scale Star Night celebrity concerts.",
+        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 25,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹20 LACS (20 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night concerts starring Bollywood playback icon Asees Kaur and Punjabi music legend Ranjit Bawa.",
       },
     },
     {
@@ -672,7 +694,7 @@ const jsonLdFAQ = {
       name: "What is the meaning and story behind Aevorian Reverie (or Aevorian Reviere)?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Aevorian Reverie is the official conceptual theme of Saviskar 2026 at CGC University, Mohali. Its guiding philosophy is 'A future imagined so vividly, it begins to exist.' Etymologically, 'Aevorian' evokes aeon (eternity, timeless endurance) and aurora (a luminous new dawn of intelligence). 'Reverie' is a state of waking dream where visionary human imagination crosses into physical reality. For Saviskar's 3rd landmark edition, it represents a world where every cycle births a more evolved reality—unifying human creativity, artificial intelligence, artistic expression, and advanced engineering into one transcendent dreamscape under the motto 'Where Tomorrow Dreams Awake'.",
+        text: "Aevorian Reverie is the official conceptual theme of Saviskar 2026 at CGC University, Mohali. Its guiding philosophy is 'A future imagined so vividly, it begins to exist.' Etymologically, 'Aevorian' evokes aeon (eternity, timeless endurance) and aurora (a luminous new dawn of intelligence). 'Reverie' is a state of waking dream where visionary human imagination crosses into physical reality. For Saviskar's 3rd landmark edition, it represents a world where every cycle births a more evolved reality—unifying human creativity, artificial intelligence, artistic expression, and advanced engineering into one transcendent dreamscape under the motto 'Where Tomorrow Dreams Awake. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.'",
       },
     },
     {
@@ -680,7 +702,7 @@ const jsonLdFAQ = {
       name: "What are the major competitions and events happening at CGC Saviskar 2026?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CGC Saviskar 2026 hosts over 50 marquee competitions across 4 realms: 1. Technical: Metal Mayhem RoboWars (15kg & 30kg battlebots), CodePulse 24h Hackathon, Nitro Circuit RoboRace, Web3/AI hackathons; 2. Cultural: Symphony of Chaos Battle of the Bands, Footloose Western Group Dance, Nachda Punjab Bhangra & Giddha, Runway of the Future Fashion Show, Street Beat Nukkad Natak, Mr & Ms Saviskar; 3. AIvishkar: Autonomous Humanoid Robotics, AI Tech Expo & Startup Venture Grants; 4. Non-Technical: Saviskar E-Clash Valorant 5v5, BGMI Mobile Championship, FIFA, The Chakravyuh General Quiz; plus stadium-shaking Star Night celebrity concerts.",
+        text: "CGC Saviskar 2026 hosts over 50 marquee competitions across 4 realms: 1. Technical (Think. Build. Challenge. Conquer.): Web-Dev Sprint, Code Circuit, Thrust Powered Vehicle Challenge, FormulaRx, LabX, Crime Scene, VISION HACK, AI Game Maker, Optovation, RoboRace, Graviton, Bug Hunt: Code Cracker, TechXhibit, Diagnostic Challenge, Prayog, National MUN; 2. Cultural (Own the stage. Set the rhythm. Make your moment.): Nritya-E-Bharat Folk Dance, Clash of Chords Battle of Bands, Mr. & Ms. Saviskar, Saviskar Got Talent (SGT), Footlose Solo & Western Dance, Sur Sagar Sing Your Story, Gully War Rap Battle, Nachda Punjab Punjabi Folk, Spin & Dance; 3. Non-Technical (Create without limits. Play beyond the ordinary.): Face Painting, Doodle Art, Short Film Contest, Open Mic, Business Quiz, Photography, Chill & Grill Fireless Cooking, Ad-Mad Show, Brand Battle, The Opinion Exchange, The Case Mystique, Reel-ity Check, Canvas Art, Visual Storytelling Challenge, Vlog Making; plus stadium-shaking Star Night concerts starring Asees Kaur and Ranjit Bawa.",
       },
     },
     {
@@ -704,7 +726,7 @@ const jsonLdFAQ = {
       name: "Who can register for Saviskar 2026 passes and what is the prize pool?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Undergraduate and postgraduate students from all recognized universities, engineering colleges, management institutes, and arts colleges across India are eligible to register. Registrations are available online at https://saviskar.co.in/register. The total prize pool exceeds ₹25,00,000+ (25 Lakhs+) across all 50+ competitions, with dedicated trophies, cash awards, certificates of merit, and startup incubation grants.",
+        text: "Undergraduate and postgraduate students from over 500+ recognized universities, engineering colleges, management institutes, and arts colleges across India are eligible to register. Registrations are available online at https://saviskar.co.in/register. Cash prizes are upto ₹20 LACS (₹20,00,000) across all 50+ competitions, with dedicated trophies, cash awards, certificates of merit, and startup grants. Student Coordinators: Ms. Lakshita (+91 85728 15510), Mr. Saaransh Sharma (+91 62391 24013).",
       },
     },
   ],
@@ -814,7 +836,7 @@ export default function RootLayout({
 
           <h2>CGC University Mohali &amp; Chandigarh Group of Colleges Authority</h2>
           <p>
-            CGC University Mohali is a distinguished higher education landmark in North India. Saviskar represents the absolute pinnacle of student innovation, artistic performance, and campus life at CGC, organized under the patronage of the Directorate of Student Affairs (Team DSA) and the Student Advisory Council (SAC). Over 35,000 student attendees representing 500+ colleges across India converge at CGC Mohali for two electric days of competition.
+            CGC University Mohali is a distinguished higher education landmark in North India. Saviskar represents the absolute pinnacle of student innovation, artistic performance, and campus life at CGC, organized under the patronage of the Directorate of Student Affairs (Team DSA) and the Student Advisory Council (SAC). Over 25,000 student attendees representing 500+ universities across India converge at CGC Mohali for two electric days of competition with endless possibilities. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.
           </p>
 
           <h2>Nearby Areas, Tricity Proximity &amp; College Vicinity</h2>
@@ -830,13 +852,13 @@ export default function RootLayout({
             The name <strong>Saviskar</strong> is the historical synthesis of <em>Srijan</em> (creation) and <em>Avishkar</em> (invention).
           </p>
 
-          <h2>All 50+ Competitive Realms &amp; Signature Events</h2>
+          <h2>All 50+ Competitive Realms &amp; Signature Events (Cash Prizes Upto ₹20 LACS)</h2>
           <ul>
-            <li><strong>Technical Realm:</strong> Metal Mayhem Combat RoboWars (15kg &amp; 30kg battlebots), CodePulse 24-Hour National Hackathon, Nitro Circuit High-Speed RoboRace, Web3 &amp; AI challenges, Circuitron, CAD Quest, Code Relay with ₹5,00,000+ prize pool.</li>
-            <li><strong>Cultural Realm:</strong> Symphony of Chaos (Battle of the Bands), Footloose Western &amp; Thematic Group Dance, Nachda Punjab (Bhangra &amp; Giddha Championship), Runway of the Future (Haute Couture Fashion Show), Street Beat (Nukkad Natak), Mono Acting, Mr &amp; Ms Saviskar with ₹5,00,000+ prize pool.</li>
+            <li><strong>Technical Realm (Think. Build. Challenge. Conquer.):</strong> Web-Dev Sprint, Code Circuit - Pass the Code Beat the Clock, Thrust Powered Vehicle Challenge, FormulaRx, LabX, Crime Scene, Assessment of Posture Education, AI Video &amp; Meme Challenge, VISION HACK — Train Your Own AI, AI Game Maker Challenge, Intubation &amp; Airway Management Simulation, Optovation — Build a Smart Eye, RoboRace, Graviton, Bug Hunt: Code Cracker, TechXhibit, Diagnostic Challenge, Prayog, National MUN, The Best Manager.</li>
+            <li><strong>Cultural Realm (Own the stage. Set the rhythm. Make your moment.):</strong> Nritya-E-Bharat – Folk Dance, Clash of Chords – Battle of Bands, Mr. &amp; Ms. Saviskar, Saviskar Got Talent (SGT), Footlose– Solo &amp; Western Dance, Sur Sagar – Sing Your Story, Gully War – Rap Battle, Nachda Punjab – Punjabi Folk, Spin &amp; Dance.</li>
+            <li><strong>Non-Technical Realm (Create without limits. Play beyond the ordinary.):</strong> Face Painting, Doodle Art, Short Film Contest, Open Mic, Business Quiz, Photography, Chill &amp; Grill – Fireless Cooking, Ad-Mad Show, Brand Battle, The Opinion Exchange, The Case Mystique, Reel-ity Check, Canvas Art, Visual Storytelling Challenge, Vlog Making.</li>
             <li><strong>AIvishkar:</strong> Flagship National AI Tech Expo, Autonomous Humanoid Robotics, Neural Agents, Computer Vision labs, and Founders Arena Angel Pitch Venture Grants.</li>
-            <li><strong>Non-Technical Realm:</strong> Saviskar E-Clash (Valorant 5v5 Championship, BGMI Battlegrounds Tournament, FIFA LAN Cup), The Chakravyuh National General Quiz, Youth Parliament, Stock Market Trading Simulation, IPL Auction with ₹4,00,000+ prize pool.</li>
-            <li><strong>Star Night Stadium Concerts:</strong> Two consecutive nights of stadium celebrity concerts, chart-topping Bollywood and Punjabi singers, EDM DJ sets, laser pyrotechnics, and 35,000+ voices singing under the Mohali night sky.</li>
+            <li><strong>Star Night Stadium Concerts:</strong> Two consecutive nights of stadium celebrity concerts starring Bollywood playback icon Asees Kaur and Punjabi music legend Ranjit Bawa, laser pyrotechnics, and 25,000+ voices singing under the Mohali night sky.</li>
           </ul>
 
           <h2>CGC Campus Venues &amp; Map Coordinates</h2>
@@ -844,9 +866,10 @@ export default function RootLayout({
             Block 1 Academic Complex &amp; Executive Conclave; Block 2 Main Auditorium &amp; Heavy Armor RoboWars Arena; Block 3 Media Studios &amp; LAN Gaming Center; Ivory Hall Residential Commons &amp; Basketball Courts; Block 6 Computing Hub &amp; Hackathon Labs; Block 7 Research Towers; Main Concert Arena &amp; Festival Grounds. Geo Coordinates: Latitude 30.6942 N, Longitude 76.6653 E.
           </p>
 
-          <h2>Dates &amp; Registration Portal</h2>
+          <h2>Dates, Registration Portal &amp; Student Coordinators</h2>
           <p>
             Festival Dates: October 28 &ndash; October 29, 2026. Official Passes &amp; Competitions Registration: https://saviskar.co.in/register. Contact Email: saviskar@cgcuniversity.in.
+            Student Coordinators: Ms. Lakshita (Mobile: +91 85728 15510), Mr. Saaransh Sharma (Mobile: +91 62391 24013).
           </p>
         </section>
 
