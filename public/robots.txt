@@ -2,6 +2,34 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api
-Disallow: /_next
+Disallow: /payment
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /payment
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /payment
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /payment
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
 
 Sitemap: https://saviskar.co.in/sitemap.xml
+Host: https://saviskar.co.in
