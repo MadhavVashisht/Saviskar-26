@@ -54,16 +54,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/register`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.95,
+    },
+    {
       url: `${baseUrl}/schedule`,
       lastModified,
       changeFrequency: "daily",
-      priority: 0.75,
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/starnight`,
       lastModified,
       changeFrequency: "weekly",
-      priority: 0.75,
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/sponsors`,
@@ -76,12 +82,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/register`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.65,
     },
   ];
 }

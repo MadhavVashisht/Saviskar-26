@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Dome Gallery & Festival Glimpses | Saviskar 2026",
+  title: "Dome Gallery & Festival Highlights | CGC Saviskar 2026 — CGC University Mohali",
   description:
     "Explore the immersive 3D Dome Gallery and visual archives of Saviskar: Aevorian Reverie at CGC University, Mohali. High-voltage hackathons, RoboWars, stage performances, and Star Night concert energy.",
   keywords: [
     "Saviskar 2026 Gallery",
+    "CGC Fest Photos",
     "Saviskar Dome Gallery",
     "CGC University Fest photos",
     "Saviskar concert images",
-    "RoboWars CGC Mohali",
+    "RoboWars CGC Mohali photos",
     "Aevorian Reverie visual archives",
     "North India college fest glimpses",
   ],

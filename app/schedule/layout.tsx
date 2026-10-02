@@ -3,13 +3,35 @@ import type { Metadata } from "next";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Schedule & Timeline — Full Event Lineup | Saviskar 2026",
+  title: "Campus Map & Event Schedule | CGC Saviskar 2026 — CGC University Mohali",
   description:
-    "Complete two-day festival schedule for Saviskar 2026 at CGC University, Mohali. Track competitive realms, hackathons, cultural showcases, and star night concerts.",
+    "Complete two-day live festival itinerary and interactive campus map for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Explore schedules for RoboWars, 24h Hackathon, Battle of the Bands, and Star Night concerts.",
+  keywords: [
+    "CGC Schedule 2026",
+    "CGC University Campus Map",
+    "Saviskar Event Itinerary",
+    "CGC Fest Dates",
+    "RoboWars Timing CGC Mohali",
+    "Hackathon Schedule Punjab",
+    "Star Night Timings CGC",
+    "Block 2 Auditorium CGC",
+    "CGC Landran Map",
+    "Aevorian Reverie Schedule",
+  ],
+  alternates: {
+    canonical: "/schedule",
+  },
   openGraph: {
-    title: "Schedule & Timeline | Saviskar 2026: Aevorian Reverie",
+    title: "Campus Map & Event Schedule | CGC Saviskar 2026",
     description:
-      "Explore the hour-by-hour itinerary of 50+ competitions, robotics arenas, cultural stages, and headline concerts.",
+      "Explore the 48-hour live competition timeline and interactive campus map of 50+ competitions and headline concert stages at CGC University, Mohali.",
+    images: ["/images/scene-realms-stage.webp"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Campus Map & Event Schedule | CGC Saviskar 2026",
+    description:
+      "Explore the 48-hour live competition timeline and interactive campus map of 50+ competitions and headline concert stages at CGC University, Mohali.",
     images: ["/images/scene-realms-stage.webp"],
   },
 };

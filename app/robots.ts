@@ -36,6 +36,28 @@ export default function robots(): MetadataRoute.Robots {
           "/payment/*",
         ],
       },
+      {
+        userAgent: "Applebot",
+        allow: "/",
+        disallow: [
+          "/admin",
+          "/admin/*",
+          "/api/*",
+          "/payment/*",
+        ],
+      },
+      {
+        userAgent: "Google-Extended",
+        allow: "/",
+      },
+      {
+        userAgent: "ChatGPT-User",
+        allow: "/",
+      },
+      {
+        userAgent: "PerplexityBot",
+        allow: "/",
+      },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
     host: baseUrl,

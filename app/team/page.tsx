@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import TeamView from "@/components/team/TeamView";
 
 export const metadata: Metadata = {
-  title: "Organising Team & Student Advisory Council (SAC) | Saviskar 2026",
+  title: "Organising Team & Student Council (SAC) | CGC Saviskar 2026 — CGC University Mohali",
   description:
     "Meet the visionary faculty directorate, executive leadership, and the 54-member Student Advisory Council (SAC) organizing Saviskar 2026: Aevorian Reverie at CGC University, Mohali.",
   keywords: [
@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     "Student Advisory Council CGC",
     "SAC CGC University Mohali",
     "Department of Student Affairs DSA CGC",
+    "CGC Fest Organisers",
     "Saviskar Student Leads",
     "Saviskar Core Committee",
   ],

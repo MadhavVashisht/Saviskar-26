@@ -12,13 +12,35 @@ import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import { SITE_ACCESS } from "@/lib/config/site-access";
 
 export const metadata: Metadata = {
-  title: "Official Registration Portal",
+  title: "Register & Claim Passes | CGC Saviskar 2026 — CGC University Mohali",
   description:
-    "Register for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Fast-track digital verification for 50+ realms across technology, culture, hackathons, and sports.",
+    "Official registration and digital pass accreditation portal for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Claim delegate passes for 50+ competitions across RoboWars, 24h Hackathons, Battle of the Bands, and Star Night concerts.",
+  keywords: [
+    "Saviskar Registration 2026",
+    "CGC Fest Passes",
+    "CGC University Fest Registration",
+    "Claim Saviskar Pass",
+    "RoboWars Registration CGC",
+    "Hackathon Registration Mohali",
+    "CGC Landran Fest Entry",
+    "Saviskar 2026 Student Passes",
+    "Aevorian Reverie Pass",
+  ],
+  alternates: {
+    canonical: "/register",
+  },
   openGraph: {
-    title: "Official Registration | Saviskar 2026: Aevorian Reverie",
+    title: "Register & Claim Passes | CGC Saviskar 2026",
     description:
-      "Join thousands of university delegates nationwide for Saviskar 2026 at CGC University, Mohali.",
+      "Claim your official passes for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Compete across 50+ realms with ₹25L+ prize pool.",
+    images: ["/images/concert-stadium.webp"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Register & Claim Passes | CGC Saviskar 2026",
+    description:
+      "Claim your official passes for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Compete across 50+ realms with ₹25L+ prize pool.",
+    images: ["/images/concert-stadium.webp"],
   },
 };
 
