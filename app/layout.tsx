@@ -237,6 +237,12 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  verification: {
+    google: "googlee9e943df092cfddf",
+    other: {
+      "google-site-verification": ["googlee9e943df092cfddf.html", "googlee9e943df092cfddf"],
+    },
+  },
   other: {
     "geo.region": "IN-PB",
     "geo.placename": "Mohali, Chandigarh, Punjab, India",
