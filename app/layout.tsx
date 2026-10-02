@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     template: "%s | CGC Saviskar 2026 — CGC University, Mohali",
   },
   description:
-    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS, and Headline Star Night Concerts starring Asees Kaur & Ranjit Bawa. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
+    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS, and Stadium Star Night Concerts. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
   keywords: [
     // 1. Primary Fest Brands & Typo / Phonetic Search Variations
     "Saviskar 2026",
@@ -112,12 +112,6 @@ export const metadata: Metadata = {
     "500+ Universities",
     "25000 Students",
     "Cash Prizes Upto 20 Lacs",
-    "Asees Kaur",
-    "Asees Kaur Live",
-    "Asees Kaur CGC Mohali",
-    "Ranjit Bawa",
-    "Ranjit Bawa Live",
-    "Ranjit Bawa CGC Mohali",
     "Ms Lakshita 8572815510",
     "Mr Saaransh Sharma 6239124013",
     "Saviskar theme meaning",
@@ -305,9 +299,9 @@ const jsonLdSiteNavigation = {
     {
       "@type": "SiteNavigationElement",
       "@id": "https://saviskar.co.in/#nav-starnight",
-      name: "Star Night: Asees Kaur & Ranjit Bawa",
+      name: "Star Night Concerts",
       description:
-        "Headline celebrity concerts starring Asees Kaur and Ranjit Bawa with laser pyrotechnics and 25,000+ voices under the Mohali night sky.",
+        "Headline celebrity concerts, laser pyrotechnics, and stadium pro-nights under the Mohali night sky.",
       url: "https://saviskar.co.in/starnight",
     },
     {
@@ -553,22 +547,14 @@ const jsonLdFestival = {
     },
     {
       "@type": "MusicEvent",
-      name: "Star Night (Day 1) — Asees Kaur Live Concert",
-      description: "Headline concert in the CGC Concert Arena featuring celebrated Bollywood playback icon Asees Kaur and 25,000+ attendee crowd.",
-      performer: {
-        "@type": "Person",
-        name: "Asees Kaur",
-      },
+      name: "Star Night (Day 1) — Headline Stadium Concert",
+      description: "Headline concert in the CGC Concert Arena featuring celebrated vocalists, live instrumental bands, and 25,000+ attendee crowd.",
       url: "https://saviskar.co.in/starnight",
     },
     {
       "@type": "MusicEvent",
-      name: "Star Night (Day 2) — Ranjit Bawa Live Grand Finale Concert",
-      description: "Grand stadium finale starring Punjabi folk superstar Ranjit Bawa with pyrotechnic displays, laser lighting, and 25,000+ voices.",
-      performer: {
-        "@type": "Person",
-        name: "Ranjit Bawa",
-      },
+      name: "Star Night (Day 2) — Grand Finale Stadium Concert",
+      description: "Grand stadium finale with chart-topping celebrity singers, pyrotechnic displays, and laser lighting.",
       url: "https://saviskar.co.in/starnight",
     },
   ],
@@ -686,7 +672,7 @@ const jsonLdFAQ = {
       name: "What is CGC and why is CGC University Mohali famous for Saviskar?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 25,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹20 LACS (20 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night concerts starring Bollywood playback icon Asees Kaur and Punjabi music legend Ranjit Bawa.",
+        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 25,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹20 LACS (20 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night celebrity concerts.",
       },
     },
     {
@@ -702,7 +688,7 @@ const jsonLdFAQ = {
       name: "What are the major competitions and events happening at CGC Saviskar 2026?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CGC Saviskar 2026 hosts over 50 marquee competitions across 4 realms: 1. Technical (Think. Build. Challenge. Conquer.): Web-Dev Sprint, Code Circuit, Thrust Powered Vehicle Challenge, FormulaRx, LabX, Crime Scene, VISION HACK, AI Game Maker, Optovation, RoboRace, Graviton, Bug Hunt: Code Cracker, TechXhibit, Diagnostic Challenge, Prayog, National MUN; 2. Cultural (Own the stage. Set the rhythm. Make your moment.): Nritya-E-Bharat Folk Dance, Clash of Chords Battle of Bands, Mr. & Ms. Saviskar, Saviskar Got Talent (SGT), Footlose Solo & Western Dance, Sur Sagar Sing Your Story, Gully War Rap Battle, Nachda Punjab Punjabi Folk, Spin & Dance; 3. Non-Technical (Create without limits. Play beyond the ordinary.): Face Painting, Doodle Art, Short Film Contest, Open Mic, Business Quiz, Photography, Chill & Grill Fireless Cooking, Ad-Mad Show, Brand Battle, The Opinion Exchange, The Case Mystique, Reel-ity Check, Canvas Art, Visual Storytelling Challenge, Vlog Making; plus stadium-shaking Star Night concerts starring Asees Kaur and Ranjit Bawa.",
+        text: "CGC Saviskar 2026 hosts over 50 marquee competitions across 4 realms: 1. Technical (Think. Build. Challenge. Conquer.): Web-Dev Sprint, Code Circuit, Thrust Powered Vehicle Challenge, FormulaRx, LabX, Crime Scene, VISION HACK, AI Game Maker, Optovation, RoboRace, Graviton, Bug Hunt: Code Cracker, TechXhibit, Diagnostic Challenge, Prayog, National MUN; 2. Cultural (Own the stage. Set the rhythm. Make your moment.): Nritya-E-Bharat Folk Dance, Clash of Chords Battle of Bands, Mr. & Ms. Saviskar, Saviskar Got Talent (SGT), Footlose Solo & Western Dance, Sur Sagar Sing Your Story, Gully War Rap Battle, Nachda Punjab Punjabi Folk, Spin & Dance; 3. Non-Technical (Create without limits. Play beyond the ordinary.): Face Painting, Doodle Art, Short Film Contest, Open Mic, Business Quiz, Photography, Chill & Grill Fireless Cooking, Ad-Mad Show, Brand Battle, The Opinion Exchange, The Case Mystique, Reel-ity Check, Canvas Art, Visual Storytelling Challenge, Vlog Making; plus stadium-shaking Star Night celebrity concerts.",
       },
     },
     {
@@ -858,7 +844,7 @@ export default function RootLayout({
             <li><strong>Cultural Realm (Own the stage. Set the rhythm. Make your moment.):</strong> Nritya-E-Bharat – Folk Dance, Clash of Chords – Battle of Bands, Mr. &amp; Ms. Saviskar, Saviskar Got Talent (SGT), Footlose– Solo &amp; Western Dance, Sur Sagar – Sing Your Story, Gully War – Rap Battle, Nachda Punjab – Punjabi Folk, Spin &amp; Dance.</li>
             <li><strong>Non-Technical Realm (Create without limits. Play beyond the ordinary.):</strong> Face Painting, Doodle Art, Short Film Contest, Open Mic, Business Quiz, Photography, Chill &amp; Grill – Fireless Cooking, Ad-Mad Show, Brand Battle, The Opinion Exchange, The Case Mystique, Reel-ity Check, Canvas Art, Visual Storytelling Challenge, Vlog Making.</li>
             <li><strong>AIvishkar:</strong> Flagship National AI Tech Expo, Autonomous Humanoid Robotics, Neural Agents, Computer Vision labs, and Founders Arena Angel Pitch Venture Grants.</li>
-            <li><strong>Star Night Stadium Concerts:</strong> Two consecutive nights of stadium celebrity concerts starring Bollywood playback icon Asees Kaur and Punjabi music legend Ranjit Bawa, laser pyrotechnics, and 25,000+ voices singing under the Mohali night sky.</li>
+            <li><strong>Star Night Stadium Concerts:</strong> Two consecutive nights of stadium celebrity concerts, chart-topping headline artists, laser pyrotechnics, and 25,000+ voices singing under the Mohali night sky.</li>
           </ul>
 
           <h2>CGC Campus Venues &amp; Map Coordinates</h2>

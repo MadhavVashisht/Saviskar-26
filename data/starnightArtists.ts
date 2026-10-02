@@ -134,22 +134,20 @@ export const artists: Artist[] = festivalEditions.map((ed) => ({
 export const headliners2026 = [
   {
     day: "DAY 01",
-    artist: "ASEES KAUR",
-    status: "OFFICIAL HEADLINER",
+    status: "CLASSIFIED • REVEAL IMMINENT",
     stage: "CGC MAINSTAGE ARENA",
-    theme: "Bollywood Playback Sensation & Soulful Anthems",
+    theme: "Global Streaming Sensation & Stadium Anthems",
     teaser:
-      "Celebrated Bollywood vocal icon behind multi-million streaming hits including 'Raataan Lambiyan', 'Makhna', and 'Ve Maahi'. Live Day 01.",
+      "Their record-breaking tracks have dominated global charts and headline stadium tours worldwide. Headlining Day 01.",
     targetFrequency: "102.6 MHz",
   },
   {
     day: "DAY 02",
-    artist: "RANJIT BAWA",
-    status: "OFFICIAL GRAND FINALE",
+    status: "CLASSIFIED • REVEAL IMMINENT",
     stage: "CGC MAINSTAGE ARENA",
-    theme: "High-Voltage Punjabi Folk & Stadium Roar",
+    theme: "Mega Bollywood & Fusion Symphony Spectacle",
     teaser:
-      "Legendary Punjabi music superstar behind 'Jatt Di Akal', 'Yaar Jari Da', and 'Jean'. Igniting Northern India's biggest collegiate concert night.",
+      "An iconic live stadium performance primed to create Northern India's biggest collegiate concert night.",
     targetFrequency: "102.6 MHz",
   },
 ];

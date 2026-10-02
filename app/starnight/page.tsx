@@ -17,19 +17,11 @@ const StarNightReveal = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Star Night Concerts: Asees Kaur & Ranjit Bawa | CGC Saviskar 2026 — CGC University Mohali",
+  title: "Star Night Celebrity Concerts | CGC Saviskar 2026 — CGC University Mohali",
   description:
-    "Experience the iconic Star Night stadium concerts at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Starring Bollywood vocal superstar Asees Kaur and Punjabi music legend Ranjit Bawa with laser pyrotechnics and 25,000+ attendee stadium pro-nights.",
+    "Experience the iconic Star Night stadium concerts at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Headline Bollywood vocalists, Punjabi music icons, laser pyrotechnics, and 25,000+ attendee stadium pro-nights.",
   keywords: [
     "Star Night CGC University",
-    "Asees Kaur",
-    "Asees Kaur Live",
-    "Asees Kaur CGC Mohali",
-    "Asees Kaur Concert",
-    "Ranjit Bawa",
-    "Ranjit Bawa Live",
-    "Ranjit Bawa CGC Mohali",
-    "Ranjit Bawa Saviskar",
     "Celebrity Star Night Mohali",
     "CGC Mohali Concert 2026",
     "CGC Landran Star Night",
@@ -45,16 +37,16 @@ export const metadata: Metadata = {
     canonical: "/starnight",
   },
   openGraph: {
-    title: "Star Night Concerts: Asees Kaur & Ranjit Bawa | CGC Saviskar 2026",
+    title: "Star Night Celebrity Concerts | CGC Saviskar 2026",
     description:
-      "Headline concerts with Asees Kaur & Ranjit Bawa, laser pyrotechnics, and 25,000+ voices singing as one at CGC University, Mohali.",
+      "Headline concerts, laser pyrotechnics, and 25,000+ voices singing as one at CGC University, Mohali.",
     images: ["/images/concert-stadium.webp"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Star Night Concerts: Asees Kaur & Ranjit Bawa | CGC Saviskar 2026",
+    title: "Star Night Celebrity Concerts | CGC Saviskar 2026",
     description:
-      "Headline concerts with Asees Kaur & Ranjit Bawa, laser pyrotechnics, and 25,000+ voices singing as one at CGC University, Mohali.",
+      "Headline concerts, laser pyrotechnics, and 25,000+ voices singing as one at CGC University, Mohali.",
     images: ["/images/concert-stadium.webp"],
   },
 };
@@ -62,23 +54,11 @@ export const metadata: Metadata = {
 const jsonLdStarNight = {
   "@context": "https://schema.org",
   "@type": "MusicFestival",
-  name: "Saviskar 2026 Star Night Stadium Concerts ft. Asees Kaur & Ranjit Bawa",
+  name: "Saviskar 2026 Star Night Stadium Concerts",
   alternateName: ["CGC Star Night", "CGC Fest Pro Night", "Saviskar Celebrity Night"],
   description:
-    "Two consecutive stadium headline concerts featuring Bollywood vocal sensation Asees Kaur and Punjabi music legend Ranjit Bawa with laser pyrotechnics and 25,000+ attendee crowd at CGC University Mohali.",
+    "Two consecutive stadium headline concerts featuring chart-topping Bollywood and Punjabi artists, laser shows, and 25,000+ attendee crowd at CGC University Mohali.",
   url: "https://saviskar.co.in/starnight",
-  performer: [
-    {
-      "@type": "Person",
-      name: "Asees Kaur",
-      jobTitle: "Bollywood Playback Singer",
-    },
-    {
-      "@type": "Person",
-      name: "Ranjit Bawa",
-      jobTitle: "Punjabi Singer & Actor",
-    },
-  ],
   startDate: "2026-10-28T19:30:00+05:30",
   endDate: "2026-10-29T23:00:00+05:30",
   location: {
