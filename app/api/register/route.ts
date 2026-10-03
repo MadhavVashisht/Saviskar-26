@@ -13,6 +13,7 @@ type MemberInput = {
   phone?: unknown;
   gender?: unknown;
   state?: unknown;
+  idCardStoragePath?: unknown;
 };
 
 type EventRegistrationInput = {
@@ -36,9 +37,11 @@ type RegistrationInput = {
   phone?: unknown;
   gender?: unknown;
   state?: unknown;
+  idCardStoragePath?: unknown;
 
   events?: unknown;
   accommodations?: unknown;
+  faculty?: unknown;
 
   // Legacy single-event compatibility
   eventId?: unknown;
@@ -145,6 +148,7 @@ function normalizeMembers(
         phone: cleanPhone(member.phone),
         gender: cleanString(member.gender, 20).toLowerCase(),
         state: cleanString(member.state, 100),
+        idCardStoragePath: cleanString(member.idCardStoragePath, 255),
         index,
       };
     }
@@ -155,11 +159,11 @@ export async function POST(
   request: NextRequest
 ) {
   // =====================================================
-  // 0. FEATURE GATE / SITE ACCESS CHECK
+  // 0. ACCESS GATE
   // =====================================================
   if (!SITE_ACCESS.REGISTRATIONS_ENABLED) {
     return errorResponse(
-      "Registrations are currently closed. Portal will open Soon for Saviskar 2026.",
+      "Online registrations are currently closed or in preview mode.",
       403
     );
   }
@@ -355,6 +359,16 @@ export async function POST(
       body.state,
       100
     );
+
+  const idCardStoragePath =
+    cleanString(
+      body.idCardStoragePath,
+      255
+    );
+
+  if (idCardStoragePath && !idCardStoragePath.startsWith(`${session.email.toLowerCase()}/`)) {
+    return errorResponse("Invalid ID card storage path ownership.", 403);
+  }
 
   if (!email || email !== session.email.toLowerCase()) {
     return errorResponse(
@@ -580,10 +594,45 @@ export async function POST(
 
               phone:
                 member.phone,
+              gender:
+                member.gender,
+              state:
+                member.state,
+              id_card_storage_path:
+                (member.idCardStoragePath && !member.idCardStoragePath.startsWith(`${session.email.toLowerCase()}/`)) 
+                  ? null 
+                  : member.idCardStoragePath,
             })
           ),
       })
     );
+
+  // =====================================================
+  // 10B. NORMALIZE FACULTY FOR DATABASE RPC
+  // =====================================================
+  let rpcFaculty = null;
+  if (body.faculty) {
+    const rawFac = body.faculty as MemberInput;
+    const facEmail = cleanEmail(rawFac.email);
+    if (!facEmail || !EMAIL_PATTERN.test(facEmail)) {
+      return errorResponse("Invalid faculty email address.", 400);
+    }
+    const facIdCardStoragePath = cleanString(rawFac.idCardStoragePath, 255);
+    
+    if (facIdCardStoragePath && !facIdCardStoragePath.startsWith(`${session.email.toLowerCase()}/`)) {
+      return errorResponse("Invalid faculty ID card storage path ownership.", 403);
+    }
+
+    rpcFaculty = {
+      name: cleanString(rawFac.name, 120),
+      college: cleanString(rawFac.college, 180),
+      email: facEmail,
+      phone: cleanPhone(rawFac.phone),
+      gender: cleanString(rawFac.gender, 20).toLowerCase(),
+      state: cleanString(rawFac.state, 100),
+      id_card_storage_path: facIdCardStoragePath,
+    };
+  }
 
   // =====================================================
   // 10A. NORMALIZE ACCOMMODATIONS FOR DATABASE RPC
@@ -595,6 +644,8 @@ export async function POST(
     if (body.accommodations.length > 50) {
       return errorResponse("Too many accommodation selections.", 400);
     }
+
+    const seenEmails = new Set<string>();
 
     for (const rawAcc of body.accommodations) {
       const acc = (rawAcc ?? {}) as AccommodationRegistrationInput;
@@ -608,10 +659,13 @@ export async function POST(
         return errorResponse("Accommodation plan is required.", 400);
       }
 
-      rpcAccommodations.push({
-        email: accEmail,
-        plan_slug: accPlanSlug,
-      });
+      if (!seenEmails.has(accEmail)) {
+        seenEmails.add(accEmail);
+        rpcAccommodations.push({
+          email: accEmail,
+          plan_slug: accPlanSlug,
+        });
+      }
     }
   }
 
@@ -646,6 +700,18 @@ export async function POST(
 
         p_accommodations:
           rpcAccommodations,
+
+        p_faculty:
+          rpcFaculty,
+
+        p_gender:
+          gender || null,
+
+        p_state:
+          state || null,
+
+        p_id_card_storage_path:
+          idCardStoragePath || null,
       }
     );
 
@@ -800,6 +866,7 @@ export async function POST(
     event_name?: string;
     status?: string;
     message?: string;
+    payment_order_id?: string;
   };
 
   type ParticipantEventJoinedRow = {
@@ -814,25 +881,25 @@ export async function POST(
     checked_in: boolean | null;
     checked_in_at: string | null;
     events:
-    | {
-      id?: string;
-      name?: string;
-      category?: string | null;
-      registration_type?: string | null;
-      registration_fee?: number | null;
-      payment_type?: string | null;
-      payment_unit?: string | null;
-    }
-    | {
-      id?: string;
-      name?: string;
-      category?: string | null;
-      registration_type?: string | null;
-      registration_fee?: number | null;
-      payment_type?: string | null;
-      payment_unit?: string | null;
-    }[]
-    | null;
+      | {
+          id?: string;
+          name?: string;
+          category?: string | null;
+          registration_type?: string | null;
+          registration_fee?: number | null;
+          payment_type?: string | null;
+          payment_unit?: string | null;
+        }
+      | {
+          id?: string;
+          name?: string;
+          category?: string | null;
+          registration_type?: string | null;
+          registration_fee?: number | null;
+          payment_type?: string | null;
+          payment_unit?: string | null;
+        }[]
+      | null;
   };
 
   type TeamMemberJoinedRow = {
@@ -909,7 +976,7 @@ export async function POST(
     // We update in series; there are usually very few members (1-10)
     for (const update of participantUpdates) {
       const updatePayload: Record<string, string> = {};
-
+      
       // Strict validation for allowed gender values
       if (update.gender && ["male", "female", "other"].includes(update.gender)) {
         updatePayload.gender = update.gender;
@@ -1100,92 +1167,30 @@ export async function POST(
   };
 
   let paymentOrder: PaymentOrderInfo | null = null;
+  const returnedPaymentOrderId = results[0]?.payment_order_id;
 
-  if (participant?.id) {
-    const newPaidEvents = paymentEvents.filter(
-      (row) =>
-        addedEventIds.has(
-          String(row.event_id)
-        ) &&
-        Number(row.payment_amount) > 0
-    );
+  if (returnedPaymentOrderId) {
+    const { data: orderData, error: orderLookupError } = await supabaseAdmin
+      .from("payment_orders")
+      .select("id, order_reference, amount, currency, status")
+      .eq("id", returnedPaymentOrderId)
+      .limit(1)
+      .maybeSingle();
 
-    const paidPeIds = newPaidEvents.map((r) => r.id).filter(Boolean);
+    if (orderLookupError) {
+      console.error("Payment order lookup error:", orderLookupError);
+    }
 
-    if (paidPeIds.length > 0) {
-      const { data: itemRow, error: itemLookupError } = await supabaseAdmin
-        .from("payment_order_items")
-        .select(`
-          payment_order_id,
-          payment_orders (
-            id,
-            order_reference,
-            amount,
-            currency,
-            status
-          )
-        `)
-        .in("participant_event_id", paidPeIds)
-        .limit(1)
-        .maybeSingle();
-
-      if (itemLookupError) {
-        console.error("Payment order lookup error:", itemLookupError);
-      }
-
-      const rawOrder = itemRow?.payment_orders;
-      const orderData = Array.isArray(rawOrder) ? rawOrder[0] : rawOrder;
-      if (orderData) {
-        paymentOrder = orderData as unknown as PaymentOrderInfo;
-        totalAmount = Number(orderData.amount) || totalAmount;
-        console.log(
-          "Atomic payment order retrieved:",
-          {
-            orderReference: orderData.order_reference,
-            amount: orderData.amount,
-          }
-        );
-      }
-    } else if (rpcAccommodations.length > 0) {
-      // Free event + paid accommodation (Case 3)
-      const { data: itemRow, error: itemLookupError } = await supabaseAdmin
-        .from("payment_order_items")
-        .select(`
-          payment_order_id,
-          payment_orders!inner (
-            id,
-            order_reference,
-            amount,
-            currency,
-            status,
-            payer_participant_id,
-            created_at
-          )
-        `)
-        .eq("item_type", "accommodation")
-        .eq("participant_id", participant.id)
-        .eq("payment_orders.status", "pending")
-        .order("created_at", { referencedTable: "payment_orders", ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (itemLookupError) {
-        console.error("Accommodation payment order lookup error:", itemLookupError);
-      }
-
-      const rawOrder = itemRow?.payment_orders;
-      const orderData = Array.isArray(rawOrder) ? rawOrder[0] : rawOrder;
-      if (orderData) {
-        paymentOrder = orderData as unknown as PaymentOrderInfo;
-        totalAmount = Number(orderData.amount) || totalAmount;
-        console.log(
-          "Atomic accommodation payment order retrieved:",
-          {
-            orderReference: orderData.order_reference,
-            amount: orderData.amount,
-          }
-        );
-      }
+    if (orderData) {
+      paymentOrder = orderData as unknown as PaymentOrderInfo;
+      totalAmount = Number(orderData.amount) || totalAmount;
+      console.log(
+        "Atomic payment order retrieved:",
+        {
+          orderReference: orderData.order_reference,
+          amount: orderData.amount,
+        }
+      );
     }
   }
   // =====================================================
