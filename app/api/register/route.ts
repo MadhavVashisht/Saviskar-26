@@ -159,7 +159,7 @@ export async function POST(
   // =====================================================
   if (!SITE_ACCESS.REGISTRATIONS_ENABLED) {
     return errorResponse(
-      "Registrations are currently closed. Portal will open in Phase 2 for Saviskar 2026.",
+      "Registrations are currently closed. Portal will open Soon for Saviskar 2026.",
       403
     );
   }
@@ -814,25 +814,25 @@ export async function POST(
     checked_in: boolean | null;
     checked_in_at: string | null;
     events:
-      | {
-          id?: string;
-          name?: string;
-          category?: string | null;
-          registration_type?: string | null;
-          registration_fee?: number | null;
-          payment_type?: string | null;
-          payment_unit?: string | null;
-        }
-      | {
-          id?: string;
-          name?: string;
-          category?: string | null;
-          registration_type?: string | null;
-          registration_fee?: number | null;
-          payment_type?: string | null;
-          payment_unit?: string | null;
-        }[]
-      | null;
+    | {
+      id?: string;
+      name?: string;
+      category?: string | null;
+      registration_type?: string | null;
+      registration_fee?: number | null;
+      payment_type?: string | null;
+      payment_unit?: string | null;
+    }
+    | {
+      id?: string;
+      name?: string;
+      category?: string | null;
+      registration_type?: string | null;
+      registration_fee?: number | null;
+      payment_type?: string | null;
+      payment_unit?: string | null;
+    }[]
+    | null;
   };
 
   type TeamMemberJoinedRow = {
@@ -909,7 +909,7 @@ export async function POST(
     // We update in series; there are usually very few members (1-10)
     for (const update of participantUpdates) {
       const updatePayload: Record<string, string> = {};
-      
+
       // Strict validation for allowed gender values
       if (update.gender && ["male", "female", "other"].includes(update.gender)) {
         updatePayload.gender = update.gender;

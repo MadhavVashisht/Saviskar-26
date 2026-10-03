@@ -320,7 +320,7 @@ export default function EventsView() {
 
           <div className="flex items-center gap-3 font-mono text-xs text-white/50">
             <ShieldCheck size={16} className="text-violet-400" />
-            <span>Cash Prizes Upto ₹20 LACS • Certified Rulebooks Included</span>
+            <span>Cash Prizes Upto ₹25 LACS • Certified Rulebooks Included</span>
           </div>
         </motion.div>
       </section>
