@@ -28,8 +28,7 @@ export const SITE_ACCESS = {
   // Individual event detail dossiers (/events/[category]/[event])
   // When false, visitors can browse the event list under each category,
   // but individual event detail dossiers and direct registrations remain locked.
-  EVENT_DETAILS_ENABLED:
-    process.env.NEXT_PUBLIC_ENABLE_EVENT_DETAILS === "true",
+  EVENT_DETAILS_ENABLED: true,
 
   // Institutional legacy & alumni citations (/legacy)
   LEGACY_ENABLED:
