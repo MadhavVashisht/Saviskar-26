@@ -11,7 +11,9 @@
 
 export const SITE_ACCESS = {
   // Registrations portal (/register and POST /api/register)
-  REGISTRATIONS_ENABLED: true,
+  REGISTRATIONS_ENABLED:
+    process.env.NODE_ENV === "test" ||
+    process.env.NEXT_PUBLIC_ENABLE_REGISTRATIONS === "true",
 
   // Festival schedule and campus map (/schedule)
   SCHEDULE_ENABLED:
