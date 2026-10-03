@@ -6,6 +6,7 @@
  */
 
 import { Resend } from "resend";
+import { getEmailSender } from "@/lib/email-sender";
 
 export type SendOtpEmailResult = {
   success: boolean;
@@ -17,12 +18,24 @@ export async function sendOtpEmail(
   toEmail: string,
   otp: string
 ): Promise<SendOtpEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Saviskar 2026 <noreply@amadhav.com>";
+  const senderResult = getEmailSender();
+  if (!senderResult.success) {
+    console.error(senderResult.internalLog);
+    return {
+      success: false,
+      error: senderResult.error,
+    };
+  }
 
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[AUTH OTP ERROR] RESEND_API_KEY is not configured in production.");
+      return {
+        success: false,
+        error: "Authentication service is temporarily unavailable. Please try again later.",
+      };
+    }
     console.warn(
       `[AUTH OTP] RESEND_API_KEY is not configured. Simulating email dispatch to ${toEmail}.`
     );
@@ -34,6 +47,7 @@ export async function sendOtpEmail(
   }
 
   const resend = new Resend(apiKey);
+  const fromEmail = senderResult.from;
 
   const subject = "Your Saviskar 2026 verification code";
 
@@ -134,7 +148,7 @@ export async function sendOtpEmail(
       console.error("[AUTH OTP] Resend dispatch error:", error);
       return {
         success: false,
-        error: error.message || "Failed to deliver verification code email.",
+        error: "Unable to send verification code. Please try again later.",
       };
     }
 
@@ -148,7 +162,7 @@ export async function sendOtpEmail(
     console.error("[AUTH OTP] Unexpected send exception:", errorMsg);
     return {
       success: false,
-      error: errorMsg,
+      error: "Unable to send verification code. Please try again later.",
     };
   }
 }
