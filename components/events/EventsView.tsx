@@ -71,7 +71,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-cyan-400",
     accentBorder: "hover:border-cyan-500/50",
     accentGlow: "rgba(6,182,212,0.25)",
-    prizePool: "₹7,00,000+",
+    prizePool: "₹8,00,000+",
   },
   {
     id: "non-technical",
@@ -88,7 +88,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-amber-400",
     accentBorder: "hover:border-amber-500/50",
     accentGlow: "rgba(245,158,11,0.25)",
-    prizePool: "₹3,00,000",
+    prizePool: "₹4,00,000",
   },
   {
     id: "cultural",
@@ -105,7 +105,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-fuchsia-400",
     accentBorder: "hover:border-fuchsia-500/50",
     accentGlow: "rgba(217,70,239,0.25)",
-    prizePool: "₹6,00,000+",
+    prizePool: "₹8,00,000+",
   },
   {
     id: "aivishkar",
@@ -122,7 +122,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-violet-400",
     accentBorder: "hover:border-violet-500/60",
     accentGlow: "rgba(168,85,247,0.35)",
-    prizePool: "₹4,00,000+ in Grants",
+    prizePool: "₹5,00,000+ in Grants",
     highlightChips: [
       "Autonomous Humanoid Robotics Arena",
       "Generative AI & LLM Agent Showcase",
@@ -135,7 +135,7 @@ export const REALMS_DATA: Realm[] = [
 export const METRICS = [
   { label: "EXPERIENCES", value: "50+", subtitle: "Realm of Experiences" },
   { label: "UNIVERSITIES", value: "500+", subtitle: "Universities Across India" },
-  { label: "STUDENTS", value: "25,000", subtitle: "Creators & Innovators" },
+  { label: "STUDENTS", value: "35,000+", subtitle: "Creators & Innovators" },
   { label: "EPIC DAYS", value: "2", subtitle: "28th–29th October 2026" },
   { label: "POSSIBILITIES", value: "ENDLESS", subtitle: "Infinite Ways To Make Your Mark" },
 ];
@@ -314,7 +314,7 @@ export default function EventsView() {
           className="mt-8 flex flex-col justify-between gap-6 border-t border-white/12 pt-8 md:flex-row md:items-end"
         >
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-300 md:text-lg font-normal">
-            Four competitive horizons uniting 25,000+ creators, builders, and performers across 500+ universities with endless possibilities.
+            Four competitive horizons uniting 35,000+ creators, builders, and performers across 500+ universities with endless possibilities.
             Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.
           </p>
 

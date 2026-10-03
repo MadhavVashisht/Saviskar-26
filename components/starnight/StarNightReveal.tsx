@@ -25,7 +25,7 @@ const headliners2026Teaser = [
     artist: "GLOBAL STREAMING SENSATION",
     genre: "High-Voltage Stadium Anthems & Pop Rock Fusion",
     tagline:
-      "Over 2 Billion+ global streams. Turning 25,000+ voices into an electric ocean under the stadium sky.",
+      "Over 2 Billion+ global streams. Turning 35,000+ voices into an electric ocean under the stadium sky.",
     status: "CLASSIFIED • REVEAL IMMINENT",
     stage: "CGC MAINSTAGE ARENA",
   },

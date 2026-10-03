@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     template: "%s | CGC Saviskar 2026 — CGC University, Mohali",
   },
   description:
-    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS, and Stadium Star Night Concerts. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
+    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS, and Stadium Star Night Concerts. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
   keywords: [
     // 1. Primary Fest Brands & Typo / Phonetic Search Variations
     "Saviskar 2026",
@@ -110,7 +110,8 @@ export const metadata: Metadata = {
     "One Campus Infinite Ways To Make Your Mark",
     "Endless Possibilities",
     "500+ Universities",
-    "25000 Students",
+    "35000 Students",
+    "35,000+ Students",
     "Cash Prizes Upto 25 Lacs",
     "Ms Lakshita 8572815510",
     "Mr Saaransh Sharma 6239124013",
@@ -217,7 +218,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CGC University Mohali | Saviskar 2026 (Official CGC Fest) — Aevorian Reverie",
     description:
-      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS.",
     url: "https://saviskar.co.in",
     siteName: "Saviskar 2026 — CGC University Mohali",
     locale: "en_IN",
@@ -235,7 +236,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CGC University Mohali | Saviskar 2026 (Official CGC Fest) — Aevorian Reverie",
     description:
-      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 25,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS.",
     images: ["/images/concert-stadium.webp"],
   },
   robots: {
@@ -309,7 +310,7 @@ const jsonLdSiteNavigation = {
       "@id": "https://saviskar.co.in/#nav-gallery",
       name: "Dome Gallery & Archives",
       description:
-        "Interactive 3D Dome Gallery and visual archive capturing 25,000+ creators, hackers, and performers across 500+ universities.",
+        "Interactive 3D Dome Gallery and visual archive capturing 35,000+ creators, hackers, and performers across 500+ universities.",
       url: "https://saviskar.co.in/gallery",
     },
     {
@@ -548,7 +549,7 @@ const jsonLdFestival = {
     {
       "@type": "MusicEvent",
       name: "Star Night (Day 1) — Headline Stadium Concert",
-      description: "Headline concert in the CGC Concert Arena featuring celebrated vocalists, live instrumental bands, and 25,000+ attendee crowd.",
+      description: "Headline concert in the CGC Concert Arena featuring celebrated vocalists, live instrumental bands, and 35,000+ attendee crowd.",
       url: "https://saviskar.co.in/starnight",
     },
     {
@@ -672,7 +673,7 @@ const jsonLdFAQ = {
       name: "What is CGC and why is CGC University Mohali famous for Saviskar?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 25,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹25 LACS (25 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night celebrity concerts.",
+        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 35,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹25 LACS (25 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night celebrity concerts.",
       },
     },
     {
@@ -822,7 +823,7 @@ export default function RootLayout({
 
           <h2>CGC University Mohali &amp; Chandigarh Group of Colleges Authority</h2>
           <p>
-            CGC University Mohali is a distinguished higher education landmark in North India. Saviskar represents the absolute pinnacle of student innovation, artistic performance, and campus life at CGC, organized under the patronage of the Directorate of Student Affairs (Team DSA) and the Student Advisory Council (SAC). Over 25,000 student attendees representing 500+ universities across India converge at CGC Mohali for two electric days of competition with endless possibilities. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.
+            CGC University Mohali is a distinguished higher education landmark in North India. Saviskar represents the absolute pinnacle of student innovation, artistic performance, and campus life at CGC, organized under the patronage of the Directorate of Student Affairs (Team DSA) and the Student Advisory Council (SAC). Over 35,000 student attendees representing 500+ universities across India converge at CGC Mohali for two electric days of competition with endless possibilities. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.
           </p>
 
           <h2>Nearby Areas, Tricity Proximity &amp; College Vicinity</h2>
@@ -844,7 +845,7 @@ export default function RootLayout({
             <li><strong>Cultural Realm (Own the stage. Set the rhythm. Make your moment.):</strong> Nritya-E-Bharat – Folk Dance, Clash of Chords – Battle of Bands, Mr. &amp; Ms. Saviskar, Saviskar Got Talent (SGT), Footlose– Solo &amp; Western Dance, Sur Sagar – Sing Your Story, Gully War – Rap Battle, Nachda Punjab – Punjabi Folk, Spin &amp; Dance.</li>
             <li><strong>Non-Technical Realm (Create without limits. Play beyond the ordinary.):</strong> Face Painting, Doodle Art, Short Film Contest, Open Mic, Business Quiz, Photography, Chill &amp; Grill – Fireless Cooking, Ad-Mad Show, Brand Battle, The Opinion Exchange, The Case Mystique, Reel-ity Check, Canvas Art, Visual Storytelling Challenge, Vlog Making.</li>
             <li><strong>AIvishkar:</strong> Flagship National AI Tech Expo, Autonomous Humanoid Robotics, Neural Agents, Computer Vision labs, and Founders Arena Angel Pitch Venture Grants.</li>
-            <li><strong>Star Night Stadium Concerts:</strong> Two consecutive nights of stadium celebrity concerts, chart-topping headline artists, laser pyrotechnics, and 25,000+ voices singing under the Mohali night sky.</li>
+            <li><strong>Star Night Stadium Concerts:</strong> Two consecutive nights of stadium celebrity concerts, chart-topping headline artists, laser pyrotechnics, and 35,000+ voices singing under the Mohali night sky.</li>
           </ul>
 
           <h2>CGC Campus Venues &amp; Map Coordinates</h2>

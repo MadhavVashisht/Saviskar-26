@@ -19,7 +19,7 @@ const StarNightReveal = dynamic(
 export const metadata: Metadata = {
   title: "Star Night Celebrity Concerts | CGC Saviskar 2026 — CGC University Mohali",
   description:
-    "Experience the iconic Star Night stadium concerts at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Headline Bollywood vocalists, Punjabi music icons, laser pyrotechnics, and 25,000+ attendee stadium pro-nights.",
+    "Experience the iconic Star Night stadium concerts at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Headline Bollywood vocalists, Punjabi music icons, laser pyrotechnics, and 35,000+ attendee stadium pro-nights.",
   keywords: [
     "Star Night CGC University",
     "Celebrity Star Night Mohali",
@@ -39,14 +39,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Star Night Celebrity Concerts | CGC Saviskar 2026",
     description:
-      "Headline concerts, laser pyrotechnics, and 25,000+ voices singing as one at CGC University, Mohali.",
+      "Headline concerts, laser pyrotechnics, and 35,000+ voices singing as one at CGC University, Mohali.",
     images: ["/images/concert-stadium.webp"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Star Night Celebrity Concerts | CGC Saviskar 2026",
     description:
-      "Headline concerts, laser pyrotechnics, and 25,000+ voices singing as one at CGC University, Mohali.",
+      "Headline concerts, laser pyrotechnics, and 35,000+ voices singing as one at CGC University, Mohali.",
     images: ["/images/concert-stadium.webp"],
   },
 };
@@ -57,7 +57,7 @@ const jsonLdStarNight = {
   name: "Saviskar 2026 Star Night Stadium Concerts",
   alternateName: ["CGC Star Night", "CGC Fest Pro Night", "Saviskar Celebrity Night"],
   description:
-    "Two consecutive stadium headline concerts featuring chart-topping Bollywood and Punjabi artists, laser shows, and 25,000+ attendee crowd at CGC University Mohali.",
+    "Two consecutive stadium headline concerts featuring chart-topping Bollywood and Punjabi artists, laser shows, and 35,000+ attendee crowd at CGC University Mohali.",
   url: "https://saviskar.co.in/starnight",
   startDate: "2026-10-28T19:30:00+05:30",
   endDate: "2026-10-29T23:00:00+05:30",
