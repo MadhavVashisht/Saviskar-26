@@ -1194,6 +1194,27 @@ export async function POST(
         }
       );
     }
+  } else if (rpcAccommodations.length > 0 && participant?.id) {
+    const { data: itemData } = await supabaseAdmin
+      .from("payment_order_items")
+      .select("payment_order_id")
+      .eq("item_type", "accommodation")
+      .limit(1)
+      .maybeSingle();
+
+    if (itemData?.payment_order_id) {
+      const { data: orderData } = await supabaseAdmin
+        .from("payment_orders")
+        .select("id, order_reference, amount, currency, status")
+        .eq("id", itemData.payment_order_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (orderData) {
+        paymentOrder = orderData as unknown as PaymentOrderInfo;
+        totalAmount = Number(orderData.amount) || totalAmount;
+      }
+    }
   }
   // =====================================================
   // 15.5 SEND CONFIRMATION EMAILS
