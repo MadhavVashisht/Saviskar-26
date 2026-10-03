@@ -181,6 +181,8 @@ export async function POST(
     );
   }
 
+  const authenticatedEmail = session.email.toLowerCase();
+
   // =====================================================
   // 2. RATE LIMIT
   // =====================================================
@@ -366,11 +368,11 @@ export async function POST(
       255
     );
 
-  if (idCardStoragePath && !idCardStoragePath.startsWith(`${session.email.toLowerCase()}/`)) {
+  if (idCardStoragePath && !idCardStoragePath.startsWith(`${authenticatedEmail}/`)) {
     return errorResponse("Invalid ID card storage path ownership.", 403);
   }
 
-  if (!email || email !== session.email.toLowerCase()) {
+  if (!email || email !== authenticatedEmail) {
     return errorResponse(
       "Submitted email does not match authenticated session.",
       403
@@ -599,7 +601,7 @@ export async function POST(
               state:
                 member.state,
               id_card_storage_path:
-                (member.idCardStoragePath && !member.idCardStoragePath.startsWith(`${session.email.toLowerCase()}/`)) 
+                (member.idCardStoragePath && !member.idCardStoragePath.startsWith(`${authenticatedEmail}/`)) 
                   ? null 
                   : member.idCardStoragePath,
             })
@@ -619,7 +621,7 @@ export async function POST(
     }
     const facIdCardStoragePath = cleanString(rawFac.idCardStoragePath, 255);
     
-    if (facIdCardStoragePath && !facIdCardStoragePath.startsWith(`${session.email.toLowerCase()}/`)) {
+    if (facIdCardStoragePath && !facIdCardStoragePath.startsWith(`${authenticatedEmail}/`)) {
       return errorResponse("Invalid faculty ID card storage path ownership.", 403);
     }
 

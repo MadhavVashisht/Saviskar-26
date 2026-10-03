@@ -891,12 +891,12 @@ export default function EventRegistrationsPage() {
               ""
           ),
           escapeCsv(
-            role === "master_admin"
+            role === "master"
               ? item.participant.email
               : maskEmail(item.participant.email)
           ),
           escapeCsv(
-            role === "master_admin"
+            role === "master"
               ? (item.participant.phone ?? "")
               : maskPhone(item.participant.phone)
           ),

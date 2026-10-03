@@ -1162,9 +1162,9 @@ export default function AdminPage() {
           item.participant.college ??
           "",
 
-          role === "master_admin" ? item.participant.email : maskEmail(item.participant.email),
+          role === "master" ? item.participant.email : maskEmail(item.participant.email),
 
-          role === "master_admin" ? (item.participant.phone ?? "") : maskPhone(item.participant.phone),
+          role === "master" ? (item.participant.phone ?? "") : maskPhone(item.participant.phone),
 
           item.event?.name ??
           item.registration
