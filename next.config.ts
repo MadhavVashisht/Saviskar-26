@@ -26,9 +26,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    optimizePackageImports: ["lucide-react", "motion", "three"],
-  },
   async headers() {
     const cspHeader = [
       "default-src 'self'",

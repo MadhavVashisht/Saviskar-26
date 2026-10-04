@@ -15,12 +15,16 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
+  fallback: ["system-ui", "-apple-system", "sans-serif"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
+  fallback: ["monospace"],
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -29,6 +33,8 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
   subsets: ["latin"],
   display: "swap",
+  preload: false,
+  fallback: ["serif"],
 });
 
 export const metadata: Metadata = {
