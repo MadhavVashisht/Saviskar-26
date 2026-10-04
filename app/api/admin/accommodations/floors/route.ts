@@ -196,14 +196,26 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("hostel_floors")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) {
       return NextResponse.json({ error: "Could not delete floor." }, { status: 500 });
     }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: "Floor not found or already deleted." }, { status: 404 });
+    }
+
+    await supabaseAdmin.from("admin_audit_logs").insert({
+      admin_id: auth.user.id,
+      action_type: "DELETE_ACCOMMODATION_FLOOR",
+      target_id: id,
+      details: { deleted_at: new Date().toISOString() },
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch {

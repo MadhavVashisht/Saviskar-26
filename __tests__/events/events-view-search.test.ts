@@ -324,9 +324,10 @@ describe("Public EventsView — Supabase Data Source & Search Architecture", () 
 
     it("24. Normal periods in descriptions and unrelated text remain unchanged", () => {
       const tech = REALMS_DATA.find((r) => r.id === "technical")!;
-      expect(tech.tagline).toBe("Build. Invent. Compete.");
+      expect(tech.tagline).toBe("Think. Build. Challenge. Conquer.");
       expect(tech.description.endsWith(".")).toBe(true);
       expect(tech.description).toContain("innovators.");
     });
   });
 });
+

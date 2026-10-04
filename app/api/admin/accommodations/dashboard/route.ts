@@ -105,7 +105,8 @@ export async function GET(request: Request) {
           email,
           phone,
           gender,
-          state
+          state,
+          faculty_incharges ( id )
         )
       `, { count: "exact" })
       .order("created_at", { ascending: false })
@@ -156,23 +157,47 @@ export async function GET(request: Request) {
     // Calculate total accommodation stats including check-in/out
     const { data: statusStats } = await supabaseAdmin
       .from("participant_accommodations")
-      .select("status, checked_in, checked_out, room_id");
+      .select(`
+        status, 
+        checked_in, 
+        checked_out, 
+        room_id,
+        participants (
+          faculty_incharges ( id )
+        )
+      `);
 
     let total = 0, paid = 0, pending = 0, cancelled = 0, checkedIn = 0, checkedOut = 0;
     let allocated = 0, awaitingAllocation = 0;
+    let activeParticipants = 0, activeFaculty = 0;
+
     if (statusStats) {
       for (const s of statusStats) {
-        total++;
         if (s.status === "paid") {
+          total++;
           paid++;
           if (s.room_id) allocated++;
           else awaitingAllocation++;
         }
-        else if (s.status === "pending" || s.status === "unpaid") pending++;
-        else if (s.status === "cancelled" || s.status === "failed") cancelled++;
+        else if (s.status === "pending" || s.status === "unpaid") {
+          total++;
+          pending++;
+        }
         
-        if (s.checked_out) checkedOut++;
-        else if (s.checked_in) checkedIn++;
+        if (s.status === "cancelled" || s.status === "failed") {
+          cancelled++;
+        } else {
+          if (s.checked_out) checkedOut++;
+          else if (s.checked_in) checkedIn++;
+          
+          const p = s.participants as any;
+          const is_faculty = Array.isArray(p) 
+            ? p.length > 0 && p[0].faculty_incharges && p[0].faculty_incharges.length > 0 
+            : p?.faculty_incharges && p.faculty_incharges.length > 0;
+            
+          if (is_faculty) activeFaculty++;
+          else activeParticipants++;
+        }
       }
     }
 
@@ -184,9 +209,18 @@ export async function GET(request: Request) {
     }
     const occupiedCapacity = activeAllocations?.length ?? 0;
 
+    const processedAccommodations = (accommodations ?? []).map((acc: any) => {
+      const is_faculty = acc.participants?.faculty_incharges && acc.participants.faculty_incharges.length > 0;
+      if (acc.participants) {
+        delete acc.participants.faculty_incharges;
+        acc.participants.is_faculty = is_faculty;
+      }
+      return acc;
+    });
+
     return NextResponse.json(
       {
-        accommodations: accommodations ?? [],
+        accommodations: processedAccommodations,
         hostels: hostels ?? [],
         floors: floors ?? [],
         rooms: rooms ?? [],
@@ -194,10 +228,11 @@ export async function GET(request: Request) {
         roomOccupancy: Object.fromEntries(roomOccupancy),
         floorOccupancy: Object.fromEntries(floorOccupancy),
         hostelOccupancy: Object.fromEntries(hostelOccupancy),
-        stats: { total, paid, pending, cancelled, checkedIn, checkedOut, allocated, awaitingAllocation, totalCapacity, occupiedCapacity },
+        stats: { total, paid, pending, cancelled, checkedIn, checkedOut, allocated, awaitingAllocation, totalCapacity, occupiedCapacity, participants: activeParticipants, faculty: activeFaculty },
         page,
         pageSize,
         totalCount: count ?? 0,
+        role: auth.role,
       },
       {
         headers: { "Cache-Control": "no-store" },
