@@ -16,7 +16,7 @@
 
 import { NextRequest } from "next/server";
 
-export const STABLE_PRODUCTION_ORIGIN = "https://saviskar-26.vercel.app";
+export const STABLE_PRODUCTION_ORIGIN = "https://saviskar.co.in";
 
 const PROHIBITED_PROD_HOSTNAMES = [
   "trycloudflare.com",

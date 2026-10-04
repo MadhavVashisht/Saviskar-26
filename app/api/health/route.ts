@@ -18,8 +18,12 @@ export async function GET() {
     environment: {
       supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SECRET_KEY),
       payu: Boolean(process.env.PAYU_KEY && process.env.PAYU_SALT),
-      resend: Boolean(process.env.RESEND_API_KEY),
-      primaryAdmin: Boolean(process.env.PRIMARY_ADMIN_USER_ID),
+      primaryAdmin: Boolean(
+        process.env.PRIMARY_ADMIN_USER_ID ||
+        process.env.PRIMARY_ADMIN_USER_IDS ||
+        process.env.PRIMARY_ADMIN_EMAIL ||
+        process.env.PRIMARY_ADMIN_EMAILS
+      ),
     },
   };
 

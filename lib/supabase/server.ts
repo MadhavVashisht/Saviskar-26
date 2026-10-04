@@ -161,22 +161,59 @@ export async function requireMasterAdmin() {
 }
 
 /**
- * Determines if a given user is the Primary Master Admin.
+ * Determines if a given user is one of the Primary Master Admins.
  *
- * Authoritatively checks against process.env.PRIMARY_ADMIN_USER_ID (immutable Supabase Auth user ID).
- * If PRIMARY_ADMIN_USER_ID is not configured, fails closed (returns false).
+ * Authoritatively checks against:
+ * 1. process.env.PRIMARY_ADMIN_USER_IDS or process.env.PRIMARY_ADMIN_USER_ID (comma-separated UUIDs)
+ * 2. process.env.PRIMARY_ADMIN_EMAILS or process.env.PRIMARY_ADMIN_EMAIL (comma-separated emails)
+ * 3. Designated primary master admin emails (jashan082006@gmail.com, mvashisht911@gmail.com)
  */
 export function isPrimaryMaster(
   user: { id?: string; email?: string | null } | null | undefined
 ): boolean {
-  if (!user?.id) return false;
+  if (!user) return false;
 
-  const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
-  if (configuredUserId) {
-    return user.id === configuredUserId;
+  // 1. Check by configured User IDs
+  if (user.id) {
+    const configuredUserIds = [
+      process.env.PRIMARY_ADMIN_USER_IDS,
+      process.env.PRIMARY_ADMIN_USER_ID,
+    ]
+      .filter(Boolean)
+      .join(",")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (configuredUserIds.includes(user.id)) {
+      return true;
+    }
   }
 
-  // Fail closed if PRIMARY_ADMIN_USER_ID is not configured
+  // 2. Check by Email
+  const userEmail = user.email?.trim().toLowerCase();
+  if (userEmail) {
+    const defaultPrimaryEmails = [
+      "jashan082006@gmail.com",
+      "mvashisht911@gmail.com",
+    ];
+
+    const envEmails = [
+      process.env.PRIMARY_ADMIN_EMAILS,
+      process.env.PRIMARY_ADMIN_EMAIL,
+    ]
+      .filter(Boolean)
+      .join(",")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    const allowedEmails = new Set([...defaultPrimaryEmails, ...envEmails]);
+    if (allowedEmails.has(userEmail)) {
+      return true;
+    }
+  }
+
   return false;
 }
 

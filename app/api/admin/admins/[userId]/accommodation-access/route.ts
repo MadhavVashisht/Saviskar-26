@@ -24,13 +24,22 @@ function getIpFromRequest(request: Request): string {
 }
 
 async function isTargetPrimaryMaster(
-  _adminClient: SupabaseClient,
+  adminClient: SupabaseClient,
   targetUserId: string
 ): Promise<boolean> {
-  const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
-  if (configuredUserId) {
-    return targetUserId === configuredUserId;
+  if (isPrimaryMaster({ id: targetUserId })) {
+    return true;
   }
+
+  try {
+    const { data: userResp } = await adminClient.auth.admin.getUserById(targetUserId);
+    if (userResp?.user?.email) {
+      return isPrimaryMaster({ id: targetUserId, email: userResp.user.email });
+    }
+  } catch {
+    // ignore
+  }
+
   return false;
 }
 

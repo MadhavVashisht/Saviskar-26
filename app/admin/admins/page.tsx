@@ -503,7 +503,7 @@ export default function AdminManagementPage() {
     }
   }
 
-  const primaryMaster = admins.find((admin) => admin.isPrimary);
+  const primaryMasters = admins.filter((admin) => admin.isPrimary);
   const masters = admins.filter(
     (admin) => admin.role === "master" && !admin.isPrimary
   );
@@ -670,24 +670,26 @@ export default function AdminManagementPage() {
           </form>
         </div>
 
-        {primaryMaster && (
+        {primaryMasters.length > 0 && (
           <section className="mb-8">
             <div className="mb-4 flex items-center gap-3 text-black">
               <Crown size={18} className="text-amber-500" />
               <h2 className="text-xl font-semibold text-black">
-                Primary Master
+                {primaryMasters.length > 1 ? "Primary Master Admins" : "Primary Master"}
               </h2>
             </div>
             <div className="overflow-hidden rounded-[28px] bg-white">
               <div className="divide-y divide-black/[0.06]">
-                <AdminRow
-                  key={primaryMaster.user_id}
-                  admin={primaryMaster}
-                  master
-                  isSuperMaster={isSuperMaster}
-                  onResetPassword={() => resetPassword(primaryMaster)}
-                  resetting={resettingId === primaryMaster.user_id}
-                />
+                {primaryMasters.map((pm) => (
+                  <AdminRow
+                    key={pm.user_id}
+                    admin={pm}
+                    master
+                    isSuperMaster={isSuperMaster}
+                    onResetPassword={() => resetPassword(pm)}
+                    resetting={resettingId === pm.user_id}
+                  />
+                ))}
               </div>
             </div>
           </section>

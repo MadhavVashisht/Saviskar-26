@@ -124,17 +124,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Administrator not found." }, { status: 404 });
   }
 
-  // 1.5 Protect Primary Master
-  const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
-  const isTargetPrimary = configuredUserId ? targetUserId === configuredUserId : false;
-  
-  if (isTargetPrimary && !isPrimaryMaster(auth.user)) {
-    return NextResponse.json(
-      { error: "Only the Primary Master Admin can reset the Primary Master password." },
-      { status: 403 }
-    );
-  }
-
   // 2. Get the user's email from Auth
   const { data: userResp, error: userError } = await adminClient.auth.admin.getUserById(targetUserId);
 
@@ -143,6 +132,15 @@ export async function POST(request: Request) {
   }
 
   const email = userResp.user.email;
+
+  // 2.5 Protect Primary Master
+  const isTargetPrimary = isPrimaryMaster({ id: targetUserId, email });
+  if (isTargetPrimary && !isPrimaryMaster(auth.user)) {
+    return NextResponse.json(
+      { error: "Only a Primary Master Admin can reset a Primary Master password." },
+      { status: 403 }
+    );
+  }
 
   // 3. Send the password reset email
   const siteUrl = getRequestOrigin(request);

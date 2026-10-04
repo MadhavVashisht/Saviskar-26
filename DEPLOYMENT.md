@@ -13,16 +13,18 @@ All environment variables are strictly categorized by security classification. *
 | Variable Name | Scope | Classification | Default / Example | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Public (Client + Server) | `PUBLIC` | `https://xyzcompany.supabase.co` | Supabase API URL endpoint. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public (Client + Server) | `PUBLIC` | `eyJhbGci...` | Supabase anon key with RLS enforcement. |
-| `SUPABASE_SECRET_KEY` | Server Only | `CRITICAL_SECRET` | `sbp_...` / `eyJ...` | Supabase Service Role Key for elevated backend RPCs & admin actions. |
-| `PayU_KEY_ID` | Public / Server | `PUBLIC` | `rzp_live_...` | PayU public key ID initialized in frontend checkout. |
-| `PayU_KEY_SECRET` | Server Only | `CRITICAL_SECRET` | `secret_...` | PayU API secret key for HMAC signature verification and order creation. |
-| `PayU_WEBHOOK_SECRET` | Server Only | `CRITICAL_SECRET` | `whsec_...` | PayU webhook signature verification secret for `/api/payments/webhook`. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public (Client + Server) | `PUBLIC` | `sb_publishable_...` | Supabase publishable key for client browser auth. |
+| `SUPABASE_SECRET_KEY` | Server Only | `CRITICAL_SECRET` | `sb_secret_...` | Supabase Service Role Key for elevated backend RPCs & admin actions. |
+| `PAYU_KEY` | Server Only | `CRITICAL_SECRET` | `your_live_payu_key` | PayU Merchant Key for order initialization and checksum calculation. |
+| `PAYU_SALT` | Server Only | `CRITICAL_SECRET` | `your_live_payu_salt` | PayU Merchant Salt for SHA-512 payment hash generation and verification. |
+| `PAYU_ENVIRONMENT` | Server Only | `INTERNAL_CONFIG` | `production` | Set to `production` for live transactions, `test` for sandbox. |
+| `PAYMENT_GATEWAY` | Server Only | `INTERNAL_CONFIG` | `payu` | Active payment gateway provider (`payu`). |
+| `PAYMENT_CALLBACK_BASE_URL` | Server Only | `INTERNAL_CONFIG` | `https://saviskar.co.in` | Canonical base URL for PayU success and failure callback redirects. |
 | `RESEND_API_KEY` | Server Only | `CRITICAL_SECRET` | `re_...` | Resend API key for transactional emails and delegate passes. |
 | `RESEND_FROM_EMAIL` | Server Only | `INTERNAL_CONFIG` | `Saviskar 2026 <noreply@saviskar.co.in>` | Production verified sender address. |
-| `PRIMARY_ADMIN_USER_ID` | Server Only | `CRITICAL_SECRET` | `usr_...` / UUID | Root super-admin Supabase Auth UID with initial access permissions. |
+| `PRIMARY_ADMIN_EMAILS` | Server Only | `INTERNAL_CONFIG` | `jashan082006@gmail.com,mvashisht911@gmail.com` | Comma-separated emails of Primary Master Admins. |
 | `NEXT_PUBLIC_SITE_URL` | Public | `INTERNAL_CONFIG` | `https://saviskar.co.in` | Canonical URL used for absolute links and QR pass verification URLs. |
-| `NEXT_PUBLIC_SENTRY_DSN` | Public / Server | `PUBLIC` | `https://...ingest.sentry.io/...` | Optional Sentry DSN for client and server error reporting. |
+| `NEXT_PUBLIC_ENABLE_REGISTRATIONS` | Public | `INTERNAL_CONFIG` | `true` | Feature flag to unlock registration portal. |
 | `NODE_ENV` | Build & Runtime | `INTERNAL_CONFIG` | `production` | Enables React production optimizations and strict HSTS headers. |
 
 ---
@@ -155,15 +157,73 @@ During the October 27–28 peak load, expect sudden bursts of registrations, pay
 
 ---
 
-## 7. Emergency Rollback Procedure
+## 7. Hostinger Deployment & Rollback Runbook
 
-If a critical flaw is detected during live operations:
+### Deployment Options on Hostinger
 
-1. **Instant Vercel Instant Rollback:**
-   - In Vercel Dashboard > Deployments > locate prior stable deployment (`88a4db2` or designated tag).
-   - Click `...` > `Instant Rollback`.
-   - Traffic diverts immediately within 2 seconds globally.
+#### Option A: Hostinger VPS (Recommended for Performance)
+1. **Server Prerequisites:**
+   - Ubuntu 22.04 / 24.04 LTS
+   - Node.js 20+ LTS (`curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs`)
+   - PM2: `sudo npm install -g pm2`
+   - Nginx: `sudo apt install -y nginx certbot python3-certbot-nginx`
 
+2. **Clone & Build:**
+   ```bash
+   git clone https://github.com/MadhavVashisht/Saviskar-26.git /var/www/saviskar
+   cd /var/www/saviskar
+   npm ci
+   cp .env.production.local .env.production
+   # Verify all live secrets in .env.production
+   npm run build
+   ```
+
+3. **Process Management (PM2):**
+   ```bash
+   # Start with Next.js standalone runner
+   pm2 start .next/standalone/server.js --name "saviskar-2026" -i max
+   pm2 save
+   pm2 startup
+   ```
+
+4. **Nginx Reverse Proxy & SSL:**
+   - Configure `/etc/nginx/sites-available/saviskar.co.in`:
+     ```nginx
+     server {
+         server_name saviskar.co.in www.saviskar.co.in;
+
+         location / {
+             proxy_pass http://127.0.0.1:3000;
+             proxy_http_version 1.1;
+             proxy_set_header Upgrade $http_upgrade;
+             proxy_set_header Connection 'upgrade';
+             proxy_set_header Host $host;
+             proxy_set_header X-Real-IP $remote_addr;
+             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+             proxy_set_header X-Forwarded-Proto $scheme;
+             proxy_cache_bypass $http_upgrade;
+         }
+     }
+     ```
+   - Enable SSL: `sudo certbot --nginx -d saviskar.co.in -d www.saviskar.co.in`
+
+#### Option B: Hostinger Node.js Web Hosting (hPanel)
+1. Go to **hPanel > Websites > Manage > Node.js**.
+2. **Node.js version:** Select `20.x`.
+3. **Application Root:** `/public_html` or `/domains/saviskar.co.in/app`.
+4. **Application Startup File:** `.next/standalone/server.js` (or `server.js`).
+5. **Environment Variables:** In hPanel, populate all production environment variables from `.env.production.local`.
+6. Run `npm install --omit=dev` and `npm run build`, then restart the application.
+
+### Emergency Rollback Procedure
+If a critical issue occurs post-launch:
+1. **Hostinger VPS:**
+   ```bash
+   cd /var/www/saviskar
+   git checkout <prior_stable_commit_hash>
+   npm run build
+   pm2 restart saviskar-2026
+   ```
 2. **Database State Preservation:**
-   - All migrations and schema structures are backward-compatible.
-   - Do NOT run destructive `DROP TABLE` or `DROP COLUMN` during a rollback.
+   - Migrations and schema are backward-compatible.
+   - Never run destructive `DROP` commands during emergency rollback.

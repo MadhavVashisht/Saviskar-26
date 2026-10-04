@@ -26,12 +26,20 @@ function getIpFromRequest(request: Request): string {
 }
 
 async function isTargetPrimaryMaster(
-  _adminClient: SupabaseClient,
+  adminClient: SupabaseClient,
   targetUserId: string
 ): Promise<boolean> {
-  const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
-  if (configuredUserId) {
-    return targetUserId === configuredUserId;
+  if (isPrimaryMaster({ id: targetUserId })) {
+    return true;
+  }
+
+  try {
+    const { data: userResp } = await adminClient.auth.admin.getUserById(targetUserId);
+    if (userResp?.user?.email) {
+      return isPrimaryMaster({ id: targetUserId, email: userResp.user.email });
+    }
+  } catch {
+    // ignore
   }
 
   return false;
@@ -157,11 +165,10 @@ export async function GET() {
   }
 
   const primary = isPrimaryMaster(auth.user);
-  const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
 
   const result = (admins ?? []).map((admin) => {
     const email = users.get(admin.user_id)?.email ?? null;
-    const isPrimary = configuredUserId ? admin.user_id === configuredUserId : false;
+    const isPrimary = isPrimaryMaster({ id: admin.user_id, email });
 
     return {
       user_id: admin.user_id,
@@ -312,12 +319,7 @@ export async function POST(request: Request) {
   }
 
   // Primary Master protection: cannot re-add or overwrite Primary Master
-  const configuredUserId = process.env.PRIMARY_ADMIN_USER_ID?.trim();
-  if (
-    configuredUserId &&
-    auth.user?.id === configuredUserId &&
-    auth.user?.email?.toLowerCase() === email
-  ) {
+  if (isPrimaryMaster({ email })) {
     return NextResponse.json(
       {
         error: "The Primary Master account already exists and cannot be modified.",
