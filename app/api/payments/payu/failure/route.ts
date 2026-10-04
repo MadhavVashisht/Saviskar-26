@@ -6,13 +6,20 @@ import { getCanonicalPaymentBaseUrl, STABLE_PRODUCTION_ORIGIN } from "@/lib/paym
 import { WebhookEvent } from "@/lib/payments/types";
 
 export async function POST(request: NextRequest) {
+  // ─── Resolve Canonical Redirect Base Origin ─────────────
+  const baseUrlResult = getCanonicalPaymentBaseUrl(request);
+  if (!baseUrlResult.success) {
+    console.error(baseUrlResult.internalLog);
+  }
+  const redirectBase = baseUrlResult.success ? baseUrlResult.origin : STABLE_PRODUCTION_ORIGIN;
+
   // ─── Supabase Admin ─────────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !supabaseSecretKey) {
     console.error("PayU failure API: Missing Supabase config.");
-    return NextResponse.redirect(new URL("/register?error=server-config", request.url), 303);
+    return NextResponse.redirect(new URL("/register?error=server-config", redirectBase), 303);
   }
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
@@ -28,24 +35,19 @@ export async function POST(request: NextRequest) {
   try {
     bodyText = await request.text();
   } catch {
-    return NextResponse.redirect(new URL("/register?error=invalid-request", request.url), 303);
+    return NextResponse.redirect(new URL("/register?error=invalid-request", redirectBase), 303);
   }
 
   const gateway = getPaymentGateway("payu");
 
   // Validate the webhook / response hash
   const validateResult = gateway.validateWebhook({ body: bodyText, signature: "" });
+  const rawParams = new URLSearchParams(bodyText);
 
-  if (!validateResult.valid || !validateResult.event) {
-    console.error("PayU signature verification failed on failure route:", validateResult.error);
-    return NextResponse.redirect(new URL("/register?error=signature-invalid", request.url), 303);
-  }
-
-  const event: WebhookEvent = validateResult.event;
-  const gatewayOrderId = event.gatewayOrderId; // txnid
+  const gatewayOrderId = validateResult.event?.gatewayOrderId || rawParams.get("txnid")?.trim() || "";
 
   if (!gatewayOrderId) {
-    return NextResponse.redirect(new URL("/register?error=missing-order-id", request.url), 303);
+    return NextResponse.redirect(new URL("/register?error=missing-order-id", redirectBase), 303);
   }
 
   // ─── Look Up Payment Order ──────────────────────────────
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
 
   if (lookupError || !paymentOrder) {
     console.error("Payment order lookup for failure route failed:", lookupError);
-    return NextResponse.redirect(new URL("/register?error=order-not-found", request.url), 303);
+    return NextResponse.redirect(new URL("/register?error=order-not-found", redirectBase), 303);
   }
 
   const paymentOrderId = paymentOrder.id;
@@ -83,12 +85,6 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     participantPublicId = payer?.participant_id ?? "";
   }
-
-  const baseUrlResult = getCanonicalPaymentBaseUrl(request);
-  if (!baseUrlResult.success) {
-    console.error(baseUrlResult.internalLog);
-  }
-  const redirectBase = baseUrlResult.success ? baseUrlResult.origin : STABLE_PRODUCTION_ORIGIN;
 
   const resumeUrl = generatePaymentResumeUrl({
     paymentOrderId,

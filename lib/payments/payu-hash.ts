@@ -64,22 +64,41 @@ export function verifyPayUResponseHash(params: {
     additionalCharges, receivedHash
   } = params;
 
-  let hashString = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-  
-  if (additionalCharges) {
-    hashString = `${additionalCharges}|${hashString}`;
+  if (!receivedHash) return false;
+
+  const sanitizeSecret = (val: string) => val.trim().replace(/^["']+|["']+$/g, "").trim();
+  const cleanSalt = sanitizeSecret(salt);
+  const cleanKey = sanitizeSecret(key);
+  const cleanReceived = receivedHash.trim().toLowerCase();
+
+  // PayU response hash candidate 1: Standard reverse hash:
+  // sha512(SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+  const baseSequence = `${cleanSalt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${cleanKey}`;
+  const candidates: string[] = [baseSequence];
+
+  // PayU response hash candidate 2: If additionalCharges is present/provided:
+  // sha512(additionalCharges|SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+  if (additionalCharges && additionalCharges.trim().length > 0) {
+    candidates.unshift(`${additionalCharges.trim()}|${baseSequence}`);
   }
 
-  const computedHash = crypto.createHash("sha512").update(hashString).digest("hex").toLowerCase();
-  
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(computedHash, "utf-8"),
-      Buffer.from(receivedHash.toLowerCase(), "utf-8")
-    );
-  } catch {
-    return false; // Timing safe equal fails if lengths are different
+  for (const candidate of candidates) {
+    const computedHash = crypto.createHash("sha512").update(candidate).digest("hex").toLowerCase();
+    try {
+      if (
+        crypto.timingSafeEqual(
+          Buffer.from(computedHash, "utf-8"),
+          Buffer.from(cleanReceived, "utf-8")
+        )
+      ) {
+        return true;
+      }
+    } catch {
+      // Buffer length mismatch or comparison error; continue to next candidate
+    }
   }
+
+  return false;
 }
 
 /**

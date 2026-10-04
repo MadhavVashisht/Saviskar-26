@@ -20,8 +20,15 @@ import { getSiteBaseUrl } from "./resume-token";
 export class PayUGateway implements PaymentGateway {
   readonly name = "payu";
 
+  private cleanSecret(val?: string): string {
+    return (val || "").trim().replace(/^["']+|["']+$/g, "").trim();
+  }
+
   private get environment(): "test" | "production" {
-    return process.env.PAYU_ENVIRONMENT === "production" ? "production" : "test";
+    if (process.env.PAYU_ENVIRONMENT === "production" || process.env.NODE_ENV === "production") {
+      return "production";
+    }
+    return "test";
   }
 
   private get endpoint(): string {
@@ -37,13 +44,13 @@ export class PayUGateway implements PaymentGateway {
   }
 
   private get key(): string {
-    const k = process.env.PAYU_KEY?.trim();
+    const k = this.cleanSecret(process.env.PAYU_KEY);
     if (!k) throw new Error("PAYU_KEY is not set in environment variables.");
     return k;
   }
 
   private get salt(): string {
-    const s = process.env.PAYU_SALT?.trim();
+    const s = this.cleanSecret(process.env.PAYU_SALT);
     if (!s) throw new Error("PAYU_SALT is not set in environment variables.");
     return s;
   }

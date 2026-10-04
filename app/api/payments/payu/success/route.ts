@@ -8,13 +8,20 @@ import { getCanonicalPaymentBaseUrl, STABLE_PRODUCTION_ORIGIN } from "@/lib/paym
 import { WebhookEvent } from "@/lib/payments/types";
 
 export async function POST(request: NextRequest) {
+  // ─── Resolve Canonical Redirect Base Origin ─────────────
+  const baseUrlResult = getCanonicalPaymentBaseUrl(request);
+  if (!baseUrlResult.success) {
+    console.error(baseUrlResult.internalLog);
+  }
+  const redirectBase = baseUrlResult.success ? baseUrlResult.origin : STABLE_PRODUCTION_ORIGIN;
+
   // ─── Supabase Admin ─────────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !supabaseSecretKey) {
     console.error("PayU success API: Missing Supabase config.");
-    return NextResponse.redirect(new URL("/register?error=server-config", request.url), 303);
+    return NextResponse.redirect(new URL("/register?error=server-config", redirectBase), 303);
   }
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
@@ -30,25 +37,22 @@ export async function POST(request: NextRequest) {
   try {
     bodyText = await request.text();
   } catch {
-    return NextResponse.redirect(new URL("/register?error=invalid-request", request.url), 303);
+    return NextResponse.redirect(new URL("/register?error=invalid-request", redirectBase), 303);
   }
 
   const gateway = getPaymentGateway("payu");
 
   // Validate the webhook / response hash
   const validateResult = gateway.validateWebhook({ body: bodyText, signature: "" });
+  const rawParams = new URLSearchParams(bodyText);
 
-  if (!validateResult.valid || !validateResult.event) {
-    console.error("PayU signature verification failed:", validateResult.error);
-    return NextResponse.redirect(new URL("/register?error=signature-invalid", request.url), 303);
-  }
-
-  const event: WebhookEvent = validateResult.event;
-  const gatewayOrderId = event.gatewayOrderId; // txnid
-  const gatewayPaymentId = event.gatewayPaymentId; // mihpayid
+  let gatewayOrderId = validateResult.event?.gatewayOrderId || rawParams.get("txnid")?.trim() || "";
+  let gatewayPaymentId = validateResult.event?.gatewayPaymentId || rawParams.get("mihpayid")?.trim() || "";
+  const isSignatureValid = validateResult.valid && !!validateResult.event;
 
   if (!gatewayOrderId) {
-    return NextResponse.redirect(new URL("/register?error=missing-order-id", request.url), 303);
+    console.error("PayU success API: Missing gatewayOrderId (txnid).");
+    return NextResponse.redirect(new URL("/register?error=missing-order-id", redirectBase), 303);
   }
 
   // ─── Look Up Payment Order ──────────────────────────────
@@ -68,8 +72,8 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (lookupError || !paymentOrder) {
-    console.error("Payment order lookup for verification failed:", lookupError);
-    return NextResponse.redirect(new URL("/register?error=order-not-found", request.url), 303);
+    console.error("Payment order lookup for verification failed:", lookupError, { gatewayOrderId });
+    return NextResponse.redirect(new URL("/register?error=order-not-found", redirectBase), 303);
   }
 
   const paymentOrderId = paymentOrder.id;
@@ -87,12 +91,6 @@ export async function POST(request: NextRequest) {
     participantPublicId = payer?.participant_id ?? "";
   }
 
-  const baseUrlResult = getCanonicalPaymentBaseUrl(request);
-  if (!baseUrlResult.success) {
-    console.error(baseUrlResult.internalLog);
-  }
-  const redirectBase = baseUrlResult.success ? baseUrlResult.origin : STABLE_PRODUCTION_ORIGIN;
-
   const resumeUrl = generatePaymentResumeUrl({
     paymentOrderId,
     participantId: participantPublicId,
@@ -103,6 +101,13 @@ export async function POST(request: NextRequest) {
   // ─── Idempotency: Already Paid ──────────────────────────
   if (paymentOrder.status === "paid") {
     return NextResponse.redirect(new URL(resumeUrl), 303);
+  }
+
+  // If browser form POST hash failed, log and rely on authoritative server-to-server verification:
+  if (!isSignatureValid) {
+    console.warn(
+      `[PAYU SUCCESS] Response hash check did not match (${validateResult.error}); performing authoritative server-to-server verification via verify_payment for ${gatewayOrderId}...`
+    );
   }
 
   // ─── P0-2: Server-Side Payment Verification ───────────
@@ -130,6 +135,10 @@ export async function POST(request: NextRequest) {
       redirectUrl.searchParams.set("error", "amount-mismatch");
       return NextResponse.redirect(redirectUrl, 303);
     }
+
+    if (!gatewayPaymentId && fetchedPayment.gatewayPaymentId) {
+      gatewayPaymentId = fetchedPayment.gatewayPaymentId;
+    }
   } catch (err) {
     captureException(err, {
       route: "/api/payments/payu/success",
@@ -139,7 +148,7 @@ export async function POST(request: NextRequest) {
     });
     console.error("Server-side payment verification failed (fail-closed):", err instanceof Error ? err.message : String(err));
     const redirectUrl = new URL(resumeUrl);
-    redirectUrl.searchParams.set("error", "verification-failed");
+    redirectUrl.searchParams.set("error", !isSignatureValid ? "signature-invalid" : "verification-failed");
     return NextResponse.redirect(redirectUrl, 303);
   }
 
