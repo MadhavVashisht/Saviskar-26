@@ -204,10 +204,20 @@ export default function Footer() {
                 </a>
 
                 <a
+                  href="https://www.linkedin.com/company/cgcuniversitymohali/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-zinc-400 transition-colors hover:text-white flex items-center gap-1"
+                >
+                  <span>LinkedIn</span>
+                  <ArrowUpRight size={13} className="opacity-70" />
+                </a>
+
+                <a
                   href="mailto:saviskar@cgcuniversity.in"
                   className="text-sm text-zinc-400 transition-colors hover:text-white flex items-center gap-1"
                 >
-                  <span>Email: saviskar@cgcuniversity.in</span>
+                  <span>Email Helpline</span>
                   <ArrowUpRight size={13} className="opacity-70" />
                 </a>
               </div>
@@ -230,7 +240,7 @@ export default function Footer() {
               <p className="font-mono text-[11px] tracking-wider text-zinc-400">
                 © 2026 SAVISKAR • CGC UNIVERSITY MOHALI • ALL RIGHTS RESERVED
               </p>
-              <p className="text-[11px] text-zinc-300 flex items-center gap-1">
+              <p className="text-[11px] text-zinc-300 flex flex-wrap items-center gap-1">
                 <span>Made by</span>
                 <a
                   href="https://www.amadhav.com"
@@ -241,6 +251,9 @@ export default function Footer() {
                   <span>Madhav Vashisht</span>
                   <ArrowUpRight size={11} className="inline opacity-70" />
                 </a>
+                <span className="text-zinc-500">·</span>
+                <span className="font-medium text-violet-300">Jashan Jot</span>
+                <span className="text-zinc-400">(Student Advisory Council)</span>
               </p>
             </div>
           </div>
@@ -388,7 +401,7 @@ export default function Footer() {
 
                   {/* Campus Venue Footnote */}
                   <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center text-[11px] text-zinc-400">
-                    Campus Venue: CGC University, Mohali, State Highway 12A, Chandigarh-Sirhind Road, Sahibzada Ajit Singh Nagar, Punjab 140307
+                    Campus Venue: CGC University, Sector 112, Landran, Mohali, Punjab - 140307, India
                   </div>
                 </motion.div>
               </motion.div>
