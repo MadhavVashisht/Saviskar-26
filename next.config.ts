@@ -34,13 +34,13 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https://*.supabase.co https://img.youtube.com https://i.ytimg.com https://lh3.googleusercontent.com https://drive.google.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.resend.com https://secure.payu.in https://test.payu.in https://info.payu.in",
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://secure.payu.in https://test.payu.in",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.resend.com https://secure.payu.in https://test.payu.in https://info.payu.in https://api.payu.in https://*.payu.in https://payu.in",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://secure.payu.in https://test.payu.in https://api.payu.in https://*.payu.in https://payu.in",
       "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
-      // Critical for PayU hosted checkout: permits browser form POST to PayU gateways
-      "form-action 'self' https://secure.payu.in https://test.payu.in",
+      // Critical for PayU hosted checkout: permits browser form POST to PayU gateways and redirects to api.payu.in
+      "form-action 'self' https://secure.payu.in https://test.payu.in https://api.payu.in https://*.payu.in https://payu.in https://*.payubiz.in https://payubiz.in https://*.payumoney.com https://payumoney.com",
     ].join("; ");
 
     return [

@@ -334,8 +334,13 @@ export class PayUGateway implements PaymentGateway {
       parsedStatus = "not_found";
     }
 
-    const amt = parseFloat(transaction.amt || transaction.amount || "0");
-    const amountInPaise = Math.round(amt * 100);
+    const txRecord = transaction as Record<string, unknown>;
+    const rawAmt = typeof txRecord.transaction_amount === "string" && txRecord.transaction_amount
+      ? parseFloat(txRecord.transaction_amount)
+      : txRecord.additional_charges
+        ? parseFloat(transaction.amt || "0") - parseFloat(String(txRecord.additional_charges) || "0")
+        : parseFloat(transaction.amt || transaction.amount || "0");
+    const amountInPaise = Math.round(rawAmt * 100);
 
     return {
       gatewayPaymentId: transaction.mihpayid?.toString() || "",
@@ -344,6 +349,9 @@ export class PayUGateway implements PaymentGateway {
       amount: amountInPaise,
       currency: "INR",
       rawStatus: transaction.status,
+      unmappedStatus: typeof txRecord.unmappedstatus === "string" ? txRecord.unmappedstatus : undefined,
+      mode: typeof txRecord.mode === "string" ? txRecord.mode : undefined,
+      addedOn: typeof txRecord.addedon === "string" ? txRecord.addedon : undefined,
     };
   }
 }

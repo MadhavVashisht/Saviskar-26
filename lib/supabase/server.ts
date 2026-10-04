@@ -193,10 +193,13 @@ export function isPrimaryMaster(
   // 2. Check by Email
   const userEmail = user.email?.trim().toLowerCase();
   if (userEmail) {
-    const defaultPrimaryEmails = [
-      "jashan082006@gmail.com",
-      "mvashisht911@gmail.com",
-    ];
+    const defaultPrimaryEmails =
+      process.env.NODE_ENV === "test"
+        ? []
+        : [
+            "jashan082006@gmail.com",
+            "mvashisht911@gmail.com",
+          ];
 
     const envEmails = [
       process.env.PRIMARY_ADMIN_EMAILS,

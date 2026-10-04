@@ -105,6 +105,15 @@ export type FetchedPaymentDetails = {
 
   /** Raw status text from gateway if available. */
   rawStatus?: string;
+
+  /** Provider-specific sub-status (e.g. PayU's unmappedstatus: "initiated", "in progress", "captured") */
+  unmappedStatus?: string;
+
+  /** Payment mode selected (e.g. "UPI", "CC", "DC", or "-" if none selected) */
+  mode?: string;
+
+  /** Gateway timestamp when transaction was recorded */
+  addedOn?: string;
 };
 
 export class PaymentVerificationError extends Error {

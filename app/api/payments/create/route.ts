@@ -472,7 +472,15 @@ export async function POST(
     }
 
     // ─── Case B: Active Pending Payment in Progress on Gateway ───
-    if (details.status === "pending") {
+    // If PayU confirms the transaction was merely "initiated" (checkout opened but no payment
+    // method selected or submitted), it has been abandoned — fall through to Case C (atomic retry)
+    // so attendees clicking "Complete Payment" from email or retry are never permanently deadlocked.
+    // If the payment is actually in progress (e.g. awaiting UPI approval or banking OTP), return 409.
+    const isMerelyInitiated =
+      details.unmappedStatus?.toLowerCase() === "initiated" ||
+      (details.mode === "-" && !details.gatewayPaymentId);
+
+    if (details.status === "pending" && !isMerelyInitiated) {
       return errorResponse(
         "A payment attempt is currently being processed by the gateway. Please complete it on your payment app or wait a few moments before retrying.",
         409,

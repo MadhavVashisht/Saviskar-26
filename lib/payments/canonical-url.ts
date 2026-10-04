@@ -17,6 +17,10 @@
 import { NextRequest } from "next/server";
 
 export const STABLE_PRODUCTION_ORIGIN = "https://saviskar.co.in";
+export const ALLOWED_PRODUCTION_ORIGINS = [
+  "https://saviskar.co.in",
+  "https://saviskar-26.vercel.app",
+];
 
 const PROHIBITED_PROD_HOSTNAMES = [
   "trycloudflare.com",
@@ -133,14 +137,14 @@ export function getCanonicalPaymentBaseUrl(req?: NextRequest): CanonicalPaymentU
     return { success: true, origin: STABLE_PRODUCTION_ORIGIN };
   }
 
-  // Ensure origin strictly matches STABLE_PRODUCTION_ORIGIN (reject arbitrary third-party domains)
-  if (parsed.origin !== STABLE_PRODUCTION_ORIGIN) {
-    console.warn(`[PAYMENT URL WARN] Non-canonical production origin: "${parsed.origin}". Configured origin must match "${STABLE_PRODUCTION_ORIGIN}". Falling back to canonical origin.`);
+  // Ensure origin matches an allowed production origin (reject arbitrary third-party domains)
+  if (!ALLOWED_PRODUCTION_ORIGINS.includes(parsed.origin)) {
+    console.warn(`[PAYMENT URL WARN] Non-canonical production origin: "${parsed.origin}". Configured origin must match an allowed production domain. Falling back to canonical origin.`);
     return { success: true, origin: STABLE_PRODUCTION_ORIGIN };
   }
 
   return {
     success: true,
-    origin: STABLE_PRODUCTION_ORIGIN,
+    origin: parsed.origin,
   };
 }

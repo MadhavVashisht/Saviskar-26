@@ -137,7 +137,7 @@ export async function POST(request: Request) {
   const isTargetPrimary = isPrimaryMaster({ id: targetUserId, email });
   if (isTargetPrimary && !isPrimaryMaster(auth.user)) {
     return NextResponse.json(
-      { error: "Only a Primary Master Admin can reset a Primary Master password." },
+      { error: "Only the Primary Master Admin can reset a Primary Master password." },
       { status: 403 }
     );
   }

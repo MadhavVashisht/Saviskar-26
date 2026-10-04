@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -19,13 +20,13 @@ import {
   Plus,
   QrCode,
   Trash2,
-  Users,
   X,
   Sparkles,
   ShieldCheck,
   Search,
   CreditCard,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabase";
@@ -217,6 +218,9 @@ export default function RegistrationForm({
   const [participantLookupEvents, setParticipantLookupEvents] = useState<
     ParticipantLookupEvent[]
   >([]);
+  const [showManualSync, setShowManualSync] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const isSaveOnlyRef = useRef(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   /*
@@ -369,9 +373,89 @@ export default function RegistrationForm({
       : filteredEvents.slice(0, 3);
 
 
+  const applyParticipantData = useCallback(
+    (
+      participant: NonNullable<ParticipantLookupResponse["participant"]>,
+      events: ParticipantLookupEvent[]
+    ) => {
+      setExistingParticipantId(participant.participantId);
+      setExistingParticipantEmail(normalizedSessionEmail || participant.email || "");
+      setParticipantLookup(participant);
+      setParticipantLookupEvents(events);
+
+      // Never keep an event selected if the participant is already registered for it.
+      const registeredIds = new Set(events.map((item) => item.eventId));
+      setSelectedEventIds((current) =>
+        current.filter((eventId) => !registeredIds.has(eventId))
+      );
+      setEventState((current) => {
+        const next = { ...current };
+        for (const eventId of registeredIds) delete next[eventId];
+        return next;
+      });
+    },
+    [normalizedSessionEmail]
+  );
+
   /*
-   * (Event state initialization handled directly in toggleEvent)
+   * AUTO-FETCH PARTICIPANT FOR VERIFIED SESSION
    */
+  useEffect(() => {
+    let isMounted = true;
+
+    async function autoFetchParticipant() {
+      if (!normalizedSessionEmail) return;
+
+      try {
+        setParticipantLookupLoading(true);
+        const response = await fetch("/api/participants/me", {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) return;
+
+        const result = (await response.json()) as {
+          success?: boolean;
+          found?: boolean;
+          participant?: ParticipantLookupResponse["participant"];
+          events?: ParticipantLookupEvent[];
+        };
+
+        if (!isMounted) return;
+
+        if (result.success && result.found && result.participant) {
+          applyParticipantData(result.participant, result.events ?? []);
+        }
+      } catch (err) {
+        console.error("Auto participant lookup failed:", err);
+      } finally {
+        if (isMounted) {
+          setParticipantLookupLoading(false);
+        }
+      }
+    }
+
+    void autoFetchParticipant();
+
+    function onFocus() {
+      if (document.visibilityState === "visible") {
+        void autoFetchParticipant();
+      }
+    }
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [normalizedSessionEmail, applyParticipantData]);
 
   async function findParticipant() {
     const cleanId = existingParticipantId.trim().toUpperCase();
@@ -452,27 +536,7 @@ export default function RegistrationForm({
       }
 
       const registeredEvents = result.events ?? [];
-
-      setExistingParticipantId(
-        result.participant.participantId
-      );
-      setParticipantLookup(
-        result.participant
-      );
-      setParticipantLookupEvents(
-        registeredEvents
-      );
-
-      // Never keep an event selected if the participant is already registered for it.
-      const registeredIds = new Set(registeredEvents.map((item) => item.eventId));
-      setSelectedEventIds((current) =>
-        current.filter((eventId) => !registeredIds.has(eventId))
-      );
-      setEventState((current) => {
-        const next = { ...current };
-        for (const eventId of registeredIds) delete next[eventId];
-        return next;
-      });
+      applyParticipantData(result.participant, registeredEvents);
     } catch (error) {
       console.error("Participant lookup error:", error);
       setParticipantLookup(null);
@@ -484,6 +548,39 @@ export default function RegistrationForm({
       );
     } finally {
       setParticipantLookupLoading(false);
+    }
+  }
+
+  const confirmedEvents = useMemo(
+    () =>
+      participantLookupEvents.filter(
+        (item) => item.paymentStatus === "paid" || !item.paymentStatus || item.paymentStatus === "free"
+      ),
+    [participantLookupEvents]
+  );
+
+  const pendingEvents = useMemo(
+    () =>
+      participantLookupEvents.filter(
+        (item) => item.paymentStatus === "pending" && (item.paymentAmount || 0) > 0
+      ),
+    [participantLookupEvents]
+  );
+
+  async function handleSaveAndLogout() {
+    if (!onSignOut) return;
+
+    if (selectedEventIds.length === 0) {
+      await onSignOut();
+      return;
+    }
+
+    const formElement = document.getElementById("saviskar-registration-form") as HTMLFormElement | null;
+    if (formElement) {
+      isSaveOnlyRef.current = true;
+      formElement.requestSubmit();
+    } else {
+      await onSignOut();
     }
   }
 
@@ -1027,13 +1124,16 @@ export default function RegistrationForm({
         result.paymentOrder?.id &&
         Number(result.totalAmount) > 0
       ) {
-        form.reset();
-        setSelectedEventIds([]);
-        setEventState({});
-        setExistingParticipantId("");
-
         setPendingPaymentOrderId(result.paymentOrder.id);
         setPendingPaymentAmount(Number(result.totalAmount));
+
+        if (isSaveOnlyRef.current) {
+          isSaveOnlyRef.current = false;
+          if (onSignOut) {
+            await onSignOut();
+          }
+          return;
+        }
 
         await initiatePaymentCheckout(
           result.paymentOrder.id,
@@ -1046,6 +1146,14 @@ export default function RegistrationForm({
        * FREE EVENT PATH — no payment needed.
        * QR contains ONLY the permanent participant ID.
        */
+      if (isSaveOnlyRef.current) {
+        isSaveOnlyRef.current = false;
+        if (onSignOut) {
+          await onSignOut();
+        }
+        return;
+      }
+
       const generatedQr = await QRCode.toDataURL(
         result.participantId,
         {
@@ -1075,6 +1183,7 @@ export default function RegistrationForm({
         );
       }
     } finally {
+      isSaveOnlyRef.current = false;
       setLoading(false);
     }
   }
@@ -1212,10 +1321,9 @@ export default function RegistrationForm({
         }
       }
 
+      // Submit form and keep paymentProcessing active while browser navigates away to PayU
       document.body.appendChild(checkoutForm);
       checkoutForm.submit();
-      
-      // Do not set paymentProcessing to false, because we are navigating away.
       return;
     } catch (error) {
       console.error("Payment checkout error:", error);
@@ -1225,9 +1333,9 @@ export default function RegistrationForm({
           : "Payment could not be processed. Please try again."
       );
       setPaymentPending(true);
-    } finally {
       setPaymentProcessing(false);
       setLoading(false);
+      throw error;
     }
   }
 
@@ -1280,29 +1388,16 @@ export default function RegistrationForm({
       setPendingPaymentOrderId(paymentOrderId);
       setPendingPaymentAmount(item.paymentAmount || 0);
 
-      // Now call the existing checkout function
+      // Now call the checkout function to redirect to the PayU hosted checkout
       await initiatePaymentCheckout(
         paymentOrderId,
         participantLookup.participantId
       );
-
-      // If we got here without throwing, payment was successful. Update UI.
-      setParticipantLookupEvents((current) =>
-        current.map((e) =>
-          e.participantEventId === item.participantEventId
-            ? { ...e, paymentStatus: "paid" }
-            : e
-        )
-      );
-
     } catch (error) {
       console.error("Recovery error:", error);
       setErrorMessage(
         error instanceof Error ? error.message : "Recovery could not be processed."
       );
-    } finally {
-      // payment processing false is handled inside initiatePaymentCheckout usually,
-      // but let's ensure it's off if it threw before
       setPaymentProcessing(false);
       setLoading(false);
     }
@@ -1614,7 +1709,7 @@ export default function RegistrationForm({
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="relative z-10 space-y-12">
+          <form id="saviskar-registration-form" onSubmit={handleSubmit} className="relative z-10 space-y-12">
             <datalist id="indian-states">
               {INDIAN_STATES_AND_UT.map((state) => (
                 <option key={state} value={state} />
@@ -1634,7 +1729,7 @@ export default function RegistrationForm({
                   <button
                     type="button"
                     onClick={onSignOut}
-                    className="text-xs font-medium text-violet-400 hover:text-violet-200 transition-colors underline"
+                    className="text-xs font-medium text-violet-400 hover:text-violet-200 transition-colors underline cursor-pointer"
                   >
                     Switch Account
                   </button>
@@ -1642,187 +1737,311 @@ export default function RegistrationForm({
               </div>
             )}
 
-            {/* EXISTING PARTICIPANT ID (ACCREDITATION SYNC) */}
-            <div className="rounded-[24px] border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-6 md:p-8 backdrop-blur-xl transition-all hover:border-violet-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-              <div className="flex items-start gap-4 sm:gap-5">
-                <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-950/40 text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-                  <Users size={19} />
+            {/* UNIFIED REGISTRATION & CART HUB */}
+            {participantLookupLoading ? (
+              <div className="rounded-[24px] border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-6 md:p-8 backdrop-blur-xl animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 w-5 rounded-full bg-violet-400/40" />
+                  <div className="h-4 w-56 rounded bg-white/20" />
                 </div>
-
-                <div className="w-full min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
-                      Already Registered?
-                    </span>
-                    <span className="text-white/20">•</span>
-                    <span className="text-xs text-white/50">
-                      Accreditation Sync
-                    </span>
+                <div className="mt-4 h-6 w-72 rounded bg-white/10" />
+              </div>
+            ) : participantLookup ? (
+              <div className="rounded-[24px] border border-emerald-500/30 bg-gradient-to-b from-emerald-950/25 via-black/40 to-black/60 p-6 md:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(52,211,153,0.15)] space-y-6">
+                {/* Profile Header */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-white/10 pb-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400 text-black shadow-[0_0_10px_#34d399]">
+                        <Check size={12} />
+                      </span>
+                      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                        Official Saviskar 2026 Registration Hub
+                      </p>
+                    </div>
+                    <h3 className="mt-2 text-xl sm:text-2xl font-semibold text-white">
+                      {participantLookup.name}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-white/60">
+                      {participantLookup.college} • <span className="font-mono">{participantLookup.email}</span>
+                    </p>
                   </div>
 
-                  <h3 className="mt-1.5 text-lg sm:text-xl font-medium tracking-tight text-white">
-                    Add another competition to your Participant ID.
-                  </h3>
-
-                  <p className="mt-1 text-xs sm:text-sm text-white/60">
-                    If this is your first event registration at Saviskar 2026, leave this section blank and proceed below.
-                  </p>
-
-                  <div className="mt-6 flex flex-col gap-4">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                      <div>
-                        <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
-                          Participant ID
-                        </label>
-                        <input
-                          type="text"
-                          value={existingParticipantId}
-                          onChange={(e) => {
-                            setExistingParticipantId(e.target.value.toUpperCase());
-                            setParticipantLookup(null);
-                            setParticipantLookupEvents([]);
-                            setErrorMessage("");
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              void findParticipant();
-                            }
-                          }}
-                          placeholder="Example: SVK26-8D25C998"
-                          className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 font-mono text-sm uppercase text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
-                          Registered Email
-                        </label>
-                        <input
-                          type="email"
-                          value={existingParticipantEmail}
-                          onChange={(e) => {
-                            setExistingParticipantEmail(e.target.value);
-                            setParticipantLookup(null);
-                            setParticipantLookupEvents([]);
-                            setErrorMessage("");
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              void findParticipant();
-                            }
-                          }}
-                          readOnly={Boolean(normalizedSessionEmail)}
-                          placeholder="name@example.com"
-                          className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-80"
-                        />
-                        {normalizedSessionEmail && (
-                          <p className="mt-1 font-mono text-[10px] text-white/40">
-                            Locked to verified email session.
-                          </p>
-                        )}
-                      </div>
-
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/60 px-3.5 py-1.5 font-mono text-xs font-semibold text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                      <span>{participantLookup.participantId}</span>
                       <button
                         type="button"
-                        onClick={() => void findParticipant()}
-                        disabled={participantLookupLoading || !existingParticipantId.trim() || !(existingParticipantEmail || normalizedSessionEmail).trim()}
-                        className="inline-flex h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-6 text-xs font-semibold text-black transition-all hover:bg-violet-100 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:cursor-not-allowed disabled:opacity-40"
+                        onClick={() => {
+                          if (participantLookup?.participantId) {
+                            navigator.clipboard.writeText(participantLookup.participantId);
+                            setCopiedId(true);
+                            setTimeout(() => setCopiedId(false), 2000);
+                          }
+                        }}
+                        className="text-emerald-400 hover:text-white transition-colors text-[10px] underline ml-1 cursor-pointer"
                       >
-                        {participantLookupLoading ? (
-                          <>
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
-                            <span>Verifying</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Find Participant</span>
-                            <ArrowRight size={14} />
-                          </>
-                        )}
+                        {copiedId ? "Copied!" : "Copy"}
                       </button>
                     </div>
                   </div>
+                </div>
 
-                  {participantLookup && (
-                    <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(52,211,153,0.15)]">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400 text-black shadow-[0_0_10px_#34d399]">
-                              <Check size={12} />
-                            </span>
-                            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
-                              Participant Verified
+                {/* ERROR BANNER IN CART HUB */}
+                {errorMessage && (
+                  <div className="flex items-center gap-2.5 rounded-xl border border-red-500/30 bg-red-950/30 px-5 py-3 text-sm text-red-300">
+                    <AlertCircle size={15} className="shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                {/* SECTION 1: CONFIRMED COMPETITIONS (PAID / FREE) */}
+                {confirmedEvents.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400/90">
+                        Confirmed Competitions ({confirmedEvents.length})
+                      </p>
+                      <span className="font-mono text-[10px] text-white/40">Verified Access</span>
+                    </div>
+
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      {confirmedEvents.map((item) => (
+                        <div
+                          key={item.participantEventId}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-4 py-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-white truncate">{item.eventName}</p>
+                            <p className="text-[10px] text-white/50 font-mono">
+                              {item.paymentAmount ? `₹${item.paymentAmount} Paid` : "Free Entry"}
                             </p>
                           </div>
-                          <h4 className="mt-2 text-lg font-semibold text-white">
-                            {participantLookup.name}
-                          </h4>
-                          <p className="mt-0.5 text-xs text-white/60">
-                            {participantLookup.email}
-                          </p>
+                          <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider text-emerald-300">
+                            {item.paymentStatus === "paid" ? "PAID" : "CONFIRMED"}
+                          </span>
                         </div>
-                        <p className="font-mono text-xs font-semibold text-emerald-300/90 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-3 py-1 self-start sm:self-auto">
-                          {participantLookup.participantId}
-                        </p>
-                      </div>
-
-                      <div className="mt-5 border-t border-white/10 pt-4">
-                        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 mb-3">
-                          Current Registered Events
-                        </p>
-
-                        {participantLookupEvents.length === 0 ? (
-                          <p className="text-xs text-white/50">
-                            No active event registrations currently tied to this ID.
-                          </p>
-                        ) : (
-                          <div className="grid gap-2.5 sm:grid-cols-2">
-                            {participantLookupEvents.map((item) => (
-                              <div
-                                key={item.participantEventId}
-                                className="flex flex-col justify-between gap-2 rounded-xl border border-white/10 bg-black/40 p-3.5"
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="font-medium text-sm text-white">{item.eventName}</p>
-                                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${item.paymentStatus === "paid"
-                                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                      : item.paymentStatus === "pending"
-                                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                        : "bg-white/10 text-white/70 border border-white/10"
-                                    }`}>
-                                    {item.paymentStatus ? item.paymentStatus.replace(/_/g, " ") : "FREE"}
-                                  </span>
-                                </div>
-
-                                {item.paymentAmount ? (
-                                  <span className="text-xs font-mono text-white/60">₹{item.paymentAmount}</span>
-                                ) : null}
-
-                                {item.paymentStatus === "pending" && (item.paymentAmount || 0) > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handlePaymentRecovery(item)}
-                                    className="mt-1 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-violet-100 transition-all self-start"
-                                  >
-                                    Complete Payment
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      ))}
                     </div>
+                  </div>
+                )}
+
+                {/* SECTION 2: PENDING PAYMENT (SAVED, AWAITING PAYMENT) */}
+                {pendingEvents.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
+                          Pending Payment ({pendingEvents.length})
+                        </p>
+                      </div>
+                      <span className="font-mono text-[10px] text-amber-300/70">Saved in Account</span>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {pendingEvents.map((item) => (
+                        <div
+                          key={item.participantEventId}
+                          className="flex flex-col justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-medium text-sm text-white">{item.eventName}</p>
+                              <p className="text-xs font-mono text-amber-300/90 font-semibold mt-0.5">
+                                Fee: ₹{item.paymentAmount || 0}
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider text-amber-300">
+                              PENDING
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={paymentProcessing}
+                            onClick={() => handlePaymentRecovery(item)}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black transition-all hover:bg-amber-100 hover:scale-[1.01] shadow-[0_0_15px_rgba(251,191,36,0.2)] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                          >
+                            {paymentProcessing ? (
+                              <>
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                                <span>Connecting Gateway...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Pay Now (₹{item.paymentAmount || 0})</span>
+                                <ArrowRight size={13} />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SECTION 3: IN-SESSION SELECTIONS DRAFT */}
+                {selectedEventIds.length > 0 && (
+                  <div className="rounded-xl border border-violet-500/30 bg-violet-950/30 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-violet-400" />
+                        <p className="font-mono text-xs font-semibold text-violet-300">
+                          {selectedEventIds.length} New Competition{selectedEventIds.length > 1 ? "s" : ""} Selected
+                        </p>
+                      </div>
+                      <p className="font-mono text-xs font-semibold text-white">
+                        Subtotal: ₹{totalPrice}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* FOOTER ACTIONS */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const catalogEl = document.getElementById("competitive-realms-catalog");
+                      catalogEl?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-2 text-xs font-semibold text-violet-300 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Add More Competitions</span>
+                  </button>
+
+                  {onSignOut && (
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={handleSaveAndLogout}
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                    >
+                      <LogOut size={13} />
+                      <span>
+                        {selectedEventIds.length > 0 ? "Save Registration & Log Out" : "Log Out Safely"}
+                      </span>
+                    </button>
                   )}
                 </div>
               </div>
-            </div>
+            ) : (
+              /* FIRST-TIME PARTICIPANT WELCOME */
+              <div className="rounded-[24px] border border-white/12 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-6 md:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                <div className="flex items-start gap-4 sm:gap-5">
+                  <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-950/40 text-violet-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+                    <Sparkles size={19} />
+                  </div>
+
+                  <div className="w-full min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+                        New Delegate Registration
+                      </span>
+                    </div>
+
+                    <h3 className="mt-1.5 text-lg sm:text-xl font-medium tracking-tight text-white">
+                      Welcome to Saviskar 2026.
+                    </h3>
+
+                    <p className="mt-1 text-xs sm:text-sm text-white/60">
+                      Select your competitive realms below. Your permanent Saviskar Participant ID will be generated upon submission.
+                    </p>
+
+                    {/* Manual Sync Accordion Toggle (Fallback for offline registrations) */}
+                    <div className="mt-4 pt-3 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setShowManualSync(!showManualSync)}
+                        className="text-xs text-white/40 hover:text-violet-300 transition-colors flex items-center gap-1.5 cursor-pointer font-mono"
+                      >
+                        <ChevronDown size={13} className={`transition-transform duration-200 ${showManualSync ? "rotate-180" : ""}`} />
+                        <span>Already have an offline Participant ID? Click to sync</span>
+                      </button>
+
+                      {showManualSync && (
+                        <div className="mt-4 pt-3 border-t border-white/10 space-y-4">
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                            <div>
+                              <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                                Participant ID
+                              </label>
+                              <input
+                                type="text"
+                                value={existingParticipantId}
+                                onChange={(e) => {
+                                  setExistingParticipantId(e.target.value.toUpperCase());
+                                  setParticipantLookup(null);
+                                  setParticipantLookupEvents([]);
+                                  setErrorMessage("");
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    void findParticipant();
+                                  }
+                                }}
+                                placeholder="Example: SVK26-8D25C998"
+                                className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 font-mono text-sm uppercase text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                                Registered Email
+                              </label>
+                              <input
+                                type="email"
+                                value={existingParticipantEmail}
+                                onChange={(e) => {
+                                  setExistingParticipantEmail(e.target.value);
+                                  setParticipantLookup(null);
+                                  setParticipantLookupEvents([]);
+                                  setErrorMessage("");
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    void findParticipant();
+                                  }
+                                }}
+                                readOnly={Boolean(normalizedSessionEmail)}
+                                placeholder="name@example.com"
+                                className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-violet-400 focus:bg-white/[0.07] focus:ring-1 focus:ring-violet-400/40 read-only:opacity-80"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => void findParticipant()}
+                              disabled={participantLookupLoading || !existingParticipantId.trim() || !(existingParticipantEmail || normalizedSessionEmail).trim()}
+                              className="inline-flex h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-6 text-xs font-semibold text-black transition-all hover:bg-violet-100 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                            >
+                              {participantLookupLoading ? (
+                                <>
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                                  <span>Verifying</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>Sync ID</span>
+                                  <ArrowRight size={14} />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* EVENT SELECTION */}
-            <div className="space-y-6">
+            <div id="competitive-realms-catalog" className="space-y-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-5">
                 <div>
                   <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300">
