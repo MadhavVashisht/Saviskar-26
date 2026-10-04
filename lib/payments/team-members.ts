@@ -90,7 +90,7 @@ export function resolveReceiptTeamMembers({
     }
   }
 
-  let deduplicatedMembers = Array.from(memberMap.values());
+  const deduplicatedMembers = Array.from(memberMap.values());
 
   // Rule 5: Ensure Team Head is present and at the top for team registrations
   const hasLeader = deduplicatedMembers.some((m) => m.isTeamLeader);

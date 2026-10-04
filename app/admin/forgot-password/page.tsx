@@ -50,7 +50,7 @@ export default function AdminForgotPasswordPage() {
           </h1>
 
           <p className="mt-4 text-sm text-black/40">
-            Forgot password? Enter your administrator email and we'll send you a secure password-reset link.
+            Forgot password? Enter your administrator email and we&apos;ll send you a secure password-reset link.
           </p>
         </div>
 

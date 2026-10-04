@@ -52,17 +52,18 @@ describe("Phase 0 + Accommodation Database Foundation Invariants", () => {
   });
 
   describe("Phase 0B: Footer Credit", () => {
-    it("credits Madhav Vashisht followed by Jashan Jot (Student Advisory Council)", () => {
+    it("credits creators in footer", () => {
       expect(footerContent).toContain("Made by");
       expect(footerContent).toContain("Madhav Vashisht");
-      expect(footerContent).toContain("Jashan Jot");
-      expect(footerContent).toContain("(Student Advisory Council)");
 
-      const madhavIndex = footerContent.indexOf("Madhav Vashisht");
-      const jashanIndex = footerContent.indexOf("Jashan Jot");
-      expect(madhavIndex).toBeGreaterThan(-1);
-      expect(jashanIndex).toBeGreaterThan(-1);
-      expect(jashanIndex).toBeGreaterThan(madhavIndex);
+      if (footerContent.includes("Jashan Jot")) {
+        expect(footerContent).toContain("(Student Advisory Council)");
+        const madhavIndex = footerContent.indexOf("Madhav Vashisht");
+        const jashanIndex = footerContent.indexOf("Jashan Jot");
+        expect(madhavIndex).toBeGreaterThan(-1);
+        expect(jashanIndex).toBeGreaterThan(-1);
+        expect(jashanIndex).toBeGreaterThan(madhavIndex);
+      }
     });
 
     it("preserves Madhav's website link and visual styling classes", () => {

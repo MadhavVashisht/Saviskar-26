@@ -523,7 +523,7 @@ export async function PATCH(
   // Audit log for dashboard check-in actions
   if (auth.user) {
     let actionType = "MANUAL_UPDATE";
-    let details: any = {};
+    const details: Record<string, unknown> = {};
     if (typeof body.checkedIn === "boolean") {
       actionType = body.checkedIn ? "MANUAL_EVENT_CHECK_IN" : "MANUAL_EVENT_CHECK_OUT";
       details.checked_in = body.checkedIn;

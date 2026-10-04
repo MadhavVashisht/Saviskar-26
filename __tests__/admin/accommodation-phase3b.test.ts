@@ -10,8 +10,8 @@ vi.mock("@/lib/supabase/server", () => ({
   requireAccommodationAdmin: vi.fn().mockResolvedValue({ error: null, admin: { id: "admin1", role: "master", accommodation_access: true } })
 }));
 
-let rpcMock = vi.fn();
-let fromMock = vi.fn();
+const rpcMock = vi.fn();
+const fromMock = vi.fn();
 
 vi.mock("@supabase/supabase-js", () => {
   return {

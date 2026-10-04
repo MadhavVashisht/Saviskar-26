@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     if (error) {
       let code = "ALLOCATION_FAILED";
-      let status = 400;
+      const status = 400;
       if (error.message.includes("Capacity exceeded")) code = "ROOM_FULL";
       if (error.message.includes("GENDER_MISMATCH")) code = "GENDER_MISMATCH";
       if (error.message.includes("UNSUPPORTED_GENDER")) code = "UNSUPPORTED_GENDER";

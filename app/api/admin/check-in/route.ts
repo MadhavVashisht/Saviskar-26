@@ -198,12 +198,14 @@ export async function POST(request: NextRequest) {
 
   if ((isEventCheckIn || isMainCheckIn) && !updatedRecord) {
     // The conditional update matched 0 rows -> check if already checked in
-    let existingRowQuery = supabaseAdmin
+    const existingRowQuery = supabaseAdmin
       .from("participant_events")
       .select("checked_in, checked_in_at, main_checked_in, main_checked_in_at")
       .eq("id", participantEventId);
       
-    let { data: existingRow, error: existingRowError } = await existingRowQuery.maybeSingle();
+    let existingRow: Record<string, any> | null = null;
+    const { data: initialRow, error: existingRowError } = await existingRowQuery.maybeSingle();
+    existingRow = initialRow as any;
     
     if (existingRowError && existingRowError.code === "42703") {
         const fallbackQuery = supabaseAdmin

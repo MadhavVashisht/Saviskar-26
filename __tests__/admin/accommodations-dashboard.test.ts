@@ -10,7 +10,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     from: vi.fn((table) => {
       let data: any[] = [];
-      let count = 0;
+      const count = 0;
       if (table === 'hostels') data = [{ id: 'h1', name: 'H1', is_active: true }];
       if (table === 'hostel_floors') data = [{ id: 'f1', hostel_id: 'h1', is_active: true }];
       if (table === 'hostel_rooms') data = [
