@@ -441,6 +441,8 @@ describe("SAVISKAR 2026 — Phase 2D Accommodation Check-In & Check-Out Test Sui
       user: { id: "admin-master-id", email: "jashan082006@gmail.com" } as any,
       role: "master",
       accommodation_access: true,
+      assigned_category: null,
+      assigned_events: [],
       error: null,
       status: 200,
     });
@@ -585,6 +587,8 @@ describe("SAVISKAR 2026 — Phase 2D Accommodation Check-In & Check-Out Test Sui
       user: { id: "admin-normal-id", email: "jashan.cgcu@gmail.com" } as any,
       role: "admin",
       accommodation_access: false,
+      assigned_category: null,
+      assigned_events: [],
       error: "Accommodation access required",
       status: 403,
     });
@@ -611,6 +615,8 @@ describe("SAVISKAR 2026 — Phase 2D Accommodation Check-In & Check-Out Test Sui
       user: null as any,
       role: null as any,
       accommodation_access: false,
+      assigned_category: null,
+      assigned_events: [],
       error: "Unauthorized",
       status: 401,
     });
@@ -774,6 +780,8 @@ describe("SAVISKAR 2026 — Phase 2D Accommodation Check-In & Check-Out Test Sui
       user: { id: "unauthorized-id", email: "user@example.com" } as any,
       role: "admin",
       accommodation_access: false,
+      assigned_category: null,
+      assigned_events: [],
       error: "Accommodation access required",
       status: 403,
     });

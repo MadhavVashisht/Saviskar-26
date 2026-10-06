@@ -20,6 +20,9 @@ export async function GET() {
       user_id: auth.user.id,
       email: auth.user.email,
       role: auth.role,
+      accommodation_access: auth.accommodation_access,
+      assigned_category: auth.assigned_category,
+      assigned_events: auth.assigned_events,
     },
     {
       status: 200,

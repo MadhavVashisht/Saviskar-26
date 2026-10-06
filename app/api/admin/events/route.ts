@@ -697,6 +697,73 @@ export async function DELETE(
     );
   }
 
+  // Clean up any remaining/orphaned payment_order_items associated with this event
+  // (e.g. from abandoned checkout attempts, test orders, or previously deleted registrations)
+  const { data: orderItems, error: fetchOrderItemsError } = await client
+    .from("payment_order_items")
+    .select("id, payment_order_id")
+    .eq("event_id", id);
+
+  if (fetchOrderItemsError) {
+    console.error(
+      "Admin event delete fetch payment_order_items failed:",
+      fetchOrderItemsError
+    );
+    return NextResponse.json(
+      {
+        error: "Could not verify event order history.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+
+  if (orderItems && orderItems.length > 0) {
+    const paymentOrderIds = [
+      ...new Set(
+        orderItems
+          .map((item) => item.payment_order_id)
+          .filter(Boolean) as string[]
+      ),
+    ];
+
+    const { error: deleteOrderItemsError } = await client
+      .from("payment_order_items")
+      .delete()
+      .eq("event_id", id);
+
+    if (deleteOrderItemsError) {
+      console.error(
+        "Admin event delete payment_order_items failed:",
+        deleteOrderItemsError
+      );
+      return NextResponse.json(
+        {
+          error: "Could not clean up order items for this event.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    // Clean up empty payment orders that have no remaining line items
+    for (const orderId of paymentOrderIds) {
+      const { count: remainingCount } = await client
+        .from("payment_order_items")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_order_id", orderId);
+
+      if ((remainingCount ?? 0) === 0) {
+        await client
+          .from("payment_orders")
+          .delete()
+          .eq("id", orderId);
+      }
+    }
+  }
+
   const {
     error,
   } = await client
@@ -710,9 +777,13 @@ export async function DELETE(
       error
     );
 
+    const userFriendlyError = error.message?.includes("foreign key constraint")
+      ? "Cannot delete event because related records still exist. Please deactivate the event instead."
+      : (error.message ?? "Could not delete event.");
+
     return NextResponse.json(
       {
-        error: error.message,
+        error: userFriendlyError,
       },
       {
         status: 400,

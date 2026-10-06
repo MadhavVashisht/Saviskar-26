@@ -220,6 +220,12 @@ export default function AdminPage() {
   const [accommodationAccess, setAccommodationAccess] =
     useState<boolean>(false);
 
+  const [assignedCategory, setAssignedCategory] =
+    useState<string | null>(null);
+
+  const [assignedEvents, setAssignedEvents] =
+    useState<string[]>([]);
+
   const [error, setError] =
     useState("");
 
@@ -322,6 +328,8 @@ export default function AdminPage() {
             adminName?: string | null;
             isPrimary?: boolean;
             accommodation_access?: boolean;
+            assigned_category?: string | null;
+            assigned_events?: string[] | null;
             total?: number;
             error?: string;
           };
@@ -349,6 +357,18 @@ export default function AdminPage() {
         }
         if (typeof payload.accommodation_access === "boolean") {
           setAccommodationAccess(payload.accommodation_access);
+        }
+        if (payload.assigned_category) {
+          const cat = payload.assigned_category.trim().toLowerCase();
+          setAssignedCategory(cat);
+          setPaymentOverviewCategory(cat as any);
+        } else {
+          setAssignedCategory(null);
+        }
+        if (Array.isArray(payload.assigned_events)) {
+          setAssignedEvents(payload.assigned_events);
+        } else {
+          setAssignedEvents([]);
         }
       } catch (loadError) {
         console.error(
@@ -797,6 +817,18 @@ export default function AdminPage() {
           (event) => event.count > 0
         );
     }, [events, registrations]);
+
+  const availableCategories = useMemo(() => {
+    if (assignedCategory && assignedCategory.trim()) {
+      return [assignedCategory.trim().toLowerCase()];
+    }
+    const set = new Set<string>();
+    events.forEach((ev) => {
+      const c = ev.category?.trim().toLowerCase();
+      if (c) set.add(c);
+    });
+    return Array.from(set);
+  }, [assignedCategory, events]);
 
   /* =======================================================
      PARTICIPANT GROUPING
@@ -1348,7 +1380,13 @@ export default function AdminPage() {
                 {adminIdentity.name || adminIdentity.email}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-black/5 border border-black/10 rounded-full text-black/60 mt-2">
-                {adminIdentity.isPrimary ? "Primary Master Admin" : role === "master" ? "Master Admin" : "Admin"}
+                {adminIdentity.isPrimary
+                  ? "Primary Master Admin"
+                  : role === "master"
+                  ? "Master Admin"
+                  : availableCategories.length === 1
+                  ? `${availableCategories[0].replace("-", " ").toUpperCase()} Category Admin`
+                  : "Admin"}
               </div>
             </div>
           )}
@@ -1642,27 +1680,41 @@ export default function AdminPage() {
           </div>
 
           <div className="mt-6 border-t border-black/[0.05] pt-6">
-            <div className="flex flex-wrap gap-2 mb-6">
-              {(["all", "technical", "non-technical", "cultural"] as const).map((cat) => (
+            {availableCategories.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-6">
                 <button
-                  key={cat}
                   type="button"
-                  onClick={() => setPaymentOverviewCategory(cat)}
-                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${paymentOverviewCategory === cat
-                    ? "border-black/20 bg-black/[0.03] text-black"
-                    : "border-transparent text-black/40 hover:text-black/70"
-                    }`}
+                  onClick={() => setPaymentOverviewCategory("all")}
+                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${
+                    paymentOverviewCategory === "all"
+                      ? "border-black/20 bg-black/[0.03] text-black"
+                      : "border-transparent text-black/40 hover:text-black/70"
+                  }`}
                 >
-                  {cat === "all" ? "All Categories" : cat.replace("-", " ")}
+                  All Categories
                 </button>
-              ))}
-            </div>
+                {availableCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setPaymentOverviewCategory(cat as any)}
+                    className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${
+                      paymentOverviewCategory === cat
+                        ? "border-black/20 bg-black/[0.03] text-black"
+                        : "border-transparent text-black/40 hover:text-black/70"
+                    }`}
+                  >
+                    {cat.replace("-", " ")}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {eventAnalytics
                 .filter((event) => {
                   const isPaidEvent = event.payment_type === "paid";
-                  if (paymentOverviewCategory !== "all") {
+                  if (availableCategories.length > 1 && paymentOverviewCategory !== "all") {
                     if (event.category?.toLowerCase() !== paymentOverviewCategory.toLowerCase()) return false;
                   }
                   if (paymentOverviewState === "free") return !isPaidEvent;
@@ -1930,7 +1982,9 @@ export default function AdminPage() {
               className="rounded-[18px] border border-black/10 bg-black px-4 py-3 text-sm outline-none"
             >
               <option value="all">
-                All events
+                {availableCategories.length === 1
+                  ? `All ${availableCategories[0].replace("-", " ")} events`
+                  : "All events"}
               </option>
 
               {events.map(

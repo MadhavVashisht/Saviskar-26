@@ -1353,9 +1353,12 @@ export async function POST(
             }))
           : [];
 
+        const hasPendingOrder = Number(totalAmount) > 0 && !!paymentOrder?.id;
+        const requiresPayment = eventMeta.payment_type === "paid" || hasPendingOrder;
+
         let paymentResumeUrl: string | null = null;
         if (
-          eventMeta.payment_type === "paid" &&
+          requiresPayment &&
           paymentOrder?.id &&
           participant?.id
         ) {
@@ -1377,7 +1380,7 @@ export async function POST(
           eventCategory: eventMeta.category || null,
           name: name || "Participant",
           college: college || "",
-          requiresPayment: eventMeta.payment_type === "paid",
+          requiresPayment,
           paymentResumeUrl,
           email: email || "",
           phone: phone || "",

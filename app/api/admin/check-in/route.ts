@@ -134,6 +134,38 @@ export async function POST(request: NextRequest) {
   const isMainCheckIn = action === "main_check_in";
   const checkInTime = (isEventCheckIn || isMainCheckIn) ? new Date().toISOString() : null;
 
+  if (
+    (action === "check_in" || action === "check_out") &&
+    auth.role !== "master" &&
+    (auth.assigned_category || (auth.assigned_events && auth.assigned_events.length > 0))
+  ) {
+    const assignedCategory = auth.assigned_category;
+    const assignedEvents = auth.assigned_events || [];
+
+    let isAllowed = assignedEvents.includes(participantEvent.event_id);
+    if (!isAllowed && assignedCategory) {
+      const { data: ev } = await supabaseAdmin
+        .from("events")
+        .select("category")
+        .eq("id", participantEvent.event_id)
+        .maybeSingle();
+
+      if (ev?.category?.toLowerCase() === assignedCategory.toLowerCase()) {
+        isAllowed = true;
+      }
+    }
+
+    if (!isAllowed) {
+      return response(
+        {
+          success: false,
+          error: "You are not authorized to manage check-ins for this event.",
+        },
+        403
+      );
+    }
+  }
+
   let updatePayload: Record<string, any> = {};
   if (action === "check_in" || action === "check_out") {
     updatePayload = {

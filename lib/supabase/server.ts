@@ -63,6 +63,8 @@ export async function requireAdmin() {
       user: null,
       role: null,
       accommodation_access: false,
+      assigned_category: null,
+      assigned_events: [] as string[],
       error: "Unauthorized" as const,
       status: 401,
     };
@@ -81,6 +83,8 @@ export async function requireAdmin() {
       user: null,
       role: null,
       accommodation_access: false,
+      assigned_category: null,
+      assigned_events: [] as string[],
       error: "Session expired" as const,
       status: 401,
     };
@@ -98,6 +102,8 @@ export async function requireAdmin() {
       user,
       role: null,
       accommodation_access: false,
+      assigned_category: null,
+      assigned_events: [] as string[],
       error: "Forbidden" as const,
       status: 403,
     };
@@ -121,6 +127,8 @@ export async function requireAdmin() {
         user,
         role,
         accommodation_access: admin.accommodation_access ?? false,
+        assigned_category: null,
+        assigned_events: [] as string[],
         error: "MFA_REQUIRED" as const,
         status: 403,
       };
@@ -132,6 +140,8 @@ export async function requireAdmin() {
     user,
     role,
     accommodation_access: admin.accommodation_access ?? false,
+    assigned_category: (admin.assigned_category as string | null) ?? null,
+    assigned_events: (Array.isArray(admin.assigned_events) ? admin.assigned_events : []) as string[],
     error: null,
     status: 200,
   };

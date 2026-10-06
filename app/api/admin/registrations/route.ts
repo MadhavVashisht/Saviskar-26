@@ -153,7 +153,56 @@ export async function GET(request: Request) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // 1. Fetch paginated participant_events with optional eventId filter
+  // Scoped admin check (category / event specific for normal admins)
+  const isMaster = auth.role === "master";
+  const assignedCategory = isMaster ? null : auth.assigned_category;
+  const assignedEvents = isMaster ? [] : (auth.assigned_events || []);
+  const isScoped = !isMaster && (!!assignedCategory || assignedEvents.length > 0);
+
+  let allowedEventIds: string[] | null = null;
+  if (isScoped) {
+    const { data: catEvents } = await supabaseAdmin
+      .from("events")
+      .select("id, category");
+
+    const matchedIds = (catEvents || [])
+      .filter((ev) => {
+        if (assignedEvents.includes(ev.id)) return true;
+        if (assignedCategory && ev.category?.toLowerCase() === assignedCategory.toLowerCase()) return true;
+        return false;
+      })
+      .map((ev) => ev.id);
+
+    allowedEventIds = matchedIds;
+
+    // If scoped admin has no matching events, return early empty state
+    if (allowedEventIds.length === 0) {
+      return NextResponse.json(
+        {
+          registrations: [],
+          events: [],
+          role: auth.role,
+          accommodation_access: auth.accommodation_access,
+          assigned_category: auth.assigned_category,
+          assigned_events: auth.assigned_events,
+          total: 0,
+          page,
+          pageSize,
+          totalPages: 0,
+        },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    if (eventId && !allowedEventIds.includes(eventId)) {
+      return NextResponse.json(
+        { error: "You are not authorized to view registrations for this event." },
+        { status: 403 }
+      );
+    }
+  }
+
+  // 1. Fetch paginated participant_events with optional eventId / scope filter
   let peQuery = supabaseAdmin
     .from("participant_events")
     .select(
@@ -163,6 +212,8 @@ export async function GET(request: Request) {
 
   if (eventId) {
     peQuery = peQuery.eq("event_id", eventId);
+  } else if (allowedEventIds !== null) {
+    peQuery = peQuery.in("event_id", allowedEventIds);
   }
 
   let {
@@ -188,6 +239,8 @@ export async function GET(request: Request) {
       
     if (eventId) {
       peQuery = peQuery.eq("event_id", eventId);
+    } else if (allowedEventIds !== null) {
+      peQuery = peQuery.in("event_id", allowedEventIds);
     }
 
     const fallbackResult = await peQuery
@@ -281,8 +334,13 @@ export async function GET(request: Request) {
   const participants =
     (participantsResult.data ?? []) as Participant[];
 
-  const events =
+  const allEvents =
     (eventsResult.data ?? []) as EventRecord[];
+
+  const events =
+    allowedEventIds !== null
+      ? allEvents.filter((event) => allowedEventIds!.includes(event.id))
+      : allEvents;
 
   const rawMembers =
     (membersResult.data ?? []) as unknown as RawMember[];
@@ -353,7 +411,7 @@ export async function GET(request: Request) {
 
   const eventsById =
     new Map(
-      events.map((event) => [
+      allEvents.map((event) => [
         event.id,
         event,
       ])
@@ -413,6 +471,8 @@ export async function GET(request: Request) {
       events,
       role: auth.role,
       accommodation_access: auth.accommodation_access,
+      assigned_category: auth.assigned_category,
+      assigned_events: auth.assigned_events,
       total: totalCount ?? 0,
       page,
       pageSize,

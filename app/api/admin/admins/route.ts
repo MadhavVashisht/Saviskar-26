@@ -112,12 +112,33 @@ export async function GET() {
     );
   }
 
-  const { data: admins, error } = await adminClient
+  let { data: admins, error } = await adminClient
     .from("admins")
-    .select("user_id, role, accommodation_access, created_at")
+    .select("user_id, role, accommodation_access, assigned_category, assigned_events, created_at")
     .order("created_at", {
       ascending: true,
     });
+
+  if (
+    error &&
+    (error.code === "42703" ||
+      error.code === "PGRST204" ||
+      error.message?.includes("assigned_category") ||
+      error.message?.includes("assigned_events"))
+  ) {
+    const fallback = await adminClient
+      .from("admins")
+      .select("user_id, role, accommodation_access, created_at")
+      .order("created_at", {
+        ascending: true,
+      });
+    admins = (fallback.data ?? []).map((a) => ({
+      ...a,
+      assigned_category: null,
+      assigned_events: [],
+    }));
+    error = fallback.error;
+  }
 
   if (error) {
     console.error("Admin list error:", error);
@@ -169,11 +190,15 @@ export async function GET() {
   const result = (admins ?? []).map((admin) => {
     const email = users.get(admin.user_id)?.email ?? null;
     const isPrimary = isPrimaryMaster({ id: admin.user_id, email });
+    const rawCategory = (admin as { assigned_category?: string | null }).assigned_category;
+    const rawEvents = (admin as { assigned_events?: string[] | null }).assigned_events;
 
     return {
       user_id: admin.user_id,
       role: (admin.role ?? "admin") as AdminRole,
       accommodation_access: admin.accommodation_access ?? false,
+      assigned_category: rawCategory ?? null,
+      assigned_events: Array.isArray(rawEvents) ? rawEvents : [],
       created_at: admin.created_at,
       email,
       auth_created_at: users.get(admin.user_id)?.created_at ?? null,
@@ -261,12 +286,16 @@ export async function POST(request: Request) {
   let body: {
     email?: unknown;
     role?: unknown;
+    assigned_category?: unknown;
+    assigned_events?: unknown;
   };
 
   try {
     body = (await request.json()) as {
       email?: unknown;
       role?: unknown;
+      assigned_category?: unknown;
+      assigned_events?: unknown;
     };
   } catch {
     return NextResponse.json(
@@ -286,6 +315,19 @@ export async function POST(request: Request) {
     body.role === "master"
       ? "master"
       : "admin";
+
+  const rawCategory =
+    typeof body.assigned_category === "string"
+      ? body.assigned_category.trim().toLowerCase()
+      : null;
+  const assignedCategory =
+    rawCategory && rawCategory !== "all" ? rawCategory : null;
+
+  const assignedEvents = Array.isArray(body.assigned_events)
+    ? (body.assigned_events.filter(
+        (e) => typeof e === "string" && e.trim()
+      ) as string[])
+    : [];
 
   if (!email) {
     return NextResponse.json(
@@ -424,14 +466,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const { error: insertError } =
+    const insertPayload: Record<string, unknown> = {
+      user_id: existingUser.id,
+      role,
+      accommodation_access: role === "master",
+    };
+    if (role !== "master") {
+      insertPayload.assigned_category = assignedCategory;
+      insertPayload.assigned_events = assignedEvents;
+    }
+
+    let { error: insertError } =
       await adminClient
         .from("admins")
-        .insert({
-          user_id: existingUser.id,
-          role,
-          accommodation_access: role === "master",
-        });
+        .insert(insertPayload);
+
+    if (
+      insertError &&
+      (insertError.code === "42703" ||
+        insertError.code === "PGRST204" ||
+        insertError.message?.includes("assigned_category") ||
+        insertError.message?.includes("assigned_events"))
+    ) {
+      delete insertPayload.assigned_category;
+      delete insertPayload.assigned_events;
+      const fallback = await adminClient
+        .from("admins")
+        .insert(insertPayload);
+      insertError = fallback.error;
+    }
 
     if (insertError) {
       console.error(
@@ -576,14 +639,35 @@ export async function POST(request: Request) {
      CREATE ADMIN RECORD
   ======================================================= */
 
-  const { error: insertError } =
+  const insertPayload: Record<string, unknown> = {
+    user_id: inviteData.user.id,
+    role,
+    accommodation_access: role === "master",
+  };
+  if (role !== "master") {
+    insertPayload.assigned_category = assignedCategory;
+    insertPayload.assigned_events = assignedEvents;
+  }
+
+  let { error: insertError } =
     await adminClient
       .from("admins")
-      .insert({
-        user_id: inviteData.user.id,
-        role,
-        accommodation_access: role === "master",
-      });
+      .insert(insertPayload);
+
+  if (
+    insertError &&
+    (insertError.code === "42703" ||
+      insertError.code === "PGRST204" ||
+      insertError.message?.includes("assigned_category") ||
+      insertError.message?.includes("assigned_events"))
+  ) {
+    delete insertPayload.assigned_category;
+    delete insertPayload.assigned_events;
+    const fallback = await adminClient
+      .from("admins")
+      .insert(insertPayload);
+    insertError = fallback.error;
+  }
 
   if (insertError) {
     console.error(

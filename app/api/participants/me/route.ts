@@ -282,6 +282,14 @@ export async function GET(request: NextRequest) {
                   })
                   .eq("id", pOrder.id);
 
+                await supabaseAdmin
+                  .from("participant_accommodations")
+                  .update({
+                    status: "paid",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("payment_order_id", pOrder.id);
+
                 const { data: orderItems } = await supabaseAdmin
                   .from("payment_order_items")
                   .select("participant_event_id, participant_id")
