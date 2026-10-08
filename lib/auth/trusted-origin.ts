@@ -1,59 +1,38 @@
 import { NextRequest } from "next/server";
 
-export const STABLE_PRODUCTION_ORIGIN = "https://saviskar.co.in";
+export const CANONICAL_SITE_ORIGIN = "https://saviskar.co.in";
+export const STABLE_PRODUCTION_ORIGIN = CANONICAL_SITE_ORIGIN;
 
 export const ALLOWED_PRODUCTION_ORIGINS = [
   "https://saviskar.co.in",
-  "https://saviskar-2026.vercel.app",
 ];
 
+/**
+ * Resolves the canonical, trusted origin for admin auth redirects (invites, password resets).
+ * Auth emails MUST redirect users to the canonical production domain (https://saviskar.co.in)
+ * so that:
+ * 1. Supabase Auth whitelist accepts the redirect URL and does NOT fall back to the landing page.
+ * 2. External users receiving emails are never directed to preview Vercel URLs or localhost.
+ */
 export function getTrustedAuthOrigin(req?: Request | NextRequest): string {
   const isProduction =
     process.env.NODE_ENV === "production" ||
-    process.env.VERCEL_ENV === "production";
+    process.env.VERCEL_ENV === "production" ||
+    Boolean(process.env.VERCEL);
 
-  if (!isProduction) {
-    if (req) {
-      const origin = req.headers.get("origin");
-      if (origin && !origin.includes("null")) return origin.replace(/\/+$/, "");
-
-      const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-      const proto = req.headers.get("x-forwarded-proto") || "http";
-      if (host) {
-        return `${proto}://${host}`.replace(/\/+$/, "");
-      }
-    }
-    return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
+  // In production / Vercel / live deployments, ALWAYS return the canonical production origin
+  if (isProduction) {
+    return CANONICAL_SITE_ORIGIN;
   }
 
-  // Production logic:
-  // Check the request origin/host first to support valid Vercel staging environments.
-  if (req) {
-    let requestOrigin = "";
-    const origin = req.headers.get("origin");
-    if (origin && !origin.includes("null")) {
-      requestOrigin = origin.replace(/\/+$/, "");
-    } else {
-      const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-      const proto = req.headers.get("x-forwarded-proto") || "https";
-      if (host) {
-        requestOrigin = `${proto}://${host}`.replace(/\/+$/, "");
-      }
-    }
-
-    if (ALLOWED_PRODUCTION_ORIGINS.includes(requestOrigin)) {
-      return requestOrigin;
-    }
-  }
-
-  // Fallback to NEXT_PUBLIC_SITE_URL if valid, otherwise safe canonical origin.
+  // In local development, check if NEXT_PUBLIC_SITE_URL is explicitly set to localhost
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (configured) {
     const cleaned = configured.replace(/\/+$/, "");
-    if (ALLOWED_PRODUCTION_ORIGINS.includes(cleaned)) {
+    if (cleaned.includes("localhost") || cleaned.includes("127.0.0.1")) {
       return cleaned;
     }
   }
 
-  return STABLE_PRODUCTION_ORIGIN;
+  return CANONICAL_SITE_ORIGIN;
 }

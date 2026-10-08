@@ -36,35 +36,7 @@ function getAdminClient() {
   });
 }
 
-function getRequestOrigin(request: Request): string {
-  const origin = request.headers.get("origin");
-  if (origin && !origin.includes("null")) {
-    return origin.replace(/\/+$/, "");
-  }
-
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
-  if (forwardedHost) {
-    return `${forwardedProto}://${forwardedHost}`.replace(/\/+$/, "");
-  }
-
-  const host = request.headers.get("host");
-  if (host) {
-    const proto = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
-    return `${proto}://${host}`.replace(/\/+$/, "");
-  }
-
-  try {
-    const urlOrigin = new URL(request.url).origin;
-    if (urlOrigin && !urlOrigin.includes("null")) {
-      return urlOrigin.replace(/\/+$/, "");
-    }
-  } catch {
-    // ignore
-  }
-
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
-}
+import { getTrustedAuthOrigin } from "@/lib/auth/trusted-origin";
 
 export async function POST(request: Request) {
   const clientIp = getIpFromRequest(request);
@@ -100,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const siteUrl = getRequestOrigin(request);
+    const siteUrl = getTrustedAuthOrigin(request);
     const redirectTo = `${siteUrl}/admin/reset-password`;
 
     // We can just call resetPasswordForEmail. If the user doesn't exist, Supabase will not send an email but will still return success (by default) or error depending on config.

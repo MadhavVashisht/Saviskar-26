@@ -37,14 +37,89 @@ export default function AcceptInvitePage() {
   useEffect(() => {
     let mounted = true;
 
-    async function handleHashSession() {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      const hash = typeof window !== "undefined" ? window.location.hash : "";
-      const parsed = parseAuthHash(hash);
-      
-      if (parsed.error === "missing_hash") {
-        const { data: { session } } = await supabase.auth.getSession();
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") && session?.user) {
+        setEmail(session.user.email ?? "");
+        setStep("password");
+      }
+    });
+
+    async function handleAuthInitialization() {
+      if (!mounted) return;
+
+      try {
+        const hash = typeof window !== "undefined" ? window.location.hash : "";
+        const search = typeof window !== "undefined" ? window.location.search : "";
+
+        // Check for error in hash or query parameters (e.g. otp_expired, access_denied)
+        const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
+        const searchParams = new URLSearchParams(search.startsWith("?") ? search.substring(1) : search);
+        const errorDesc =
+          hashParams.get("error_description") ||
+          searchParams.get("error_description") ||
+          hashParams.get("error") ||
+          searchParams.get("error");
+
+        if (errorDesc) {
+          if (!mounted) return;
+          setError("This invitation link is invalid or has expired. Please request a new invitation.");
+          setStep("error");
+          return;
+        }
+
+        // Support PKCE code exchange if present in query params
+        const code = searchParams.get("code");
+        if (code) {
+          try {
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (exchangeError) {
+              console.error("INVITATION CODE EXCHANGE ERROR:", exchangeError);
+              if (!mounted) return;
+              setError("This invitation link is invalid or has expired. Please request a new invitation.");
+              setStep("error");
+              return;
+            }
+          } finally {
+            if (typeof window !== "undefined") {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          }
+        }
+
+        // Support implicit/hash flow (#access_token=...&refresh_token=...)
+        const parsed = parseAuthHash(hash);
+        if (parsed.accessToken && parsed.refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: parsed.accessToken,
+            refresh_token: parsed.refreshToken,
+          });
+
+          if (sessionError) {
+            if (!mounted) return;
+            setError("This invitation link is invalid or has expired.");
+            setStep("error");
+            return;
+          }
+
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } else if (parsed.error && parsed.error !== "missing_hash" && parsed.error !== "empty_hash") {
+          if (!mounted) return;
+          setError("Invalid invitation link format.");
+          setStep("error");
+          return;
+        }
+
+        // Finally verify active session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.user && mounted) {
           setEmail(session.user.email ?? "");
           setStep("password");
@@ -52,44 +127,20 @@ export default function AcceptInvitePage() {
           setError("This link is missing or has expired. Please request a new invitation.");
           setStep("error");
         }
-        return;
-      }
-      
-      if (parsed.error || !parsed.accessToken || !parsed.refreshToken) {
+      } catch (err) {
+        console.error("Invitation auth handling exception:", err);
         if (mounted) {
-          setError("Invalid invitation link format.");
+          setError("Could not process invitation. Please try again.");
           setStep("error");
         }
-        return;
-      }
-
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: parsed.accessToken,
-        refresh_token: parsed.refreshToken,
-      });
-
-      if (sessionError) {
-        if (mounted) {
-          setError("This invitation link is invalid or has expired.");
-          setStep("error");
-        }
-        return;
-      }
-
-      // Clean URL only after successful session establishment
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user && mounted) {
-        setEmail(session.user.email ?? "");
-        setStep("password");
       }
     }
 
-    handleHashSession();
+    handleAuthInitialization();
 
     return () => {
       mounted = false;
+      subscription.unsubscribe();
     };
   }, [supabase]);
 

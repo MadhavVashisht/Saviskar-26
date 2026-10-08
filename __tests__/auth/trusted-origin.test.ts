@@ -34,16 +34,16 @@ describe("Trusted Auth Origin Resolver", () => {
     expect(origin).toBe("https://saviskar.co.in");
   });
 
-  it("2. Staging -> https://saviskar-2026.vercel.app", () => {
+  it("2. Vercel deployment -> https://saviskar.co.in (never leak vercel.app to email links)", () => {
     vi.stubEnv("NODE_ENV", "production");
     const req = new NextRequest("https://saviskar-2026.vercel.app/api/admin/admins");
     req.headers.set("origin", "https://saviskar-2026.vercel.app");
     
     const origin = getTrustedAuthOrigin(req);
-    expect(origin).toBe("https://saviskar-2026.vercel.app");
+    expect(origin).toBe("https://saviskar.co.in");
   });
 
-  it("3. Localhost -> localhost origin", () => {
+  it("3. Localhost in development -> localhost origin", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
     
@@ -85,7 +85,7 @@ describe("Trusted Auth Origin Resolver", () => {
     expect(redirectTo).toBe("https://saviskar.co.in/admin/accept-invite");
   });
 
-  it("7. Fallback to NEXT_PUBLIC_SITE_URL if no request passed", () => {
+  it("7. Fallback to canonical production origin if no request passed", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://saviskar.co.in");
     
