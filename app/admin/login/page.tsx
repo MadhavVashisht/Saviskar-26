@@ -350,13 +350,14 @@ export default function AdminLoginPage() {
                     setPassword(event.target.value)
                   }
                   placeholder="Enter your password"
-                  className="mt-2 w-full border-b border-black/15 bg-transparent py-4 pr-10 text-black outline-none transition placeholder:text-black/20 focus:border-black"
+                  className="mt-2 w-full border-b border-black/15 bg-transparent py-4 pr-12 text-black placeholder:text-black/40 caret-black outline-none transition focus:border-black"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 mt-1 text-black/40 transition hover:text-black focus:outline-none"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 mt-1 text-black/50 transition hover:text-black focus:outline-none focus:ring-2 focus:ring-black/20 rounded-md p-1"
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>

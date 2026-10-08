@@ -312,7 +312,7 @@ describe("Admin Management API Security & RBAC", () => {
       expect(res.status).toBe(201);
       expect(mockInviteUserByEmail).toHaveBeenCalledWith("newnormal@example.com", {
         data: { saviskar_role: "admin" },
-        redirectTo: "http://localhost/admin/accept-invite",
+        redirectTo: "http://localhost:3000/admin/accept-invite",
       });
     });
 
@@ -419,7 +419,7 @@ describe("Admin Management API Security & RBAC", () => {
       expect(res.status).toBe(201);
       expect(mockInviteUserByEmail).toHaveBeenCalledWith("secondmaster@example.com", {
         data: { saviskar_role: "master" },
-        redirectTo: "http://localhost/admin/accept-invite",
+        redirectTo: "http://localhost:3000/admin/accept-invite",
       });
     });
 
@@ -659,7 +659,7 @@ describe("Admin Management API Security & RBAC", () => {
       const res = await POST(createMockRequest("POST", { email: "exist@example.com", role: "admin" }));
       expect(res.status).toBe(201);
       expect(mockResetPasswordForEmail).toHaveBeenCalledWith("exist@example.com", {
-        redirectTo: "http://localhost/admin/reset-password",
+        redirectTo: "http://localhost:3000/admin/reset-password",
       });
       expect(mockBuilder.insert).toHaveBeenCalledWith(
         expect.objectContaining({

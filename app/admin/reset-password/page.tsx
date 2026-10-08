@@ -441,7 +441,7 @@ export default function ResetPasswordPage() {
                   }
                   autoComplete="new-password"
                   placeholder="Create a secure password"
-                  className="w-full rounded-xl border border-black/10 bg-black/[0.02] py-3 pl-11 pr-12 text-sm text-black outline-none transition focus:border-black/30"
+                  className="w-full rounded-xl border border-black/10 bg-black/[0.02] py-3 pl-11 pr-12 text-sm text-black placeholder:text-black/40 caret-black outline-none transition focus:border-black/30"
                   required
                 />
 
@@ -452,8 +452,13 @@ export default function ResetPasswordPage() {
                       (value) => !value
                     )
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-black/35 transition hover:text-black"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-black/50 transition hover:text-black focus:outline-none focus:ring-2 focus:ring-black/20"
                   aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                  title={
                     showPassword
                       ? "Hide password"
                       : "Show password"
@@ -493,7 +498,7 @@ export default function ResetPasswordPage() {
                   }
                   autoComplete="new-password"
                   placeholder="Enter the password again"
-                  className="w-full rounded-xl border border-black/10 bg-black/[0.02] py-3 pl-11 pr-12 text-sm text-black outline-none transition focus:border-black/30"
+                  className="w-full rounded-xl border border-black/10 bg-black/[0.02] py-3 pl-11 pr-12 text-sm text-black placeholder:text-black/40 caret-black outline-none transition focus:border-black/30"
                   required
                 />
 
@@ -504,8 +509,13 @@ export default function ResetPasswordPage() {
                       (value) => !value
                     )
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-black/35 transition hover:text-black"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-black/50 transition hover:text-black focus:outline-none focus:ring-2 focus:ring-black/20"
                   aria-label={
+                    showConfirmPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                  title={
                     showConfirmPassword
                       ? "Hide password"
                       : "Show password"

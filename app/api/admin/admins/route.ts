@@ -5,6 +5,7 @@ import {
   isPrimaryMaster,
 } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getTrustedAuthOrigin } from "@/lib/auth/trusted-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -513,9 +514,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      new URL(request.url).origin;
+    const siteUrl = getTrustedAuthOrigin(request);
 
     const redirectTo =
       `${siteUrl}/admin/reset-password`;
@@ -591,9 +590,7 @@ export async function POST(request: Request) {
      - User lands on /admin/accept-invite
   ======================================================= */
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    new URL(request.url).origin;
+  const siteUrl = getTrustedAuthOrigin(request);
 
   const redirectTo =
     `${siteUrl}/admin/accept-invite`;

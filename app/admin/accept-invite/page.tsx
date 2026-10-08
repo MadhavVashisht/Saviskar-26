@@ -260,10 +260,17 @@ export default function AcceptInvitePage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border bg-black/[0.02] p-3 pl-4 pr-10 text-sm outline-none focus:border-black/30"
+                    className="w-full rounded-xl border bg-black/[0.02] p-3 pl-4 pr-12 text-sm text-black placeholder:text-black/40 caret-black outline-none focus:border-black/30"
+                    placeholder="Create a secure password"
                     required
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black/50 hover:text-black focus:outline-none focus:ring-2 focus:ring-black/20 rounded-md p-1"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -275,10 +282,17 @@ export default function AcceptInvitePage() {
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-xl border bg-black/[0.02] p-3 pl-4 pr-10 text-sm outline-none focus:border-black/30"
+                    className="w-full rounded-xl border bg-black/[0.02] p-3 pl-4 pr-12 text-sm text-black placeholder:text-black/40 caret-black outline-none focus:border-black/30"
+                    placeholder="Enter the password again"
                     required
                   />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black/50 hover:text-black focus:outline-none focus:ring-2 focus:ring-black/20 rounded-md p-1"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
                     {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
