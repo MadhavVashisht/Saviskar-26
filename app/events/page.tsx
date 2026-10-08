@@ -4,9 +4,9 @@ import EventsView from "@/components/events/EventsView";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "50+ Events & Realms (₹25 LACS Prize Pool) | CGC Saviskar 2026 — CGC University Mohali",
+  title: "50+ Events & Realms (₹20 LACS Prize Pool) | CGC Saviskar 2026 — CGC University Mohali",
   description:
-    "Explore 50+ national collegiate competitions across 500+ universities with endless possibilities at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Cash prizes upto ₹25 LACS across Technical, Cultural, Non-Technical, and AIvishkar realms. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
+    "Explore 50+ national collegiate competitions across 500+ universities with endless possibilities at CGC University Mohali for Saviskar 2026: Aevorian Reverie. Cash prizes upto ₹20 LACS across Technical, Cultural, Non-Technical, and AIvishkar realms. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
   keywords: [
     // Brand & College Queries
     "CGC Fest Events",
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     "Chandigarh College Fests",
     "Punjab Inter-College Competitions",
     "Tricity College Fests 2026",
-    "Saviskar Prize Pool 25 Lakhs",
-    "Cash Prizes Upto 25 Lacs",
+    "Saviskar Prize Pool 20 Lakhs",
+    "Cash Prizes Upto 20 Lacs",
     "500+ Universities",
     "Endless Possibilities",
 
@@ -71,16 +71,16 @@ export const metadata: Metadata = {
     canonical: "/events",
   },
   openGraph: {
-    title: "50+ Events & Realms (₹25 LACS Prize Pool) | CGC Saviskar 2026",
+    title: "50+ Events & Realms (₹20 LACS Prize Pool) | CGC Saviskar 2026",
     description:
-      "50+ competitions across 500+ universities with endless possibilities at CGC University, Mohali. Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹25 LACS.",
+      "50+ competitions across 500+ universities with endless possibilities at CGC University, Mohali. Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹20 LACS.",
     images: ["/images/realms-page-bg.webp"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "50+ Events & Realms (₹25 LACS Prize Pool) | CGC Saviskar 2026",
+    title: "50+ Events & Realms (₹20 LACS Prize Pool) | CGC Saviskar 2026",
     description:
-      "50+ competitions across 500+ universities with endless possibilities at CGC University, Mohali. Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹25 LACS.",
+      "50+ competitions across 500+ universities with endless possibilities at CGC University, Mohali. Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹20 LACS.",
     images: ["/images/realms-page-bg.webp"],
   },
 };

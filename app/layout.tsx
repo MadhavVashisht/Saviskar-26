@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     template: "%s | CGC Saviskar 2026 — CGC University, Mohali",
   },
   description:
-    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS, and Stadium Star Night Concerts. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
+    "Official portal for Saviskar 2026: Aevorian Reverie — Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali (CGC). 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS, and Stadium Star Night Concerts. Two Days. Countless Stories. One Campus. Infinite Ways To Make Your Mark.",
   keywords: [
     // 1. Primary Fest Brands & Typo / Phonetic Search Variations
     "Saviskar 2026",
@@ -118,7 +118,7 @@ export const metadata: Metadata = {
     "500+ Universities",
     "35000 Students",
     "35,000+ Students",
-    "Cash Prizes Upto 25 Lacs",
+    "Cash Prizes Upto 20 Lacs",
     "Ms Lakshita 8572815510",
     "Mr Saaransh Sharma 6239124013",
     "Saviskar theme meaning",
@@ -192,7 +192,7 @@ export const metadata: Metadata = {
     "Bollywood Live Concert Mohali",
     "College Fest Passes 2026",
     "Saviskar Pass Registration",
-    "Festival Prize Pool 25 Lakhs",
+    "Festival Prize Pool 20 Lakhs",
   ],
   authors: [
     { name: "CGC University, Mohali", url: "https://cgcuniversity.in" },
@@ -224,7 +224,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CGC University Mohali | Saviskar 2026 (Official CGC Fest) — Aevorian Reverie",
     description:
-      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS.",
     url: "https://saviskar.co.in",
     siteName: "Saviskar 2026 — CGC University Mohali",
     locale: "en_IN",
@@ -242,7 +242,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CGC University Mohali | Saviskar 2026 (Official CGC Fest) — Aevorian Reverie",
     description:
-      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹25 LACS.",
+      "Where Tomorrow Dreams Awake. North India's flagship Annual National Techno-Cultural University Festival at CGC University, Mohali. 50+ Realms of Experience, 500+ Universities, 35,000+ Students, Endless Possibilities, Cash Prizes Upto ₹20 LACS.",
     images: ["/images/concert-stadium.webp"],
   },
   robots: {
@@ -292,7 +292,7 @@ const jsonLdSiteNavigation = {
       "@id": "https://saviskar.co.in/#nav-events",
       name: "50+ Events & Realms",
       description:
-        "Explore 50+ competitions across Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹25 LACS across 500+ universities.",
+        "Explore 50+ competitions across Technical, Cultural, Non-Technical, and AIvishkar with cash prizes upto ₹20 LACS across 500+ universities.",
       url: "https://saviskar.co.in/events",
     },
     {
@@ -679,7 +679,7 @@ const jsonLdFAQ = {
       name: "What is CGC and why is CGC University Mohali famous for Saviskar?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 35,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹25 LACS (25 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night celebrity concerts.",
+        text: "CGC (Chandigarh Group of Colleges / CGC University, Mohali / CGC Landran) is one of North India's foremost higher education institutions. CGC is internationally renowned for hosting Saviskar, its flagship annual national techno-cultural university festival. Drawing over 35,000 students from 500+ universities across India with endless possibilities, Saviskar features cash prizes upto ₹20 LACS (20 Lakhs), national robotics (RoboRace, Graviton), 24h coding hackathons, battle of the bands (Clash of Chords), and stadium-scale Star Night celebrity concerts.",
       },
     },
     {
@@ -719,7 +719,7 @@ const jsonLdFAQ = {
       name: "Who can register for Saviskar 2026 passes and what is the prize pool?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Undergraduate and postgraduate students from over 500+ recognized universities, engineering colleges, management institutes, and arts colleges across India are eligible to register. Registrations are available online at https://saviskar.co.in/register. Cash prizes are upto ₹25 LACS (₹25,00,000) across all 50+ competitions, with dedicated trophies, cash awards, certificates of merit, and startup grants. Student Coordinators: Ms. Lakshita (+91 85728 15510), Mr. Saaransh Sharma (+91 62391 24013).",
+        text: "Undergraduate and postgraduate students from over 500+ recognized universities, engineering colleges, management institutes, and arts colleges across India are eligible to register. Registrations are available online at https://saviskar.co.in/register. Cash prizes are upto ₹20 LACS (₹20,00,000) across all 50+ competitions, with dedicated trophies, cash awards, certificates of merit, and startup grants. Student Coordinators: Ms. Lakshita (+91 85728 15510), Mr. Saaransh Sharma (+91 62391 24013).",
       },
     },
   ],
@@ -845,7 +845,7 @@ export default function RootLayout({
             The name <strong>Saviskar</strong> is the historical synthesis of <em>Srijan</em> (creation) and <em>Avishkar</em> (invention).
           </p>
 
-          <h2>All 50+ Competitive Realms &amp; Signature Events (Cash Prizes Upto ₹25 LACS)</h2>
+          <h2>All 50+ Competitive Realms &amp; Signature Events (Cash Prizes Upto ₹20 LACS)</h2>
           <ul>
             <li><strong>Technical Realm (Think. Build. Challenge. Conquer.):</strong> Web-Dev Sprint, Code Circuit - Pass the Code Beat the Clock, Thrust Powered Vehicle Challenge, FormulaRx, LabX, Crime Scene, Assessment of Posture Education, AI Video &amp; Meme Challenge, VISION HACK — Train Your Own AI, AI Game Maker Challenge, Intubation &amp; Airway Management Simulation, Optovation — Build a Smart Eye, RoboRace, Graviton, Bug Hunt: Code Cracker, TechXhibit, Diagnostic Challenge, Prayog, National MUN, The Best Manager.</li>
             <li><strong>Cultural Realm (Own the stage. Set the rhythm. Make your moment.):</strong> Nritya-E-Bharat – Folk Dance, Clash of Chords – Battle of Bands, Mr. &amp; Ms. Saviskar, Saviskar Got Talent (SGT), Footlose– Solo &amp; Western Dance, Sur Sagar – Sing Your Story, Gully War – Rap Battle, Nachda Punjab – Punjabi Folk, Spin &amp; Dance.</li>

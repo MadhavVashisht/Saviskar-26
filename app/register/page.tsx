@@ -32,14 +32,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Register & Claim Passes | CGC Saviskar 2026",
     description:
-      "Claim your official passes for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Compete across 50+ realms with ₹25L+ prize pool.",
+      "Claim your official passes for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Compete across 50+ realms with ₹20L+ prize pool.",
     images: ["/images/concert-stadium.webp"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Register & Claim Passes | CGC Saviskar 2026",
     description:
-      "Claim your official passes for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Compete across 50+ realms with ₹25L+ prize pool.",
+      "Claim your official passes for Saviskar 2026: Aevorian Reverie at CGC University, Mohali. Compete across 50+ realms with ₹20L+ prize pool.",
     images: ["/images/concert-stadium.webp"],
   },
 };

@@ -71,7 +71,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-cyan-400",
     accentBorder: "hover:border-cyan-500/50",
     accentGlow: "rgba(6,182,212,0.25)",
-    prizePool: "₹8,00,000+",
+    prizePool: "₹7,00,000+",
   },
   {
     id: "non-technical",
@@ -88,7 +88,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-amber-400",
     accentBorder: "hover:border-amber-500/50",
     accentGlow: "rgba(245,158,11,0.25)",
-    prizePool: "₹4,00,000",
+    prizePool: "₹3,00,000",
   },
   {
     id: "cultural",
@@ -105,7 +105,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-fuchsia-400",
     accentBorder: "hover:border-fuchsia-500/50",
     accentGlow: "rgba(217,70,239,0.25)",
-    prizePool: "₹8,00,000+",
+    prizePool: "₹6,00,000+",
   },
   {
     id: "aivishkar",
@@ -122,7 +122,7 @@ export const REALMS_DATA: Realm[] = [
     accentColor: "text-violet-400",
     accentBorder: "hover:border-violet-500/60",
     accentGlow: "rgba(168,85,247,0.35)",
-    prizePool: "₹5,00,000+ in Grants",
+    prizePool: "₹4,00,000+ in Grants",
     highlightChips: [
       "Autonomous Humanoid Robotics Arena",
       "Generative AI & LLM Agent Showcase",
@@ -320,7 +320,7 @@ export default function EventsView() {
 
           <div className="flex items-center gap-3 font-mono text-xs text-white/50">
             <ShieldCheck size={16} className="text-violet-400" />
-            <span>Cash Prizes Upto ₹25 LACS • Certified Rulebooks Included</span>
+            <span>Cash Prizes Upto ₹20 LACS • Certified Rulebooks Included</span>
           </div>
         </motion.div>
       </section>
