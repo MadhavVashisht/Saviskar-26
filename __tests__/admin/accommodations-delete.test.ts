@@ -156,4 +156,77 @@ describe("DELETE /api/admin/accommodations", () => {
     const body = await res.json();
     expect(body.success).toBe(true);
   });
+
+  it("falls back to direct admin deletion when RPC gives 'schema cache' error", async () => {
+    mockRequireAccommodationAdmin.mockResolvedValueOnce({
+      user: { id: "admin-1" },
+      role: "admin",
+      accommodation_access: true,
+      status: 200,
+      error: null,
+    });
+
+    // Exact error message reported by PostgREST in production
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Could not find the function public.delete_accommodation_permanently(p_accommodation_id, p_admin_id) in the schema cache" },
+    });
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "participant_accommodations") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: {
+                    id: "acc-123",
+                    participant_id: "p-1",
+                    amount: 499,
+                    status: "pending",
+                    start_date: "2026-10-28",
+                    end_date: "2026-10-29",
+                    participants: { name: "Ananya Negi", email: "241030464@juitsolan.in", participant_id: "SVK26-0F717392" },
+                  },
+                  error: null,
+                }),
+            }),
+          }),
+          delete: () => ({
+            eq: () => Promise.resolve({ error: null }),
+          }),
+        };
+      }
+      if (table === "accommodation_allocations" || table === "payment_order_items") {
+        return {
+          delete: () => ({
+            eq: () => ({
+              is: () => ({
+                eq: () => Promise.resolve({ error: null }),
+              }),
+            }),
+          }),
+          update: () => ({
+            eq: () => Promise.resolve({ error: null }),
+          }),
+        };
+      }
+      if (table === "admin_audit_logs") {
+        return {
+          insert: () => Promise.resolve({ error: null }),
+        };
+      }
+      return {};
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/admin/accommodations?id=acc-123", {
+      method: "DELETE",
+    });
+
+    const res = await DELETE(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.message).toBe("Accommodation record deleted successfully.");
+  });
 });

@@ -84,129 +84,112 @@ export async function DELETE(request: Request) {
     }
 
     // 1. Try atomic RPC if installed
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
-      "delete_accommodation_permanently",
-      {
-        p_accommodation_id: accommodationId,
-        p_admin_id: auth.user.id,
-      }
-    );
+    try {
+      const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
+        "delete_accommodation_permanently",
+        {
+          p_accommodation_id: accommodationId,
+          p_admin_id: auth.user.id,
+        }
+      );
 
-    if (!rpcError && rpcData?.success) {
-      return NextResponse.json({
-        success: true,
-        message: "Accommodation record deleted successfully.",
-      });
+      if (!rpcError && rpcData?.success) {
+        return NextResponse.json({
+          success: true,
+          message: "Accommodation record deleted successfully.",
+        });
+      }
+
+      if (rpcError) {
+        console.warn(
+          "delete_accommodation_permanently RPC skipped, falling back to direct admin deletion:",
+          rpcError.message
+        );
+      }
+    } catch (rpcEx) {
+      console.warn("delete_accommodation_permanently RPC exception:", rpcEx);
     }
 
-    // If RPC failed because function does not exist, execute via direct admin client
-    if (rpcError && rpcError.message?.includes("function") && rpcError.message?.includes("does not exist")) {
-      // Direct Admin Fallback
-      const { data: acc, error: fetchError } = await supabaseAdmin
-        .from("participant_accommodations")
-        .select(`
+    // 2. Direct Admin Fallback (guaranteed execution across all database environments)
+    const { data: acc, error: fetchError } = await supabaseAdmin
+      .from("participant_accommodations")
+      .select(`
+        id,
+        participant_id,
+        amount,
+        status,
+        start_date,
+        end_date,
+        hostel_id,
+        room_id,
+        participants (
           id,
-          participant_id,
-          amount,
-          status,
-          start_date,
-          end_date,
-          hostel_id,
-          room_id,
-          participants (
-            id,
-            name,
-            email,
-            participant_id
-          )
-        `)
-        .eq("id", accommodationId)
-        .maybeSingle();
+          name,
+          email,
+          participant_id
+        )
+      `)
+      .eq("id", accommodationId)
+      .maybeSingle();
 
-      if (fetchError || !acc) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: "NOT_FOUND",
-              message: "Accommodation record not found.",
-            },
-          },
-          { status: 404 }
-        );
-      }
-
-      // A. Delete allocation records
-      await supabaseAdmin
-        .from("accommodation_allocations")
-        .delete()
-        .eq("participant_accommodation_id", accommodationId);
-
-      // B. Handle payment order items
-      // For unpaid items, delete them
-      await supabaseAdmin
-        .from("payment_order_items")
-        .delete()
-        .eq("participant_accommodation_id", accommodationId);
-
-      // For any remaining items (e.g. paid), set participant_accommodation_id to null
-      await supabaseAdmin
-        .from("payment_order_items")
-        .update({ participant_accommodation_id: null })
-        .eq("participant_accommodation_id", accommodationId);
-
-      // C. Audit log
-      const p = Array.isArray(acc.participants) ? acc.participants[0] : acc.participants;
-      await supabaseAdmin.from("admin_audit_logs").insert({
-        admin_id: auth.user.id,
-        action_type: "DELETE_ACCOMMODATION",
-        target_id: accommodationId,
-        details: {
-          participant_id: p?.participant_id,
-          participant_name: p?.name,
-          participant_email: p?.email,
-          amount: acc.amount,
-          status: acc.status,
-          start_date: acc.start_date,
-          end_date: acc.end_date,
-          deleted_at: new Date().toISOString(),
-        },
-      });
-
-      // D. Delete the accommodation record
-      const { error: deleteError } = await supabaseAdmin
-        .from("participant_accommodations")
-        .delete()
-        .eq("id", accommodationId);
-
-      if (deleteError) {
-        console.error("Direct accommodation delete failed:", deleteError);
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: "DELETE_FAILED",
-              message: deleteError.message || "Could not delete accommodation record.",
-            },
-          },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: "Accommodation record deleted successfully.",
-      });
-    }
-
-    if (rpcError) {
-      console.error("delete_accommodation_permanently RPC error:", rpcError);
+    if (fetchError || !acc) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: "RPC_ERROR",
-            message: rpcError.message || "Could not delete accommodation record.",
+            code: "NOT_FOUND",
+            message: "Accommodation record not found.",
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    // A. Delete allocation records
+    await supabaseAdmin
+      .from("accommodation_allocations")
+      .delete()
+      .eq("participant_accommodation_id", accommodationId);
+
+    // B. Handle payment order items
+    // Set participant_accommodation_id to null so foreign key never blocks deletion
+    await supabaseAdmin
+      .from("payment_order_items")
+      .update({ participant_accommodation_id: null })
+      .eq("participant_accommodation_id", accommodationId);
+
+    // C. Audit log
+    const p = Array.isArray(acc.participants) ? acc.participants[0] : acc.participants;
+    await supabaseAdmin.from("admin_audit_logs").insert({
+      admin_id: auth.user.id,
+      action_type: "DELETE_ACCOMMODATION",
+      target_id: accommodationId,
+      details: {
+        participant_id: p?.participant_id,
+        participant_name: p?.name,
+        participant_email: p?.email,
+        amount: acc.amount,
+        status: acc.status,
+        start_date: acc.start_date,
+        end_date: acc.end_date,
+        deleted_at: new Date().toISOString(),
+      },
+    });
+
+    // D. Delete the accommodation record
+    const { error: deleteError } = await supabaseAdmin
+      .from("participant_accommodations")
+      .delete()
+      .eq("id", accommodationId);
+
+    if (deleteError) {
+      console.error("Direct accommodation delete failed:", deleteError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "DELETE_FAILED",
+            message: deleteError.message || "Could not delete accommodation record.",
           },
         },
         { status: 500 }
