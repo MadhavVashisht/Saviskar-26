@@ -11,7 +11,9 @@ import {
   Plus, 
   RefreshCw, 
   Settings, 
-  History 
+  History,
+  Trash2,
+  Calendar
 } from "lucide-react";
 import { INDIAN_STATES_AND_UT } from "@/lib/states";
 
@@ -1045,6 +1047,10 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
   }, [initialFilters]);
   const [filterHostel, setFilterHostel] = useState("all");
   const [filterRoom, setFilterRoom] = useState("all");
+  const [filterDate, setFilterDate] = useState("all");
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [allocatingAcc, setAllocatingAcc] = useState<AccommodationRecord | null>(null);
   const [historyAcc, setHistoryAcc] = useState<AccommodationRecord | null>(null);
@@ -1100,9 +1106,18 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
       const matchesRoom = filterRoom === "all" || acc.room_id === filterRoom;
       const matchesType = filterType === "all" || (filterType === "faculty" ? !!p.is_faculty : !p.is_faculty);
 
-      return matchesSearch && matchesStatus && matchesGender && matchesState && matchesCheckIn && matchesHostel && matchesRoom && matchesType;
+      let matchesDate = true;
+      if (filterDate === "28") {
+        matchesDate = acc.start_date === "2026-10-28" && acc.duration_days === 1;
+      } else if (filterDate === "29") {
+        matchesDate = acc.start_date === "2026-10-29" || (acc.duration_days === 1 && acc.start_date?.includes("29"));
+      } else if (filterDate === "both") {
+        matchesDate = acc.duration_days >= 2;
+      }
+
+      return matchesSearch && matchesStatus && matchesGender && matchesState && matchesCheckIn && matchesHostel && matchesRoom && matchesType && matchesDate;
     });
-  }, [data, search, filterStatus, filterGender, filterType, filterState, filterCheckIn, filterHostel, filterRoom]);
+  }, [data, search, filterStatus, filterGender, filterType, filterState, filterCheckIn, filterHostel, filterRoom, filterDate]);
 
   const toggleSelection = (id: string) => {
     const next = new Set(selectedIds);
@@ -1187,6 +1202,75 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
     } finally {
       setActionLoadingId(null);
     }
+  };
+
+  const handleDeleteAccommodation = async (acc: AccommodationRecord) => {
+    const participantName = acc.participants?.name || "this participant";
+    const confirmed = window.confirm(
+      `Are you sure you want to PERMANENTLY DELETE the accommodation for ${participantName}?\n\nThis will release any room allocation and completely remove this accommodation record. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(acc.id);
+    setActionMessage(null);
+    setActionError(null);
+
+    try {
+      const res = await fetch(`/api/admin/accommodations?id=${encodeURIComponent(acc.id)}`, {
+        method: "DELETE",
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(payload?.error?.message || payload?.error || "Failed to delete accommodation record.");
+      }
+      setActionMessage(`Accommodation record for ${participantName} was deleted successfully.`);
+      onRefresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete accommodation record.";
+      setActionError(msg);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    const confirmed = window.confirm(
+      `Are you sure you want to PERMANENTLY DELETE accommodation for ${count} selected participant(s)?\n\nThis will release their room allocations and remove all selected accommodation records. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    setActionMessage(null);
+    setActionError(null);
+
+    let deleted = 0;
+    let failed = 0;
+
+    for (const id of Array.from(selectedIds)) {
+      try {
+        const res = await fetch(`/api/admin/accommodations?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          deleted++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    setBulkDeleting(false);
+    clearSelection();
+    if (failed > 0) {
+      setActionMessage(`Deleted ${deleted} accommodation record(s). ${failed} failed.`);
+    } else {
+      setActionMessage(`Successfully deleted ${deleted} accommodation record(s).`);
+    }
+    onRefresh();
   };
 
   const handleAutoAllocate = async () => {
@@ -1300,6 +1384,12 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
           <option value="all">All States</option>
           {INDIAN_STATES_AND_UT.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <select className="border border-black/10 rounded-full px-4 py-2 text-sm text-black bg-white" value={filterDate} onChange={e => setFilterDate(e.target.value)}>
+          <option value="all">All Dates</option>
+          <option value="28">28 Oct Only (Day 1)</option>
+          <option value="29">29 Oct Only (Day 2)</option>
+          <option value="both">28–29 Oct (2 Days)</option>
+        </select>
         <select 
           className="border border-black/10 rounded-full px-4 py-2 text-sm text-black bg-white" 
           value={filterHostel} 
@@ -1348,6 +1438,10 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
             <button onClick={() => setBulkAction("allocate")} className="px-4 py-1.5 bg-indigo-600 text-white rounded-full text-xs font-medium hover:bg-indigo-700 transition shadow-sm">Bulk Allocate</button>
             <button onClick={() => setBulkAction("check-in")} className="px-4 py-1.5 bg-emerald-600 text-white rounded-full text-xs font-medium hover:bg-emerald-700 transition shadow-sm">Bulk Check-in</button>
             <button onClick={() => setBulkAction("check-out")} className="px-4 py-1.5 bg-purple-600 text-white rounded-full text-xs font-medium hover:bg-purple-700 transition shadow-sm">Bulk Check-out</button>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-4 py-1.5 bg-red-600 text-white rounded-full text-xs font-medium hover:bg-red-700 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50">
+              {bulkDeleting ? <RefreshCw size={12} className="animate-spin" /> : <Trash2 size={12} />}
+              <span>Bulk Delete ({selectedIds.size})</span>
+            </button>
           </div>
         </div>
       )}
@@ -1442,7 +1536,26 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
                     {acc.participants?.gender || "—"}<br/>
                     <span className="text-black/50">{acc.participants?.state || "—"}</span>
                   </td>
-                  <td className="py-4 px-4 text-black">{plan?.name || "Unknown"}</td>
+                  <td className="py-4 px-4 text-black">
+                    <div className="font-medium text-xs sm:text-sm">{plan?.name || "Unknown"}</div>
+                    <div className="text-[11px] font-mono text-black/50 mt-0.5">
+                      {acc.duration_days === 1 ? (
+                        acc.start_date?.includes("29") ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium">
+                            29 Oct (Day 2)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-medium">
+                            28 Oct (Day 1)
+                          </span>
+                        )
+                      ) : (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-medium">
+                          28–29 Oct (2 Days)
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-4 px-4 uppercase text-xs font-semibold text-black">{acc.status}</td>
                   <td className="py-4 px-4">
                     {acc.status !== "paid" ? (
@@ -1545,6 +1658,18 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
                         title="History"
                       >
                         <History size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAccommodation(acc)}
+                        disabled={deletingId === acc.id || actionLoadingId === acc.id}
+                        className="p-1.5 text-black/40 hover:text-red-600 transition disabled:opacity-50"
+                        title="Delete Accommodation Permanently"
+                      >
+                        {deletingId === acc.id ? (
+                          <RefreshCw size={16} className="animate-spin text-red-500" />
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
                       </button>
                     </div>
                   </td>

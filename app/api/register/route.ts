@@ -26,6 +26,7 @@ type EventRegistrationInput = {
 type AccommodationRegistrationInput = {
   email?: unknown;
   planSlug?: unknown;
+  selectedDate?: unknown;
 };
 
 type RegistrationInput = {
@@ -640,7 +641,7 @@ export async function POST(
   // 10A. NORMALIZE ACCOMMODATIONS FOR DATABASE RPC
   // =====================================================
 
-  const rpcAccommodations: Array<{ email: string; plan_slug: string }> = [];
+  const rpcAccommodations: Array<{ email: string; plan_slug: string; selected_date?: string }> = [];
 
   if (Array.isArray(body.accommodations) && body.accommodations.length > 0) {
     if (body.accommodations.length > 50) {
@@ -653,6 +654,7 @@ export async function POST(
       const acc = (rawAcc ?? {}) as AccommodationRegistrationInput;
       const accEmail = cleanEmail(acc.email);
       const accPlanSlug = cleanString(acc.planSlug, 50);
+      const rawDate = cleanString(acc.selectedDate, 20);
 
       if (!accEmail || !EMAIL_PATTERN.test(accEmail)) {
         return errorResponse("Invalid accommodation delegate email address.", 400);
@@ -661,11 +663,17 @@ export async function POST(
         return errorResponse("Accommodation plan is required.", 400);
       }
 
+      let selectedDate = "2026-10-28";
+      if (rawDate === "2026-10-29" || rawDate === "29" || rawDate?.includes("29")) {
+        selectedDate = "2026-10-29";
+      }
+
       if (!seenEmails.has(accEmail)) {
         seenEmails.add(accEmail);
         rpcAccommodations.push({
           email: accEmail,
           plan_slug: accPlanSlug,
+          selected_date: selectedDate,
         });
       }
     }
@@ -1027,6 +1035,32 @@ export async function POST(
       "Participant lookup after registration failed:",
       participantLookupError
     );
+  }
+
+  // 13B. SYNC ACCOMMODATION DATES (IF 29TH OCT SELECTED FOR 1-DAY PLAN)
+  if (rpcAccommodations.length > 0) {
+    for (const accItem of rpcAccommodations) {
+      if (accItem.selected_date === "2026-10-29" && (accItem.plan_slug === "1_day" || accItem.plan_slug === "1_day_29")) {
+        const { data: accParticipant } = await supabaseAdmin
+          .from("participants")
+          .select("id")
+          .eq("email", accItem.email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (accParticipant?.id) {
+          await supabaseAdmin
+            .from("participant_accommodations")
+            .update({
+              start_date: "2026-10-29",
+              end_date: "2026-10-30",
+            })
+            .eq("participant_id", accParticipant.id)
+            .in("status", ["pending", "unpaid"]);
+        }
+      }
+    }
   }
 
   const {
