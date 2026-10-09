@@ -4,6 +4,7 @@ import {
   requireAdmin,
   requireMasterAdmin,
 } from "@/lib/supabase/server";
+import { parseAdminCategories } from "@/lib/admin/scope";
 
 export const dynamic = "force-dynamic";
 
@@ -165,10 +166,12 @@ export async function GET(request: Request) {
       .from("events")
       .select("id, category");
 
+    const allowedCategories = parseAdminCategories(assignedCategory);
+
     const matchedIds = (catEvents || [])
       .filter((ev) => {
         if (assignedEvents.includes(ev.id)) return true;
-        if (assignedCategory && ev.category?.toLowerCase() === assignedCategory.toLowerCase()) return true;
+        if (allowedCategories.length > 0 && ev.category && allowedCategories.includes(ev.category.toLowerCase())) return true;
         return false;
       })
       .map((ev) => ev.id);

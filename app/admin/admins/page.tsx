@@ -21,6 +21,15 @@ import {
   X,
   Check,
 } from "lucide-react";
+import {
+  parseAdminCategories,
+  normalizeAdminCategory,
+  formatCategoryBadgeLabel,
+  getCanonicalCategoryValue,
+  CATEGORY_COMBINATIONS,
+  VALID_ADMIN_CATEGORIES,
+  type AdminCategory,
+} from "@/lib/admin/scope";
 
 type AdminRecord = {
   user_id: string;
@@ -86,6 +95,42 @@ export default function AdminManagementPage() {
   const [savingScope, setSavingScope] = useState(false);
   const [scopeSearch, setScopeSearch] = useState("");
   const [scopeModalError, setScopeModalError] = useState("");
+
+  function toggleAddCategory(cat: AdminCategory) {
+    const current = parseAdminCategories(assignedCategory);
+    const next = current.includes(cat)
+      ? current.filter((c) => c !== cat)
+      : [...current, cat];
+    const normalized = normalizeAdminCategory(next) ?? "all";
+    setAssignedCategory(normalized);
+    const active = parseAdminCategories(normalized);
+    if (active.length > 0) {
+      setSelectedEvents((prev) =>
+        prev.filter((id) => {
+          const ev = eventsList.find((item) => item.id === id);
+          return ev && active.includes(ev.category?.toLowerCase() as AdminCategory);
+        })
+      );
+    }
+  }
+
+  function toggleEditCategory(cat: AdminCategory) {
+    const current = parseAdminCategories(editScopeCategory);
+    const next = current.includes(cat)
+      ? current.filter((c) => c !== cat)
+      : [...current, cat];
+    const normalized = normalizeAdminCategory(next) ?? "all";
+    setEditScopeCategory(normalized);
+    const active = parseAdminCategories(normalized);
+    if (active.length > 0) {
+      setEditScopeEvents((prev) =>
+        prev.filter((id) => {
+          const ev = eventsList.find((item) => item.id === id);
+          return ev && active.includes(ev.category?.toLowerCase() as AdminCategory);
+        })
+      );
+    }
+  }
 
   const loadAdmins = useCallback(
     async () => {
@@ -254,7 +299,7 @@ export default function AdminManagementPage() {
             body: JSON.stringify({
               email: cleanEmail,
               role: isSuperMaster ? role : "admin",
-              assigned_category: role === "admin" && assignedCategory !== "all" ? assignedCategory : null,
+              assigned_category: role === "admin" && assignedCategory !== "all" ? normalizeAdminCategory(assignedCategory) : null,
               assigned_events: role === "admin" ? selectedEvents : [],
             }),
           }
@@ -319,7 +364,7 @@ export default function AdminManagementPage() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            assigned_category: newCategory,
+            assigned_category: newCategory === "all" ? null : normalizeAdminCategory(newCategory),
             assigned_events: newEvents,
           }),
         }
@@ -786,30 +831,59 @@ export default function AdminManagementPage() {
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-[11px] text-white/60">
-                        Category Scope
-                      </label>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="block text-[11px] text-white/60">
+                          Category Scope
+                        </label>
+                        <span className="text-[10px] text-white/40">
+                          {formatCategoryBadgeLabel(assignedCategory)}
+                        </span>
+                      </div>
                       <select
-                        value={assignedCategory}
+                        value={getCanonicalCategoryValue(assignedCategory)}
                         onChange={(e) => {
                           const val = e.target.value;
                           setAssignedCategory(val);
-                          if (val !== "all") {
+                          const active = parseAdminCategories(val);
+                          if (active.length > 0) {
                             setSelectedEvents((prev) =>
                               prev.filter((id) => {
                                 const ev = eventsList.find((item) => item.id === id);
-                                return ev && ev.category === val;
+                                return ev && active.includes(ev.category?.toLowerCase() as AdminCategory);
                               })
                             );
                           }
                         }}
                         className="w-full rounded-xl border border-white/10 bg-white/10 px-3.5 py-2.5 text-xs text-white outline-none focus:border-white/30"
                       >
-                        <option value="all" className="text-black">All Categories (Unrestricted)</option>
-                        <option value="technical" className="text-black">Technical Events Only</option>
-                        <option value="cultural" className="text-black">Cultural Events Only</option>
-                        <option value="non-technical" className="text-black">Non-Technical Events Only</option>
+                        {CATEGORY_COMBINATIONS.map((c) => (
+                          <option key={c.value} value={c.value} className="text-black">
+                            {c.label}
+                          </option>
+                        ))}
                       </select>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] text-white/40">Toggle:</span>
+                        {VALID_ADMIN_CATEGORIES.map((cat) => {
+                          const isCatActive = parseAdminCategories(assignedCategory).includes(cat);
+                          const label = cat === "technical" ? "Technical" : cat === "cultural" ? "Cultural" : "Non-Technical";
+                          return (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => toggleAddCategory(cat)}
+                              className={`rounded-lg px-2 py-0.5 text-[10px] font-medium transition ${
+                                isCatActive
+                                  ? "bg-purple-500/30 text-purple-200 border border-purple-400/50"
+                                  : "bg-white/5 text-white/50 border border-white/10 hover:bg-white/10 hover:text-white/80"
+                              }`}
+                            >
+                              {isCatActive ? "✓ " : "+ "}{label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <div>
@@ -823,7 +897,9 @@ export default function AdminManagementPage() {
                       >
                         <span className="truncate">
                           {selectedEvents.length === 0
-                            ? (assignedCategory === "all" ? "All events (Unrestricted)" : `All ${assignedCategory} events`)
+                            ? (parseAdminCategories(assignedCategory).length === 0
+                                ? "All events (Unrestricted)"
+                                : `All ${formatCategoryBadgeLabel(assignedCategory)} events`)
                             : `${selectedEvents.length} event${selectedEvents.length > 1 ? "s" : ""} selected`}
                         </span>
                         <span className="ml-2 text-[10px] text-white/50">
@@ -850,8 +926,9 @@ export default function AdminManagementPage() {
                           <button
                             type="button"
                             onClick={() => {
+                              const active = parseAdminCategories(assignedCategory);
                               const filtered = eventsList
-                                .filter((ev) => assignedCategory === "all" || ev.category === assignedCategory)
+                                .filter((ev) => active.length === 0 || active.includes(ev.category?.toLowerCase() as AdminCategory))
                                 .map((ev) => ev.id);
                               setSelectedEvents(filtered);
                             }}
@@ -871,7 +948,10 @@ export default function AdminManagementPage() {
 
                       <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
                         {eventsList
-                          .filter((ev) => assignedCategory === "all" || ev.category === assignedCategory)
+                          .filter((ev) => {
+                            const active = parseAdminCategories(assignedCategory);
+                            return active.length === 0 || active.includes(ev.category?.toLowerCase() as AdminCategory);
+                          })
                           .filter((ev) => !addSearch || ev.name.toLowerCase().includes(addSearch.toLowerCase()))
                           .map((ev) => {
                             const isChecked = selectedEvents.includes(ev.id);
@@ -900,7 +980,10 @@ export default function AdminManagementPage() {
                             );
                           })}
                         {eventsList
-                          .filter((ev) => assignedCategory === "all" || ev.category === assignedCategory)
+                          .filter((ev) => {
+                            const active = parseAdminCategories(assignedCategory);
+                            return active.length === 0 || active.includes(ev.category?.toLowerCase() as AdminCategory);
+                          })
                           .filter((ev) => !addSearch || ev.name.toLowerCase().includes(addSearch.toLowerCase())).length === 0 && (
                           <p className="py-3 text-center text-[11px] text-white/40">No events match filter</p>
                         )}
@@ -1041,7 +1124,7 @@ export default function AdminManagementPage() {
                       eventsList={eventsList}
                       onEditScope={() => {
                         setEditingScopeAdmin(admin);
-                        setEditScopeCategory(admin.assigned_category || "all");
+                        setEditScopeCategory(admin.assigned_category ? getCanonicalCategoryValue(admin.assigned_category) : "all");
                         setEditScopeEvents(admin.assigned_events || []);
                         setScopeSearch("");
                         setScopeModalError("");
@@ -1099,32 +1182,62 @@ export default function AdminManagementPage() {
 
             <div className="space-y-5">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-black/70">
-                  Category Scope
-                </label>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-xs font-semibold text-black/70">
+                    Category Scope
+                  </label>
+                  <span className="text-[11px] font-medium text-purple-700">
+                    {formatCategoryBadgeLabel(editScopeCategory)}
+                  </span>
+                </div>
                 <select
-                  value={editScopeCategory}
+                  value={getCanonicalCategoryValue(editScopeCategory)}
                   onChange={(e) => {
                     const val = e.target.value;
                     setEditScopeCategory(val);
-                    if (val !== "all") {
+                    const active = parseAdminCategories(val);
+                    if (active.length > 0) {
                       setEditScopeEvents((prev) =>
                         prev.filter((id) => {
                           const ev = eventsList.find((item) => item.id === id);
-                          return ev && ev.category === val;
+                          return ev && active.includes(ev.category?.toLowerCase() as AdminCategory);
                         })
                       );
                     }
                   }}
                   className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-black outline-none focus:border-black/30"
                 >
-                  <option value="all">All Categories (Unrestricted)</option>
-                  <option value="technical">Technical Events Only</option>
-                  <option value="cultural">Cultural Events Only</option>
-                  <option value="non-technical">Non-Technical Events Only</option>
+                  {CATEGORY_COMBINATIONS.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
                 </select>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-black/40">Toggle:</span>
+                  {VALID_ADMIN_CATEGORIES.map((cat) => {
+                    const isCatActive = parseAdminCategories(editScopeCategory).includes(cat);
+                    const label = cat === "technical" ? "Technical" : cat === "cultural" ? "Cultural" : "Non-Technical";
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleEditCategory(cat)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                          isCatActive
+                            ? "bg-purple-100 text-purple-800 border border-purple-300"
+                            : "bg-black/[0.04] text-black/60 border border-black/10 hover:bg-black/[0.08]"
+                        }`}
+                      >
+                        {isCatActive ? "✓ " : "+ "}{label}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <p className="mt-1 text-[11px] text-black/40">
-                  Restricts this administrator to only see registrations and check-in attendees for this category.
+                  Restricts this administrator to only see registrations and check-in attendees for the selected categories.
                 </p>
               </div>
 
@@ -1137,8 +1250,9 @@ export default function AdminManagementPage() {
                     <button
                       type="button"
                       onClick={() => {
+                        const active = parseAdminCategories(editScopeCategory);
                         const filtered = eventsList
-                          .filter((ev) => editScopeCategory === "all" || ev.category === editScopeCategory)
+                          .filter((ev) => active.length === 0 || active.includes(ev.category?.toLowerCase() as AdminCategory))
                           .map((ev) => ev.id);
                         setEditScopeEvents(filtered);
                       }}
@@ -1170,7 +1284,10 @@ export default function AdminManagementPage() {
 
                 <div className="max-h-56 divide-y divide-black/[0.04] overflow-y-auto rounded-xl border border-black/10 p-2">
                   {eventsList
-                    .filter((ev) => editScopeCategory === "all" || ev.category === editScopeCategory)
+                    .filter((ev) => {
+                      const active = parseAdminCategories(editScopeCategory);
+                      return active.length === 0 || active.includes(ev.category?.toLowerCase() as AdminCategory);
+                    })
                     .filter((ev) => !scopeSearch || ev.name.toLowerCase().includes(scopeSearch.toLowerCase()))
                     .map((ev) => {
                       const isChecked = editScopeEvents.includes(ev.id);
@@ -1201,7 +1318,10 @@ export default function AdminManagementPage() {
                       );
                     })}
                   {eventsList
-                    .filter((ev) => editScopeCategory === "all" || ev.category === editScopeCategory)
+                    .filter((ev) => {
+                      const active = parseAdminCategories(editScopeCategory);
+                      return active.length === 0 || active.includes(ev.category?.toLowerCase() as AdminCategory);
+                    })
                     .filter((ev) => !scopeSearch || ev.name.toLowerCase().includes(scopeSearch.toLowerCase())).length === 0 && (
                     <p className="py-4 text-center text-xs text-black/40">No events found matching filter.</p>
                   )}
@@ -1335,9 +1455,9 @@ function AdminRow({
               >
                 <Layers size={10} className={admin.assigned_category || (admin.assigned_events && admin.assigned_events.length > 0) ? "text-purple-600" : "text-black/30"} />
                 {admin.assigned_events && admin.assigned_events.length > 0
-                  ? `${admin.assigned_events.length} Event${admin.assigned_events.length > 1 ? "s" : ""}${admin.assigned_category ? ` (${admin.assigned_category})` : ""}`
+                  ? `${admin.assigned_events.length} Event${admin.assigned_events.length > 1 ? "s" : ""}${admin.assigned_category ? ` (${formatCategoryBadgeLabel(admin.assigned_category)})` : ""}`
                   : admin.assigned_category
-                  ? `${admin.assigned_category} Category`
+                  ? `${formatCategoryBadgeLabel(admin.assigned_category)} Category`
                   : "Scope: All Events"}
               </span>
             )}
@@ -1383,7 +1503,7 @@ function AdminRow({
               <span>
                 Event Scope:{" "}
                 <strong className="font-medium text-black/60">
-                  {admin.assigned_category ? `${admin.assigned_category.toUpperCase()} Category` : "All Categories"}
+                  {admin.assigned_category ? `${formatCategoryBadgeLabel(admin.assigned_category).toUpperCase()} Category` : "All Categories"}
                   {admin.assigned_events && admin.assigned_events.length > 0
                     ? ` (${admin.assigned_events.length} assigned)`
                     : " (All events)"}

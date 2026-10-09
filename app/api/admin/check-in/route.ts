@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/supabase/server";
+import { parseAdminCategories } from "@/lib/admin/scope";
 
 function response(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -144,14 +145,19 @@ export async function POST(request: NextRequest) {
 
     let isAllowed = assignedEvents.includes(participantEvent.event_id);
     if (!isAllowed && assignedCategory) {
-      const { data: ev } = await supabaseAdmin
-        .from("events")
-        .select("category")
-        .eq("id", participantEvent.event_id)
-        .maybeSingle();
-
-      if (ev?.category?.toLowerCase() === assignedCategory.toLowerCase()) {
+      const allowedCategories = parseAdminCategories(assignedCategory);
+      if (allowedCategories.length === 0) {
         isAllowed = true;
+      } else {
+        const { data: ev } = await supabaseAdmin
+          .from("events")
+          .select("category")
+          .eq("id", participantEvent.event_id)
+          .maybeSingle();
+
+        if (ev?.category && allowedCategories.includes(ev.category.toLowerCase())) {
+          isAllowed = true;
+        }
       }
     }
 

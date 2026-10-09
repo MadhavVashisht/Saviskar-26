@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTrustedAuthOrigin } from "@/lib/auth/trusted-origin";
+import { normalizeAdminCategory } from "@/lib/admin/scope";
 
 export const dynamic = "force-dynamic";
 
@@ -317,12 +318,7 @@ export async function POST(request: Request) {
       ? "master"
       : "admin";
 
-  const rawCategory =
-    typeof body.assigned_category === "string"
-      ? body.assigned_category.trim().toLowerCase()
-      : null;
-  const assignedCategory =
-    rawCategory && rawCategory !== "all" ? rawCategory : null;
+  const assignedCategory = normalizeAdminCategory(body.assigned_category);
 
   const assignedEvents = Array.isArray(body.assigned_events)
     ? (body.assigned_events.filter(

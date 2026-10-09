@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { INDIAN_STATES_AND_UT } from "@/lib/states";
+import { parseAdminCategories } from "@/lib/admin/scope";
 
 /* =========================================================
    TYPES
@@ -361,7 +362,12 @@ export default function AdminPage() {
         if (payload.assigned_category) {
           const cat = payload.assigned_category.trim().toLowerCase();
           setAssignedCategory(cat);
-          setPaymentOverviewCategory(cat as any);
+          const parsed = parseAdminCategories(cat);
+          if (parsed.length === 1) {
+            setPaymentOverviewCategory(parsed[0] as any);
+          } else {
+            setPaymentOverviewCategory("all");
+          }
         } else {
           setAssignedCategory(null);
         }
@@ -820,7 +826,8 @@ export default function AdminPage() {
 
   const availableCategories = useMemo(() => {
     if (assignedCategory && assignedCategory.trim()) {
-      return [assignedCategory.trim().toLowerCase()];
+      const parsed = parseAdminCategories(assignedCategory);
+      if (parsed.length > 0) return parsed;
     }
     const set = new Set<string>();
     events.forEach((ev) => {

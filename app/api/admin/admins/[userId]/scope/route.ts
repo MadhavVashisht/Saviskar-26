@@ -5,6 +5,7 @@ import {
   isPrimaryMaster,
 } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { normalizeAdminCategory } from "@/lib/admin/scope";
 
 export const dynamic = "force-dynamic";
 
@@ -142,11 +143,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const rawCat =
-    typeof body.assigned_category === "string"
-      ? body.assigned_category.trim().toLowerCase()
-      : null;
-  const assignedCategory = rawCat && rawCat !== "all" ? rawCat : null;
+  const assignedCategory = normalizeAdminCategory(body.assigned_category);
 
   const assignedEvents = Array.isArray(body.assigned_events)
     ? (body.assigned_events.filter(
