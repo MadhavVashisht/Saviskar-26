@@ -312,7 +312,7 @@ describe("Admin Management API Security & RBAC", () => {
       expect(res.status).toBe(201);
       expect(mockInviteUserByEmail).toHaveBeenCalledWith("newnormal@example.com", {
         data: { saviskar_role: "admin" },
-        redirectTo: "https://saviskar.co.in/admin/accept-invite",
+        redirectTo: "https://saviskar.co.in/admin/accept-invite?email=newnormal%40example.com",
       });
     });
 
@@ -419,7 +419,7 @@ describe("Admin Management API Security & RBAC", () => {
       expect(res.status).toBe(201);
       expect(mockInviteUserByEmail).toHaveBeenCalledWith("secondmaster@example.com", {
         data: { saviskar_role: "master" },
-        redirectTo: "https://saviskar.co.in/admin/accept-invite",
+        redirectTo: "https://saviskar.co.in/admin/accept-invite?email=secondmaster%40example.com",
       });
     });
 

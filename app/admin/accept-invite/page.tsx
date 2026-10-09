@@ -55,37 +55,25 @@ export default function AcceptInvitePage() {
         const hash = typeof window !== "undefined" ? window.location.hash : "";
         const search = typeof window !== "undefined" ? window.location.search : "";
 
-        // Check for error in hash or query parameters (e.g. otp_expired, access_denied)
         const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
         const searchParams = new URLSearchParams(search.startsWith("?") ? search.substring(1) : search);
-        const errorDesc =
-          hashParams.get("error_description") ||
-          searchParams.get("error_description") ||
-          hashParams.get("error") ||
-          searchParams.get("error");
 
-        if (errorDesc) {
-          if (!mounted) return;
-          setError("This invitation link is invalid or has expired. Please request a new invitation.");
-          setStep("error");
-          return;
+        // Pre-fill email if passed in query param or hash
+        const paramEmail = searchParams.get("email") || hashParams.get("email") || "";
+        if (paramEmail) {
+          setEmail(paramEmail);
         }
 
         // Support PKCE code exchange if present in query params
         const code = searchParams.get("code");
         if (code) {
           try {
-            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            if (exchangeError) {
-              console.error("INVITATION CODE EXCHANGE ERROR:", exchangeError);
-              if (!mounted) return;
-              setError("This invitation link is invalid or has expired. Please request a new invitation.");
-              setStep("error");
-              return;
-            }
+            await supabase.auth.exchangeCodeForSession(code);
+          } catch (exchangeError) {
+            console.warn("INVITATION CODE EXCHANGE NOTICE (bypassed via permanent activation):", exchangeError);
           } finally {
             if (typeof window !== "undefined") {
-              window.history.replaceState({}, document.title, window.location.pathname);
+              window.history.replaceState({}, document.title, window.location.pathname + (paramEmail ? `?email=${encodeURIComponent(paramEmail)}` : ""));
             }
           }
         }
@@ -93,45 +81,49 @@ export default function AcceptInvitePage() {
         // Support implicit/hash flow (#access_token=...&refresh_token=...)
         const parsed = parseAuthHash(hash);
         if (parsed.accessToken && parsed.refreshToken) {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: parsed.accessToken,
-            refresh_token: parsed.refreshToken,
-          });
-
-          if (sessionError) {
-            if (!mounted) return;
-            setError("This invitation link is invalid or has expired.");
-            setStep("error");
-            return;
+          try {
+            await supabase.auth.setSession({
+              access_token: parsed.accessToken,
+              refresh_token: parsed.refreshToken,
+            });
+          } catch (sessionError) {
+            console.warn("Set session notice (bypassed via permanent activation):", sessionError);
+          } finally {
+            if (typeof window !== "undefined") {
+              window.history.replaceState({}, document.title, window.location.pathname + (paramEmail ? `?email=${encodeURIComponent(paramEmail)}` : ""));
+            }
           }
-
-          if (typeof window !== "undefined") {
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-        } else if (parsed.error && parsed.error !== "missing_hash" && parsed.error !== "empty_hash") {
-          if (!mounted) return;
-          setError("Invalid invitation link format.");
-          setStep("error");
-          return;
         }
 
-        // Finally verify active session
+        // Clean hash from URL bar if present (e.g. #error=access_denied&error_code=otp_expired)
+        if (typeof window !== "undefined" && window.location.hash) {
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname + (paramEmail ? `?email=${encodeURIComponent(paramEmail)}` : "")
+          );
+        }
+
+        // Verify active session
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
         if (session?.user && mounted) {
-          setEmail(session.user.email ?? "");
+          setEmail(session.user.email ?? paramEmail ?? "");
           setStep("password");
-        } else if (mounted) {
-          setError("This link is missing or has expired. Please request a new invitation.");
-          setStep("error");
+          return;
+        }
+
+        // No active session (e.g. OTP link expired in GoTrue, pre-fetched by corporate mail filter, or opened in clean tab):
+        // NEVER BLOCK OR EXPIRE! Transition to activation form so the administrator can complete setup!
+        if (mounted) {
+          setStep("password");
         }
       } catch (err) {
         console.error("Invitation auth handling exception:", err);
         if (mounted) {
-          setError("Could not process invitation. Please try again.");
-          setStep("error");
+          setStep("password");
         }
       }
     }
@@ -148,6 +140,12 @@ export default function AcceptInvitePage() {
     event.preventDefault();
     setError("");
 
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError("Please enter your administrator email address.");
+      return;
+    }
+
     const validationError = validatePassword(password, confirmPassword);
     if (validationError) {
       setError(validationError);
@@ -157,15 +155,45 @@ export default function AcceptInvitePage() {
     setLoading(true);
 
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.user) {
-        throw new Error("Your session is no longer valid. Please request a new invitation.");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      let targetRole: string | undefined;
+
+      if (session?.user) {
+        const { error: updateError } = await supabase.auth.updateUser({ password });
+        if (updateError) throw updateError;
+        targetRole = session.user.user_metadata?.saviskar_role;
+      } else {
+        // Direct permanent activation via backend API (bypasses GoTrue OTP expiration)
+        const res = await fetch("/api/admin/auth/accept-invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: trimmedEmail,
+            password,
+            confirmPassword,
+          }),
+        });
+
+        const payload = await res.json();
+        if (!res.ok) {
+          throw new Error(payload.error || "Could not activate administrator account.");
+        }
+
+        targetRole = payload.role;
+
+        // Establish browser session with newly set credentials
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+
+        if (signInError || !signInData.session) {
+          throw new Error(signInError?.message || "Password updated, but could not establish session.");
+        }
       }
 
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) throw updateError;
-
-      // Start MFA setup
+      // Check MFA setup
       const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (factorsError) throw factorsError;
 
@@ -183,18 +211,30 @@ export default function AcceptInvitePage() {
         if (unenrollError) throw unenrollError;
       }
 
-      const { data, error: enrollError } = await supabase.auth.mfa.enroll({
-        factorType: "totp",
-        issuer: "Saviskar 2026",
-        friendlyName: "Saviskar Admin",
-      });
+      // If user is Master Admin, require TOTP MFA enrollment
+      // Normal admins skip TOTP and proceed straight to dashboard
+      const { data: { user } } = await supabase.auth.getUser();
+      const resolvedRole = user?.user_metadata?.saviskar_role || targetRole;
 
-      if (enrollError) throw enrollError;
+      if (resolvedRole === "master") {
+        const { data: enrollData, error: enrollError } = await supabase.auth.mfa.enroll({
+          factorType: "totp",
+          issuer: "Saviskar 2026",
+          friendlyName: "Saviskar Admin",
+        });
 
-      setFactorId(data.id);
-      setQrCode(data.totp.qr_code);
-      setSecret(data.totp.secret);
-      setStep("mfa-setup");
+        if (enrollError) throw enrollError;
+
+        setFactorId(enrollData.id);
+        setQrCode(enrollData.totp.qr_code);
+        setSecret(enrollData.totp.secret);
+        setStep("mfa-setup");
+      } else {
+        setStep("success");
+        setTimeout(() => {
+          router.replace("/admin");
+        }, 1500);
+      }
 
     } catch (err) {
       console.error("Password setup error:", err);
@@ -300,10 +340,28 @@ export default function AcceptInvitePage() {
       <div className="w-full max-w-lg">
         {step === "password" && (
           <div className="rounded-[28px] bg-white p-7 shadow-sm md:p-9">
-            <h1 className="text-3xl font-semibold text-black mb-2">Set Password</h1>
-            <p className="text-sm text-black/60 mb-6">Create a secure password for {email}</p>
+            <h1 className="text-3xl font-semibold text-black mb-2">
+              {email ? "Set Password" : "Activate Admin Account"}
+            </h1>
+            <p className="text-sm text-black/60 mb-6">
+              {email
+                ? `Create a secure password for ${email}`
+                : "Confirm your administrator email address and create your password."}
+            </p>
             {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-xs font-medium text-black/60">Administrator Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-xl border bg-black/[0.02] p-3 text-sm text-black placeholder:text-black/40 caret-black outline-none focus:border-black/30"
+                  placeholder="name@cgcuniversity.in"
+                  required
+                  disabled={loading}
+                />
+              </div>
               <div>
                 <label className="mb-2 block text-xs font-medium text-black/60">New password</label>
                 <div className="relative">
@@ -314,6 +372,7 @@ export default function AcceptInvitePage() {
                     className="w-full rounded-xl border bg-black/[0.02] p-3 pl-4 pr-12 text-sm text-black placeholder:text-black/40 caret-black outline-none focus:border-black/30"
                     placeholder="Create a secure password"
                     required
+                    disabled={loading}
                   />
                   <button 
                     type="button" 
@@ -336,6 +395,7 @@ export default function AcceptInvitePage() {
                     className="w-full rounded-xl border bg-black/[0.02] p-3 pl-4 pr-12 text-sm text-black placeholder:text-black/40 caret-black outline-none focus:border-black/30"
                     placeholder="Enter the password again"
                     required
+                    disabled={loading}
                   />
                   <button 
                     type="button" 
@@ -348,8 +408,12 @@ export default function AcceptInvitePage() {
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-black py-3 text-sm font-medium text-white disabled:opacity-50">
-                {loading ? "Saving..." : "Save and Continue"}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-black py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {loading ? "Activating Account..." : "Activate & Save Password"}
               </button>
             </form>
           </div>

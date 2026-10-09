@@ -589,7 +589,7 @@ export async function POST(request: Request) {
   const siteUrl = getTrustedAuthOrigin(request);
 
   const redirectTo =
-    `${siteUrl}/admin/accept-invite`;
+    `${siteUrl}/admin/accept-invite?email=${encodeURIComponent(email)}`;
 
   console.log("========================================");
   console.log("NEW ADMIN INVITATION");
