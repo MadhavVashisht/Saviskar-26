@@ -27,6 +27,7 @@ type AccommodationRegistrationInput = {
   email?: unknown;
   planSlug?: unknown;
   selectedDate?: unknown;
+  extraDays?: unknown;
 };
 
 type RegistrationInput = {
@@ -641,7 +642,12 @@ export async function POST(
   // 10A. NORMALIZE ACCOMMODATIONS FOR DATABASE RPC
   // =====================================================
 
-  const rpcAccommodations: Array<{ email: string; plan_slug: string; selected_date?: string }> = [];
+  const rpcAccommodations: Array<{
+    email: string;
+    plan_slug: string;
+    selected_date?: string;
+    extra_days?: string;
+  }> = [];
 
   if (Array.isArray(body.accommodations) && body.accommodations.length > 0) {
     if (body.accommodations.length > 50) {
@@ -655,6 +661,7 @@ export async function POST(
       const accEmail = cleanEmail(acc.email);
       const accPlanSlug = cleanString(acc.planSlug, 50);
       const rawDate = cleanString(acc.selectedDate, 20);
+      const rawExtraDays = cleanString(acc.extraDays, 20);
 
       if (!accEmail || !EMAIL_PATTERN.test(accEmail)) {
         return errorResponse("Invalid accommodation delegate email address.", 400);
@@ -664,16 +671,41 @@ export async function POST(
       }
 
       let selectedDate = "2026-10-28";
-      if (rawDate === "2026-10-29" || rawDate === "29" || rawDate?.includes("29")) {
+      if (rawDate === "2026-10-27" || rawDate?.includes("27")) {
+        selectedDate = "2026-10-27";
+      } else if (rawDate === "2026-10-29" || rawDate === "29" || rawDate?.includes("29")) {
         selectedDate = "2026-10-29";
+      } else if (rawDate === "2026-10-30" || rawDate?.includes("30")) {
+        selectedDate = "2026-10-30";
+      }
+
+      let effectivePlanSlug = accPlanSlug;
+      if (accPlanSlug === "2_days") {
+        if (rawExtraDays === "before_27") {
+          effectivePlanSlug = "3_days";
+          selectedDate = "2026-10-27";
+        } else if (rawExtraDays === "after_30") {
+          effectivePlanSlug = "3_days";
+          selectedDate = "2026-10-30";
+        } else if (rawExtraDays === "both") {
+          effectivePlanSlug = "4_days";
+          selectedDate = "2026-10-27";
+        }
+      } else if (accPlanSlug === "3_days") {
+        if (rawExtraDays === "before_27" || selectedDate === "2026-10-27") {
+          selectedDate = "2026-10-27";
+        } else {
+          selectedDate = "2026-10-30";
+        }
       }
 
       if (!seenEmails.has(accEmail)) {
         seenEmails.add(accEmail);
         rpcAccommodations.push({
           email: accEmail,
-          plan_slug: accPlanSlug,
+          plan_slug: effectivePlanSlug,
           selected_date: selectedDate,
+          extra_days: rawExtraDays || undefined,
         });
       }
     }
@@ -1037,28 +1069,65 @@ export async function POST(
     );
   }
 
-  // 13B. SYNC ACCOMMODATION DATES (IF 29TH OCT SELECTED FOR 1-DAY PLAN)
+  // 13B. SYNC ACCOMMODATION DATES & DURATION
   if (rpcAccommodations.length > 0) {
     for (const accItem of rpcAccommodations) {
-      if (accItem.selected_date === "2026-10-29" && (accItem.plan_slug === "1_day" || accItem.plan_slug === "1_day_29")) {
-        const { data: accParticipant } = await supabaseAdmin
-          .from("participants")
-          .select("id")
-          .eq("email", accItem.email)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      const { data: accParticipant } = await supabaseAdmin
+        .from("participants")
+        .select("id")
+        .eq("email", accItem.email)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-        if (accParticipant?.id) {
-          await supabaseAdmin
-            .from("participant_accommodations")
-            .update({
-              start_date: "2026-10-29",
-              end_date: "2026-10-30",
-            })
-            .eq("participant_id", accParticipant.id)
-            .in("status", ["pending", "unpaid"]);
+      if (accParticipant?.id) {
+        let startDate = "2026-10-28";
+        let endDate = "2026-10-30";
+        let durationDays = 2;
+
+        if (accItem.plan_slug === "1_day" || accItem.plan_slug === "1_day_29") {
+          durationDays = 1;
+          if (accItem.selected_date === "2026-10-27") {
+            startDate = "2026-10-27";
+            endDate = "2026-10-28";
+          } else if (accItem.selected_date === "2026-10-29") {
+            startDate = "2026-10-29";
+            endDate = "2026-10-30";
+          } else if (accItem.selected_date === "2026-10-30") {
+            startDate = "2026-10-30";
+            endDate = "2026-10-31";
+          } else {
+            startDate = "2026-10-28";
+            endDate = "2026-10-29";
+          }
+        } else if (accItem.plan_slug === "2_days") {
+          durationDays = 2;
+          startDate = "2026-10-28";
+          endDate = "2026-10-30";
+        } else if (accItem.plan_slug === "3_days") {
+          durationDays = 3;
+          if (accItem.selected_date === "2026-10-27" || accItem.extra_days === "before_27") {
+            startDate = "2026-10-27";
+            endDate = "2026-10-30";
+          } else {
+            startDate = "2026-10-28";
+            endDate = "2026-10-31";
+          }
+        } else if (accItem.plan_slug === "4_days") {
+          durationDays = 4;
+          startDate = "2026-10-27";
+          endDate = "2026-10-31";
         }
+
+        await supabaseAdmin
+          .from("participant_accommodations")
+          .update({
+            start_date: startDate,
+            end_date: endDate,
+            duration_days: durationDays,
+          })
+          .eq("participant_id", accParticipant.id)
+          .in("status", ["pending", "unpaid"]);
       }
     }
   }

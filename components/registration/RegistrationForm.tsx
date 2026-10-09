@@ -35,15 +35,66 @@ import TermsConditionsModal from "./TermsConditionsModal";
 import { INDIAN_STATES_AND_UT } from "@/lib/states";
 import { ImageUploader } from "@/components/ui/image-uploader";
 
-export function formatAccommodationDate(duration: number, selectedDate?: string) {
+export function formatAccommodationDate(
+  duration: number,
+  selectedDate?: string,
+  extraDays?: string
+) {
   if (duration === 1) {
-    if (selectedDate === "2026-10-29") return "29 Oct (Day 2)";
+    if (selectedDate === "2026-10-27") return "27 Oct (Day Before)";
     if (selectedDate === "2026-10-28") return "28 Oct (Day 1)";
+    if (selectedDate === "2026-10-29") return "29 Oct (Day 2)";
+    if (selectedDate === "2026-10-30") return "30 Oct (Day After)";
     return "28 or 29 Oct";
   }
-  if (duration === 2) return "28–29 Oct";
-  if (duration === 3) return "28–30 Oct";
+  if (duration === 2) {
+    if (extraDays === "before_27") return "27–29 Oct (3 Days)";
+    if (extraDays === "after_30") return "28–30 Oct (3 Days)";
+    if (extraDays === "both") return "27–30 Oct (4 Days)";
+    return "28–29 Oct";
+  }
+  if (duration === 3) {
+    if (selectedDate === "2026-10-27" || extraDays === "before_27") return "27–29 Oct (3 Days)";
+    if (selectedDate === "2026-10-30" || selectedDate === "2026-10-28" || extraDays === "after_30") return "28–30 Oct (3 Days)";
+    return "27th or 30th Oct";
+  }
+  if (duration === 4) return "27–30 Oct (4 Days)";
   return "28 Oct onwards";
+}
+
+export function resolveAccommodationSelection(
+  baseSlug: string,
+  selectedDate?: string,
+  extraDays?: "none" | "before_27" | "after_30" | "both"
+): { planSlug: string; selectedDate: string; extraDays: string } {
+  if (baseSlug === "1_day") {
+    const validDates = ["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"];
+    const date = validDates.includes(selectedDate || "") ? (selectedDate as string) : "2026-10-28";
+    return { planSlug: "1_day", selectedDate: date, extraDays: "none" };
+  }
+  if (baseSlug === "2_days") {
+    if (extraDays === "before_27") {
+      return { planSlug: "3_days", selectedDate: "2026-10-27", extraDays: "before_27" };
+    }
+    if (extraDays === "after_30") {
+      return { planSlug: "3_days", selectedDate: "2026-10-30", extraDays: "after_30" };
+    }
+    if (extraDays === "both") {
+      return { planSlug: "4_days", selectedDate: "2026-10-27", extraDays: "both" };
+    }
+    return { planSlug: "2_days", selectedDate: "2026-10-28", extraDays: "none" };
+  }
+  if (baseSlug === "3_days") {
+    const is30 = selectedDate === "2026-10-30" || extraDays === "after_30";
+    if (is30) {
+      return { planSlug: "3_days", selectedDate: "2026-10-30", extraDays: "after_30" };
+    }
+    return { planSlug: "3_days", selectedDate: "2026-10-27", extraDays: "before_27" };
+  }
+  if (baseSlug === "4_days") {
+    return { planSlug: "4_days", selectedDate: "2026-10-27", extraDays: "both" };
+  }
+  return { planSlug: baseSlug, selectedDate: selectedDate || "2026-10-28", extraDays: extraDays || "none" };
 }
 
 type EventOption = {
@@ -70,6 +121,7 @@ type TeamMember = {
   idCardStoragePath: string;
   accommodationPlanSlug: string;
   accommodationDate?: string;
+  extraDays?: "none" | "before_27" | "after_30" | "both";
 };
 
 type AccommodationPlan = {
@@ -170,7 +222,8 @@ export default function RegistrationForm({
     Record<string, EventRegistrationState>
   >({});
   const [mainAccommodationSlug, setMainAccommodationSlug] = useState("");
-  const [mainAccommodationDate, setMainAccommodationDate] = useState<"2026-10-28" | "2026-10-29">("2026-10-28");
+  const [mainAccommodationDate, setMainAccommodationDate] = useState<"2026-10-27" | "2026-10-28" | "2026-10-29" | "2026-10-30">("2026-10-28");
+  const [mainExtraDays, setMainExtraDays] = useState<"none" | "before_27" | "after_30" | "both">("none");
   const [mainIdCardStoragePath, setMainIdCardStoragePath] = useState("");
 
   const [facultyEnabled, setFacultyEnabled] = useState(false);
@@ -183,7 +236,8 @@ export default function RegistrationForm({
     state: "",
     idCardStoragePath: "",
     accommodationPlanSlug: "",
-    accommodationDate: "2026-10-28" as "2026-10-28" | "2026-10-29",
+    accommodationDate: "2026-10-28" as "2026-10-27" | "2026-10-28" | "2026-10-29" | "2026-10-30",
+    extraDays: "none" as "none" | "before_27" | "after_30" | "both",
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -658,6 +712,7 @@ export default function RegistrationForm({
             idCardStoragePath: "",
             accommodationPlanSlug: "",
             accommodationDate: "2026-10-28",
+            extraDays: "none",
           },
         ],
       },
@@ -762,6 +817,7 @@ export default function RegistrationForm({
               idCardStoragePath: "",
               accommodationPlanSlug: "",
               accommodationDate: "2026-10-28",
+              extraDays: "none",
             })
           );
 
@@ -805,21 +861,56 @@ export default function RegistrationForm({
   }
 
   /*
-   * TOTAL PRICE
+   * ACCOMMODATION CALCULATIONS & TOTAL PRICE
    */
+  const baseAccommodationPlans = useMemo(() => {
+    return accommodationPlans;
+  }, [accommodationPlans]);
+
+  const getAccommodationCost = useCallback(
+    (baseSlug: string, extraDays?: "none" | "before_27" | "after_30" | "both") => {
+      if (!baseSlug) return 0;
+      if (baseSlug === "1_day") {
+        const plan = accommodationPlans.find((p) => p.slug === "1_day");
+        return plan?.price ?? 499;
+      }
+      if (baseSlug === "2_days") {
+        if (extraDays === "before_27" || extraDays === "after_30") {
+          const plan = accommodationPlans.find((p) => p.slug === "3_days");
+          return plan?.price ?? 1498;
+        }
+        if (extraDays === "both") {
+          const plan = accommodationPlans.find((p) => p.slug === "4_days");
+          return plan?.price ?? 1997;
+        }
+        const plan = accommodationPlans.find((p) => p.slug === "2_days");
+        return plan?.price ?? 999;
+      }
+      if (baseSlug === "3_days") {
+        const plan = accommodationPlans.find((p) => p.slug === "3_days");
+        return plan?.price ?? 1498;
+      }
+      if (baseSlug === "4_days") {
+        const plan = accommodationPlans.find((p) => p.slug === "4_days");
+        return plan?.price ?? 1997;
+      }
+      const plan = accommodationPlans.find((p) => p.slug === baseSlug);
+      return plan?.price ?? 0;
+    },
+    [accommodationPlans]
+  );
+
   const totalPrice = useMemo(() => {
     let accCost = 0;
 
     // Main participant accommodation
     if (mainAccommodationSlug) {
-      const plan = accommodationPlans.find((p) => p.slug === mainAccommodationSlug);
-      if (plan) accCost += plan.price;
+      accCost += getAccommodationCost(mainAccommodationSlug, mainExtraDays);
     }
 
     // Faculty accommodation
     if (facultyEnabled && facultyState.accommodationPlanSlug) {
-      const plan = accommodationPlans.find((p) => p.slug === facultyState.accommodationPlanSlug);
-      if (plan) accCost += plan.price;
+      accCost += getAccommodationCost(facultyState.accommodationPlanSlug, facultyState.extraDays);
     }
 
     // Team members accommodations
@@ -828,8 +919,7 @@ export default function RegistrationForm({
         const state = getTeamState(event.id);
         state.members.forEach((m) => {
           if (m.accommodationPlanSlug) {
-            const plan = accommodationPlans.find((p) => p.slug === m.accommodationPlanSlug);
-            if (plan) accCost += plan.price;
+            accCost += getAccommodationCost(m.accommodationPlanSlug, m.extraDays);
           }
         });
       }
@@ -865,7 +955,17 @@ export default function RegistrationForm({
     }, 0);
     
     return eventsCost + accCost;
-  }, [selectedEvents, eventState, accommodationPlans, mainAccommodationSlug, getTeamState, facultyEnabled, facultyState]);
+  }, [
+    selectedEvents,
+    eventState,
+    accommodationPlans,
+    mainAccommodationSlug,
+    mainExtraDays,
+    getTeamState,
+    facultyEnabled,
+    facultyState,
+    getAccommodationCost,
+  ]);
 
   /*
    * SUBMIT
@@ -920,13 +1020,15 @@ export default function RegistrationForm({
         formData.get("accommodationPlanSlug") ?? ""
       ).trim();
 
-      const accommodationsPayload: Array<{ email: string; planSlug: string; selectedDate?: string }> = [];
+      const accommodationsPayload: Array<{ email: string; planSlug: string; selectedDate?: string; extraDays?: string }> = [];
 
       if (mainAccSlug) {
+        const resolved = resolveAccommodationSelection(mainAccSlug, mainAccommodationDate, mainExtraDays);
         accommodationsPayload.push({
           email,
-          planSlug: mainAccSlug,
-          selectedDate: mainAccSlug === "1_day" ? mainAccommodationDate : "2026-10-28",
+          planSlug: resolved.planSlug,
+          selectedDate: resolved.selectedDate,
+          extraDays: resolved.extraDays,
         });
       }
 
@@ -939,10 +1041,16 @@ export default function RegistrationForm({
           throw new ValidationError("Please complete all Faculty Incharge details (including ID card).");
         }
         if (facultyState.accommodationPlanSlug) {
+          const resolved = resolveAccommodationSelection(
+            facultyState.accommodationPlanSlug,
+            facultyState.accommodationDate,
+            facultyState.extraDays
+          );
           accommodationsPayload.push({
             email: facultyState.email.trim().toLowerCase(),
-            planSlug: facultyState.accommodationPlanSlug,
-            selectedDate: facultyState.accommodationPlanSlug === "1_day" ? (facultyState.accommodationDate || "2026-10-28") : "2026-10-28",
+            planSlug: resolved.planSlug,
+            selectedDate: resolved.selectedDate,
+            extraDays: resolved.extraDays,
           });
         }
       }
@@ -1001,10 +1109,16 @@ export default function RegistrationForm({
             }
 
             if (member.accommodationPlanSlug) {
+              const resolved = resolveAccommodationSelection(
+                member.accommodationPlanSlug,
+                member.accommodationDate,
+                member.extraDays
+              );
               accommodationsPayload.push({
                 email: member.email.trim().toLowerCase(),
-                planSlug: member.accommodationPlanSlug,
-                selectedDate: member.accommodationPlanSlug === "1_day" ? (member.accommodationDate || "2026-10-28") : "2026-10-28",
+                planSlug: resolved.planSlug,
+                selectedDate: resolved.selectedDate,
+                extraDays: resolved.extraDays,
               });
             }
           }
@@ -2597,7 +2711,7 @@ export default function RegistrationForm({
                               {accommodationPlans.length > 0 && (
                                 <div className="mt-6">
                                   <Field label="Accommodation (Optional)">
-                                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                                       <label className="relative flex cursor-pointer flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                                         <input
                                           type="radio"
@@ -2610,20 +2724,46 @@ export default function RegistrationForm({
                                         <span className="font-medium text-white text-sm">No Accommodation</span>
                                         <span className="font-mono text-xs text-white/50">₹0</span>
                                       </label>
-                                      {accommodationPlans.map((plan) => (
+                                      {baseAccommodationPlans.map((plan) => (
                                         <label key={plan.id} className="relative flex cursor-pointer flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                                           <input
                                             type="radio"
                                             name="accommodationPlanSlug"
                                             value={plan.slug}
                                             checked={mainAccommodationSlug === plan.slug}
-                                            onChange={(e) => setMainAccommodationSlug(e.target.value)}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              setMainAccommodationSlug(val);
+                                              if (val === "3_days") {
+                                                if (mainAccommodationDate !== "2026-10-27" && mainAccommodationDate !== "2026-10-30") {
+                                                  setMainAccommodationDate("2026-10-27");
+                                                  setMainExtraDays("before_27");
+                                                }
+                                              } else if (val === "1_day") {
+                                                if (!["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"].includes(mainAccommodationDate)) {
+                                                  setMainAccommodationDate("2026-10-28");
+                                                  setMainExtraDays("none");
+                                                }
+                                              } else if (val === "2_days") {
+                                                setMainAccommodationDate("2026-10-28");
+                                                setMainExtraDays("none");
+                                              } else if (val === "4_days") {
+                                                setMainAccommodationDate("2026-10-27");
+                                                setMainExtraDays("both");
+                                              }
+                                            }}
                                             className="peer sr-only"
                                           />
                                           <span className="font-medium text-white text-sm leading-tight">{plan.name}</span>
-                                          <span className="font-mono text-xs font-semibold text-emerald-400">₹{plan.price}</span>
+                                          <span className="font-mono text-xs font-semibold text-emerald-400">
+                                            ₹{plan.price}
+                                          </span>
                                           <span className="text-[10px] font-mono text-white/40 mt-1">
-                                            {formatAccommodationDate(plan.duration, mainAccommodationSlug === plan.slug ? mainAccommodationDate : undefined)}
+                                            {formatAccommodationDate(
+                                              plan.duration,
+                                              mainAccommodationSlug === plan.slug ? mainAccommodationDate : undefined,
+                                              mainAccommodationSlug === plan.slug ? mainExtraDays : undefined
+                                            )}
                                           </span>
                                         </label>
                                       ))}
@@ -2634,7 +2774,24 @@ export default function RegistrationForm({
                                           <Calendar size={13} className="text-violet-400" />
                                           <span>Choose Your 1-Day Accommodation Date:</span>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                          <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="mainAccommodationDate"
+                                              value="2026-10-27"
+                                              checked={mainAccommodationDate === "2026-10-27"}
+                                              onChange={() => setMainAccommodationDate("2026-10-27")}
+                                              className="sr-only"
+                                            />
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {mainAccommodationDate === "2026-10-27" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-medium">27th Oct (Day Before)</div>
+                                              <div className="text-[10px] text-white/50">Early arrival • Tue night</div>
+                                            </div>
+                                          </label>
                                           <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
                                             <input
                                               type="radio"
@@ -2644,12 +2801,12 @@ export default function RegistrationForm({
                                               onChange={() => setMainAccommodationDate("2026-10-28")}
                                               className="sr-only"
                                             />
-                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
                                               {mainAccommodationDate === "2026-10-28" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                             </div>
                                             <div>
-                                              <div className="text-xs font-medium">28th October 2026 (Day 1)</div>
-                                              <div className="text-[10px] text-white/50">Wednesday night stay</div>
+                                              <div className="text-xs font-medium">28th Oct (Day 1)</div>
+                                              <div className="text-[10px] text-white/50">Fest Day 1 • Wed night</div>
                                             </div>
                                           </label>
                                           <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
@@ -2661,15 +2818,104 @@ export default function RegistrationForm({
                                               onChange={() => setMainAccommodationDate("2026-10-29")}
                                               className="sr-only"
                                             />
-                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
                                               {mainAccommodationDate === "2026-10-29" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                             </div>
                                             <div>
-                                              <div className="text-xs font-medium">29th October 2026 (Day 2)</div>
-                                              <div className="text-[10px] text-white/50">Thursday night stay</div>
+                                              <div className="text-xs font-medium">29th Oct (Day 2)</div>
+                                              <div className="text-[10px] text-white/50">Fest Day 2 • Thu night</div>
+                                            </div>
+                                          </label>
+                                          <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="mainAccommodationDate"
+                                              value="2026-10-30"
+                                              checked={mainAccommodationDate === "2026-10-30"}
+                                              onChange={() => setMainAccommodationDate("2026-10-30")}
+                                              className="sr-only"
+                                            />
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {mainAccommodationDate === "2026-10-30" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-medium">30th Oct (Day After)</div>
+                                              <div className="text-[10px] text-white/50">Extended stay • Fri night</div>
                                             </div>
                                           </label>
                                         </div>
+                                      </div>
+                                    )}
+                                    {mainAccommodationSlug === "2_days" && (
+                                      <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                        <Calendar size={14} className="text-violet-400 shrink-0" />
+                                        <span>Includes both official fest days: <strong className="text-white">28th &amp; 29th October</strong> (2 Nights • Checkout 30th morning).</span>
+                                      </div>
+                                    )}
+                                    {mainAccommodationSlug === "3_days" && (
+                                      <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
+                                        <div className="flex items-center justify-between gap-1.5 text-xs font-semibold text-violet-300 mb-2">
+                                          <div className="flex items-center gap-1.5">
+                                            <Calendar size={13} className="text-violet-400" />
+                                            <span>Choose Extra Day for 3-Day Accommodation (3 Nights):</span>
+                                          </div>
+                                          <span className="text-[11px] font-mono text-emerald-400 font-semibold">₹1,498 Total</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                          <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer text-xs transition-all ${(mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="main3DaysOption"
+                                              value="2026-10-27"
+                                              checked={mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27"}
+                                              onChange={() => {
+                                                setMainAccommodationDate("2026-10-27");
+                                                setMainExtraDays("before_27");
+                                              }}
+                                              className="sr-only"
+                                            />
+                                            <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {(mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27") && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div className="flex-1">
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-semibold text-white">27th Oct (Day Before Fest)</span>
+                                                <span className="font-mono text-violet-300 text-[11px]">27–29 Oct</span>
+                                              </div>
+                                              <div className="text-[11px] text-white/50 mt-0.5">Early Arrival • 27th, 28th &amp; 29th Oct (Checkout 30th)</div>
+                                            </div>
+                                          </label>
+
+                                          <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer text-xs transition-all ${(mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="main3DaysOption"
+                                              value="2026-10-30"
+                                              checked={mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30"}
+                                              onChange={() => {
+                                                setMainAccommodationDate("2026-10-30");
+                                                setMainExtraDays("after_30");
+                                              }}
+                                              className="sr-only"
+                                            />
+                                            <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {(mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30") && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div className="flex-1">
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-semibold text-white">30th Oct (Day After Fest)</span>
+                                                <span className="font-mono text-violet-300 text-[11px]">28–30 Oct</span>
+                                              </div>
+                                              <div className="text-[11px] text-white/50 mt-0.5">Extended Stay • 28th, 29th &amp; 30th Oct (Checkout 31st)</div>
+                                            </div>
+                                          </label>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {mainAccommodationSlug === "4_days" && (
+                                      <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                        <Calendar size={14} className="text-violet-400 shrink-0" />
+                                        <span>Includes all 4 days: <strong className="text-white">27th to 30th October</strong> (4 Nights • Checkout 31st morning). Day before fest + both fest days + day after fest.</span>
                                       </div>
                                     )}
                                   </Field>
@@ -2856,7 +3102,7 @@ export default function RegistrationForm({
                                   {accommodationPlans.length > 0 && (
                                     <div className="mt-5">
                                       <Field label="Member Accommodation (Optional)">
-                                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                                           <label className="relative flex cursor-pointer flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                                             <input
                                               type="radio"
@@ -2869,20 +3115,46 @@ export default function RegistrationForm({
                                             <span className="font-medium text-white text-sm">No Accommodation</span>
                                             <span className="font-mono text-xs text-white/50">₹0</span>
                                           </label>
-                                          {accommodationPlans.map((plan) => (
+                                          {baseAccommodationPlans.map((plan) => (
                                             <label key={plan.id} className="relative flex cursor-pointer flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                                               <input
                                                 type="radio"
                                                 name={`accommodationPlanSlug-${event.id}-${index}`}
                                                 value={plan.slug}
                                                 checked={member.accommodationPlanSlug === plan.slug}
-                                                onChange={(e) => updateTeamMember(event.id, index, "accommodationPlanSlug", e.target.value)}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  updateTeamMember(event.id, index, "accommodationPlanSlug", val);
+                                                  if (val === "3_days") {
+                                                    if (member.accommodationDate !== "2026-10-27" && member.accommodationDate !== "2026-10-30") {
+                                                      updateTeamMember(event.id, index, "accommodationDate", "2026-10-27");
+                                                      updateTeamMember(event.id, index, "extraDays", "before_27");
+                                                    }
+                                                  } else if (val === "1_day") {
+                                                    if (!["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"].includes(member.accommodationDate || "")) {
+                                                      updateTeamMember(event.id, index, "accommodationDate", "2026-10-28");
+                                                      updateTeamMember(event.id, index, "extraDays", "none");
+                                                    }
+                                                  } else if (val === "2_days") {
+                                                    updateTeamMember(event.id, index, "accommodationDate", "2026-10-28");
+                                                    updateTeamMember(event.id, index, "extraDays", "none");
+                                                  } else if (val === "4_days") {
+                                                    updateTeamMember(event.id, index, "accommodationDate", "2026-10-27");
+                                                    updateTeamMember(event.id, index, "extraDays", "both");
+                                                  }
+                                                }}
                                                 className="peer sr-only"
                                               />
                                               <span className="font-medium text-white text-sm leading-tight">{plan.name}</span>
-                                              <span className="font-mono text-xs font-semibold text-emerald-400">₹{plan.price}</span>
+                                              <span className="font-mono text-xs font-semibold text-emerald-400">
+                                                ₹{plan.price}
+                                              </span>
                                               <span className="text-[10px] font-mono text-white/40 mt-1">
-                                                {formatAccommodationDate(plan.duration, member.accommodationPlanSlug === plan.slug ? (member.accommodationDate || "2026-10-28") : undefined)}
+                                                {formatAccommodationDate(
+                                                  plan.duration,
+                                                  member.accommodationPlanSlug === plan.slug ? (member.accommodationDate || "2026-10-28") : undefined,
+                                                  member.accommodationPlanSlug === plan.slug ? (member.extraDays || "none") : undefined
+                                                )}
                                               </span>
                                             </label>
                                           ))}
@@ -2893,7 +3165,24 @@ export default function RegistrationForm({
                                               <Calendar size={13} className="text-violet-400" />
                                               <span>Choose Member 1-Day Accommodation Date:</span>
                                             </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                              <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-all ${(member.accommodationDate || "2026-10-28") === "2026-10-27" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                                <input
+                                                  type="radio"
+                                                  name={`memberAccommodationDate-${event.id}-${index}`}
+                                                  value="2026-10-27"
+                                                  checked={member.accommodationDate === "2026-10-27"}
+                                                  onChange={() => updateTeamMember(event.id, index, "accommodationDate", "2026-10-27")}
+                                                  className="sr-only"
+                                                />
+                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${member.accommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                                  {member.accommodationDate === "2026-10-27" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                </div>
+                                                <div>
+                                                  <div className="text-xs font-medium">27th Oct</div>
+                                                  <div className="text-[10px] text-white/50">Day Before Fest</div>
+                                                </div>
+                                              </label>
                                               <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-all ${(member.accommodationDate || "2026-10-28") === "2026-10-28" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
                                                 <input
                                                   type="radio"
@@ -2903,10 +3192,13 @@ export default function RegistrationForm({
                                                   onChange={() => updateTeamMember(event.id, index, "accommodationDate", "2026-10-28")}
                                                   className="sr-only"
                                                 />
-                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${(member.accommodationDate || "2026-10-28") === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(member.accommodationDate || "2026-10-28") === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
                                                   {(member.accommodationDate || "2026-10-28") === "2026-10-28" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                                 </div>
-                                                <span className="text-xs">28th Oct (Day 1)</span>
+                                                <div>
+                                                  <div className="text-xs font-medium">28th Oct</div>
+                                                  <div className="text-[10px] text-white/50">Fest Day 1</div>
+                                                </div>
                                               </label>
                                               <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-all ${member.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
                                                 <input
@@ -2917,12 +3209,103 @@ export default function RegistrationForm({
                                                   onChange={() => updateTeamMember(event.id, index, "accommodationDate", "2026-10-29")}
                                                   className="sr-only"
                                                 />
-                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${member.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${member.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
                                                   {member.accommodationDate === "2026-10-29" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                                 </div>
-                                                <span className="text-xs">29th Oct (Day 2)</span>
+                                                <div>
+                                                  <div className="text-xs font-medium">29th Oct</div>
+                                                  <div className="text-[10px] text-white/50">Fest Day 2</div>
+                                                </div>
+                                              </label>
+                                              <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-all ${member.accommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                                <input
+                                                  type="radio"
+                                                  name={`memberAccommodationDate-${event.id}-${index}`}
+                                                  value="2026-10-30"
+                                                  checked={member.accommodationDate === "2026-10-30"}
+                                                  onChange={() => updateTeamMember(event.id, index, "accommodationDate", "2026-10-30")}
+                                                  className="sr-only"
+                                                />
+                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${member.accommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                                  {member.accommodationDate === "2026-10-30" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                </div>
+                                                <div>
+                                                  <div className="text-xs font-medium">30th Oct</div>
+                                                  <div className="text-[10px] text-white/50">Day After Fest</div>
+                                                </div>
                                               </label>
                                             </div>
+                                          </div>
+                                        )}
+                                        {member.accommodationPlanSlug === "2_days" && (
+                                          <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                            <Calendar size={14} className="text-violet-400 shrink-0" />
+                                            <span>Includes both official fest days: <strong className="text-white">28th &amp; 29th October</strong> (2 Nights • Checkout 30th morning).</span>
+                                          </div>
+                                        )}
+                                        {member.accommodationPlanSlug === "3_days" && (
+                                          <div className="mt-3 p-3 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
+                                            <div className="flex items-center justify-between gap-1.5 text-xs font-semibold text-violet-300 mb-2">
+                                              <div className="flex items-center gap-1.5">
+                                                <Calendar size={13} className="text-violet-400" />
+                                                <span>Choose Member Extra Day (3 Nights):</span>
+                                              </div>
+                                              <span className="text-[10px] font-mono text-emerald-400 font-semibold">₹1,498 Total</span>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                              <label className={`flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${(member.accommodationDate === "2026-10-27" || member.extraDays === "before_27") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                                <input
+                                                  type="radio"
+                                                  name={`member3DaysOption-${event.id}-${index}`}
+                                                  value="2026-10-27"
+                                                  checked={member.accommodationDate === "2026-10-27" || member.extraDays === "before_27"}
+                                                  onChange={() => {
+                                                    updateTeamMember(event.id, index, "accommodationDate", "2026-10-27");
+                                                    updateTeamMember(event.id, index, "extraDays", "before_27");
+                                                  }}
+                                                  className="sr-only"
+                                                />
+                                                <div className={`mt-0.5 w-3 h-3 rounded-full border flex items-center justify-center shrink-0 ${(member.accommodationDate === "2026-10-27" || member.extraDays === "before_27") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                                  {(member.accommodationDate === "2026-10-27" || member.extraDays === "before_27") && <div className="w-1 h-1 rounded-full bg-white" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                  <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-white">27th Oct (Day Before)</span>
+                                                    <span className="font-mono text-violet-300 text-[10px]">27–29 Oct</span>
+                                                  </div>
+                                                  <div className="text-[10px] text-white/50">Early Arrival • Checkout 30th</div>
+                                                </div>
+                                              </label>
+                                              <label className={`flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${(member.accommodationDate === "2026-10-30" || member.extraDays === "after_30") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                                <input
+                                                  type="radio"
+                                                  name={`member3DaysOption-${event.id}-${index}`}
+                                                  value="2026-10-30"
+                                                  checked={member.accommodationDate === "2026-10-30" || member.extraDays === "after_30"}
+                                                  onChange={() => {
+                                                    updateTeamMember(event.id, index, "accommodationDate", "2026-10-30");
+                                                    updateTeamMember(event.id, index, "extraDays", "after_30");
+                                                  }}
+                                                  className="sr-only"
+                                                />
+                                                <div className={`mt-0.5 w-3 h-3 rounded-full border flex items-center justify-center shrink-0 ${(member.accommodationDate === "2026-10-30" || member.extraDays === "after_30") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                                  {(member.accommodationDate === "2026-10-30" || member.extraDays === "after_30") && <div className="w-1 h-1 rounded-full bg-white" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                  <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-white">30th Oct (Day After)</span>
+                                                    <span className="font-mono text-violet-300 text-[10px]">28–30 Oct</span>
+                                                  </div>
+                                                  <div className="text-[10px] text-white/50">Extended Stay • Checkout 31st</div>
+                                                </div>
+                                              </label>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {member.accommodationPlanSlug === "4_days" && (
+                                          <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                            <Calendar size={14} className="text-violet-400 shrink-0" />
+                                            <span>Includes all 4 days: <strong className="text-white">27th to 30th October</strong> (4 Nights • Checkout 31st morning). Day before fest + both fest days + day after fest.</span>
                                           </div>
                                         )}
                                       </Field>
@@ -3064,81 +3447,213 @@ export default function RegistrationForm({
                 {accommodationPlans.length > 0 && (
                   <div>
                     <Field label="Accommodation (Optional)">
-                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                        <label className="relative flex cursor-pointer flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
-                          <input
-                            type="radio"
-                            name="accommodationPlanSlug"
-                            value=""
-                            checked={!mainAccommodationSlug}
-                            onChange={(e) => setMainAccommodationSlug(e.target.value)}
-                            className="peer sr-only"
-                          />
-                          <span className="font-medium text-white text-sm">No Accommodation</span>
-                          <span className="font-mono text-xs text-white/50">₹0</span>
-                        </label>
-                        {accommodationPlans.map((plan) => (
-                          <label key={plan.id} className="relative flex cursor-pointer flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
-                            <input
-                              type="radio"
-                              name="accommodationPlanSlug"
-                              value={plan.slug}
-                              checked={mainAccommodationSlug === plan.slug}
-                              onChange={(e) => setMainAccommodationSlug(e.target.value)}
-                              className="peer sr-only"
-                            />
-                            <span className="font-medium text-white text-sm leading-tight">{plan.name}</span>
-                            <span className="font-mono text-xs font-semibold text-emerald-400">₹{plan.price}</span>
-                            <span className="text-[10px] font-mono text-white/40 mt-1">
-                              {formatAccommodationDate(plan.duration, mainAccommodationSlug === plan.slug ? mainAccommodationDate : undefined)}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                      {mainAccommodationSlug === "1_day" && (
-                        <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-300 mb-2">
-                            <Calendar size={13} className="text-violet-400" />
-                            <span>Choose Your 1-Day Accommodation Date:</span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
-                              <input
-                                type="radio"
-                                name="mainAccommodationDateSolo"
-                                value="2026-10-28"
-                                checked={mainAccommodationDate === "2026-10-28"}
-                                onChange={() => setMainAccommodationDate("2026-10-28")}
-                                className="sr-only"
-                              />
-                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
-                                {mainAccommodationDate === "2026-10-28" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                              </div>
-                              <div>
-                                <div className="text-xs font-medium">28th October 2026 (Day 1)</div>
-                                <div className="text-[10px] text-white/50">Wednesday night stay</div>
-                              </div>
-                            </label>
-                            <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
-                              <input
-                                type="radio"
-                                name="mainAccommodationDateSolo"
-                                value="2026-10-29"
-                                checked={mainAccommodationDate === "2026-10-29"}
-                                onChange={() => setMainAccommodationDate("2026-10-29")}
-                                className="sr-only"
-                              />
-                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
-                                {mainAccommodationDate === "2026-10-29" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                              </div>
-                              <div>
-                                <div className="text-xs font-medium">29th October 2026 (Day 2)</div>
-                                <div className="text-[10px] text-white/50">Thursday night stay</div>
-                              </div>
-                            </label>
-                          </div>
-                        </div>
-                      )}
+                                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                                      <label className="relative flex cursor-pointer flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
+                                        <input
+                                          type="radio"
+                                          name="accommodationPlanSlug"
+                                          value=""
+                                          checked={!mainAccommodationSlug}
+                                          onChange={(e) => setMainAccommodationSlug(e.target.value)}
+                                          className="peer sr-only"
+                                        />
+                                        <span className="font-medium text-white text-sm">No Accommodation</span>
+                                        <span className="font-mono text-xs text-white/50">₹0</span>
+                                      </label>
+                                      {baseAccommodationPlans.map((plan) => (
+                                        <label key={plan.id} className="relative flex cursor-pointer flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
+                                          <input
+                                            type="radio"
+                                            name="accommodationPlanSlug"
+                                            value={plan.slug}
+                                            checked={mainAccommodationSlug === plan.slug}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              setMainAccommodationSlug(val);
+                                              if (val === "3_days") {
+                                                if (mainAccommodationDate !== "2026-10-27" && mainAccommodationDate !== "2026-10-30") {
+                                                  setMainAccommodationDate("2026-10-27");
+                                                  setMainExtraDays("before_27");
+                                                }
+                                              } else if (val === "1_day") {
+                                                if (!["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"].includes(mainAccommodationDate)) {
+                                                  setMainAccommodationDate("2026-10-28");
+                                                  setMainExtraDays("none");
+                                                }
+                                              } else if (val === "2_days") {
+                                                setMainAccommodationDate("2026-10-28");
+                                                setMainExtraDays("none");
+                                              } else if (val === "4_days") {
+                                                setMainAccommodationDate("2026-10-27");
+                                                setMainExtraDays("both");
+                                              }
+                                            }}
+                                            className="peer sr-only"
+                                          />
+                                          <span className="font-medium text-white text-sm leading-tight">{plan.name}</span>
+                                          <span className="font-mono text-xs font-semibold text-emerald-400">
+                                            ₹{plan.price}
+                                          </span>
+                                          <span className="text-[10px] font-mono text-white/40 mt-1">
+                                            {formatAccommodationDate(
+                                              plan.duration,
+                                              mainAccommodationSlug === plan.slug ? mainAccommodationDate : undefined,
+                                              mainAccommodationSlug === plan.slug ? mainExtraDays : undefined
+                                            )}
+                                          </span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                    {mainAccommodationSlug === "1_day" && (
+                                      <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-300 mb-2">
+                                          <Calendar size={13} className="text-violet-400" />
+                                          <span>Choose Your 1-Day Accommodation Date:</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                          <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="mainAccommodationDate"
+                                              value="2026-10-27"
+                                              checked={mainAccommodationDate === "2026-10-27"}
+                                              onChange={() => setMainAccommodationDate("2026-10-27")}
+                                              className="sr-only"
+                                            />
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {mainAccommodationDate === "2026-10-27" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-medium">27th Oct (Day Before)</div>
+                                              <div className="text-[10px] text-white/50">Early arrival • Tue night</div>
+                                            </div>
+                                          </label>
+                                          <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="mainAccommodationDate"
+                                              value="2026-10-28"
+                                              checked={mainAccommodationDate === "2026-10-28"}
+                                              onChange={() => setMainAccommodationDate("2026-10-28")}
+                                              className="sr-only"
+                                            />
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {mainAccommodationDate === "2026-10-28" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-medium">28th Oct (Day 1)</div>
+                                              <div className="text-[10px] text-white/50">Fest Day 1 • Wed night</div>
+                                            </div>
+                                          </label>
+                                          <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="mainAccommodationDate"
+                                              value="2026-10-29"
+                                              checked={mainAccommodationDate === "2026-10-29"}
+                                              onChange={() => setMainAccommodationDate("2026-10-29")}
+                                              className="sr-only"
+                                            />
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {mainAccommodationDate === "2026-10-29" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-medium">29th Oct (Day 2)</div>
+                                              <div className="text-[10px] text-white/50">Fest Day 2 • Thu night</div>
+                                            </div>
+                                          </label>
+                                          <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${mainAccommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="mainAccommodationDate"
+                                              value="2026-10-30"
+                                              checked={mainAccommodationDate === "2026-10-30"}
+                                              onChange={() => setMainAccommodationDate("2026-10-30")}
+                                              className="sr-only"
+                                            />
+                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${mainAccommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {mainAccommodationDate === "2026-10-30" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-medium">30th Oct (Day After)</div>
+                                              <div className="text-[10px] text-white/50">Extended stay • Fri night</div>
+                                            </div>
+                                          </label>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {mainAccommodationSlug === "2_days" && (
+                                      <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                        <Calendar size={14} className="text-violet-400 shrink-0" />
+                                        <span>Includes both official fest days: <strong className="text-white">28th &amp; 29th October</strong> (2 Nights • Checkout 30th morning).</span>
+                                      </div>
+                                    )}
+                                    {mainAccommodationSlug === "3_days" && (
+                                      <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
+                                        <div className="flex items-center justify-between gap-1.5 text-xs font-semibold text-violet-300 mb-2">
+                                          <div className="flex items-center gap-1.5">
+                                            <Calendar size={13} className="text-violet-400" />
+                                            <span>Choose Extra Day for 3-Day Accommodation (3 Nights):</span>
+                                          </div>
+                                          <span className="text-[11px] font-mono text-emerald-400 font-semibold">₹1,498 Total</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                          <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer text-xs transition-all ${(mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="main3DaysOption"
+                                              value="2026-10-27"
+                                              checked={mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27"}
+                                              onChange={() => {
+                                                setMainAccommodationDate("2026-10-27");
+                                                setMainExtraDays("before_27");
+                                              }}
+                                              className="sr-only"
+                                            />
+                                            <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {(mainAccommodationDate === "2026-10-27" || mainExtraDays === "before_27") && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div className="flex-1">
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-semibold text-white">27th Oct (Day Before Fest)</span>
+                                                <span className="font-mono text-violet-300 text-[11px]">27–29 Oct</span>
+                                              </div>
+                                              <div className="text-[11px] text-white/50 mt-0.5">Early Arrival • 27th, 28th &amp; 29th Oct (Checkout 30th)</div>
+                                            </div>
+                                          </label>
+
+                                          <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer text-xs transition-all ${(mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                            <input
+                                              type="radio"
+                                              name="main3DaysOption"
+                                              value="2026-10-30"
+                                              checked={mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30"}
+                                              onChange={() => {
+                                                setMainAccommodationDate("2026-10-30");
+                                                setMainExtraDays("after_30");
+                                              }}
+                                              className="sr-only"
+                                            />
+                                            <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                              {(mainAccommodationDate === "2026-10-30" || mainExtraDays === "after_30") && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </div>
+                                            <div className="flex-1">
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-semibold text-white">30th Oct (Day After Fest)</span>
+                                                <span className="font-mono text-violet-300 text-[11px]">28–30 Oct</span>
+                                              </div>
+                                              <div className="text-[11px] text-white/50 mt-0.5">Extended Stay • 28th, 29th &amp; 30th Oct (Checkout 31st)</div>
+                                            </div>
+                                          </label>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {mainAccommodationSlug === "4_days" && (
+                                      <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                        <Calendar size={14} className="text-violet-400 shrink-0" />
+                                        <span>Includes all 4 days: <strong className="text-white">27th to 30th October</strong> (4 Nights • Checkout 31st morning). Day before fest + both fest days + day after fest.</span>
+                                      </div>
+                                    )}
                     </Field>
                   </div>
                 )}
@@ -3303,81 +3818,240 @@ export default function RegistrationForm({
                       {accommodationPlans.length > 0 && (
                         <div className="mt-6">
                           <Field label="Accommodation (Optional)">
-                            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                              <label className="relative flex cursor-pointer flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
-                                <input
-                                  type="radio"
-                                  name="facultyAccommodationPlanSlug"
-                                  value=""
-                                  checked={!facultyState.accommodationPlanSlug}
-                                  onChange={(e) => setFacultyState({ ...facultyState, accommodationPlanSlug: e.target.value })}
-                                  className="peer sr-only"
-                                />
-                                <span className="font-medium text-white text-sm">No Accommodation</span>
-                                <span className="font-mono text-xs text-white/50">₹0</span>
-                              </label>
-                              {accommodationPlans.map((plan) => (
-                                <label key={plan.id} className="relative flex cursor-pointer flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
-                                  <input
-                                    type="radio"
-                                    name="facultyAccommodationPlanSlug"
-                                    value={plan.slug}
-                                    checked={facultyState.accommodationPlanSlug === plan.slug}
-                                    onChange={(e) => setFacultyState({ ...facultyState, accommodationPlanSlug: e.target.value })}
-                                    className="peer sr-only"
-                                  />
-                                  <span className="font-medium text-white text-sm leading-tight">{plan.name}</span>
-                                  <span className="font-mono text-xs font-semibold text-emerald-400">₹{plan.price}</span>
-                                  <span className="text-[10px] font-mono text-white/40 mt-1">
-                                    {formatAccommodationDate(plan.duration, facultyState.accommodationPlanSlug === plan.slug ? facultyState.accommodationDate : undefined)}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                            {facultyState.accommodationPlanSlug === "1_day" && (
-                              <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-300 mb-2">
-                                  <Calendar size={13} className="text-violet-400" />
-                                  <span>Choose Faculty 1-Day Accommodation Date:</span>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                  <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${facultyState.accommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                                  <label className="relative flex cursor-pointer flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                                     <input
                                       type="radio"
-                                      name="facultyAccommodationDate"
-                                      value="2026-10-28"
-                                      checked={facultyState.accommodationDate === "2026-10-28"}
-                                      onChange={() => setFacultyState({ ...facultyState, accommodationDate: "2026-10-28" })}
-                                      className="sr-only"
+                                      name="facultyAccommodationPlanSlug"
+                                      value=""
+                                      checked={!facultyState.accommodationPlanSlug}
+                                      onChange={(e) => setFacultyState({ ...facultyState, accommodationPlanSlug: e.target.value })}
+                                      className="peer sr-only"
                                     />
-                                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${facultyState.accommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
-                                      {facultyState.accommodationDate === "2026-10-28" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                    </div>
-                                    <div>
-                                      <div className="text-xs font-medium">28th October 2026 (Day 1)</div>
-                                      <div className="text-[10px] text-white/50">Wednesday night stay</div>
-                                    </div>
+                                    <span className="font-medium text-white text-sm">No Accommodation</span>
+                                    <span className="font-mono text-xs text-white/50">₹0</span>
                                   </label>
-                                  <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${facultyState.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
-                                    <input
-                                      type="radio"
-                                      name="facultyAccommodationDate"
-                                      value="2026-10-29"
-                                      checked={facultyState.accommodationDate === "2026-10-29"}
-                                      onChange={() => setFacultyState({ ...facultyState, accommodationDate: "2026-10-29" })}
-                                      className="sr-only"
-                                    />
-                                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${facultyState.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
-                                      {facultyState.accommodationDate === "2026-10-29" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                    </div>
-                                    <div>
-                                      <div className="text-xs font-medium">29th October 2026 (Day 2)</div>
-                                      <div className="text-[10px] text-white/50">Thursday night stay</div>
-                                    </div>
-                                  </label>
+                                  {baseAccommodationPlans.map((plan) => (
+                                    <label key={plan.id} className="relative flex cursor-pointer flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-violet-400/40 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
+                                      <input
+                                        type="radio"
+                                        name="facultyAccommodationPlanSlug"
+                                        value={plan.slug}
+                                        checked={facultyState.accommodationPlanSlug === plan.slug}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (val === "3_days") {
+                                            const is30 = facultyState.accommodationDate === "2026-10-30";
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationPlanSlug: val,
+                                              accommodationDate: is30 ? "2026-10-30" : "2026-10-27",
+                                              extraDays: is30 ? "after_30" : "before_27",
+                                            });
+                                          } else if (val === "1_day") {
+                                            const validDate = ["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"].includes(facultyState.accommodationDate)
+                                              ? facultyState.accommodationDate
+                                              : "2026-10-28";
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationPlanSlug: val,
+                                              accommodationDate: validDate,
+                                              extraDays: "none",
+                                            });
+                                          } else if (val === "2_days") {
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationPlanSlug: val,
+                                              accommodationDate: "2026-10-28",
+                                              extraDays: "none",
+                                            });
+                                          } else if (val === "4_days") {
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationPlanSlug: val,
+                                              accommodationDate: "2026-10-27",
+                                              extraDays: "both",
+                                            });
+                                          } else {
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationPlanSlug: "",
+                                              extraDays: "none",
+                                            });
+                                          }
+                                        }}
+                                        className="peer sr-only"
+                                      />
+                                      <span className="font-medium text-white text-sm leading-tight">{plan.name}</span>
+                                      <span className="font-mono text-xs font-semibold text-emerald-400">
+                                        ₹{plan.price}
+                                      </span>
+                                      <span className="text-[10px] font-mono text-white/40 mt-1">
+                                        {formatAccommodationDate(
+                                          plan.duration,
+                                          facultyState.accommodationPlanSlug === plan.slug ? facultyState.accommodationDate : undefined,
+                                          facultyState.accommodationPlanSlug === plan.slug ? facultyState.extraDays : undefined
+                                        )}
+                                      </span>
+                                    </label>
+                                  ))}
                                 </div>
-                              </div>
-                            )}
+                                {facultyState.accommodationPlanSlug === "1_day" && (
+                                  <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-300 mb-2">
+                                      <Calendar size={13} className="text-violet-400" />
+                                      <span>Choose Faculty 1-Day Accommodation Date:</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                      <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${facultyState.accommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                        <input
+                                          type="radio"
+                                          name="facultyAccommodationDate"
+                                          value="2026-10-27"
+                                          checked={facultyState.accommodationDate === "2026-10-27"}
+                                          onChange={() => setFacultyState({ ...facultyState, accommodationDate: "2026-10-27" })}
+                                          className="sr-only"
+                                        />
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${facultyState.accommodationDate === "2026-10-27" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                          {facultyState.accommodationDate === "2026-10-27" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <div>
+                                          <div className="text-xs font-medium">27th Oct (Day Before)</div>
+                                          <div className="text-[10px] text-white/50">Early arrival • Tue night</div>
+                                        </div>
+                                      </label>
+                                      <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${facultyState.accommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                        <input
+                                          type="radio"
+                                          name="facultyAccommodationDate"
+                                          value="2026-10-28"
+                                          checked={facultyState.accommodationDate === "2026-10-28"}
+                                          onChange={() => setFacultyState({ ...facultyState, accommodationDate: "2026-10-28" })}
+                                          className="sr-only"
+                                        />
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${facultyState.accommodationDate === "2026-10-28" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                          {facultyState.accommodationDate === "2026-10-28" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <div>
+                                          <div className="text-xs font-medium">28th Oct (Day 1)</div>
+                                          <div className="text-[10px] text-white/50">Fest Day 1 • Wed night</div>
+                                        </div>
+                                      </label>
+                                      <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${facultyState.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                        <input
+                                          type="radio"
+                                          name="facultyAccommodationDate"
+                                          value="2026-10-29"
+                                          checked={facultyState.accommodationDate === "2026-10-29"}
+                                          onChange={() => setFacultyState({ ...facultyState, accommodationDate: "2026-10-29" })}
+                                          className="sr-only"
+                                        />
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${facultyState.accommodationDate === "2026-10-29" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                          {facultyState.accommodationDate === "2026-10-29" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <div>
+                                          <div className="text-xs font-medium">29th Oct (Day 2)</div>
+                                          <div className="text-[10px] text-white/50">Fest Day 2 • Thu night</div>
+                                        </div>
+                                      </label>
+                                      <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${facultyState.accommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                        <input
+                                          type="radio"
+                                          name="facultyAccommodationDate"
+                                          value="2026-10-30"
+                                          checked={facultyState.accommodationDate === "2026-10-30"}
+                                          onChange={() => setFacultyState({ ...facultyState, accommodationDate: "2026-10-30" })}
+                                          className="sr-only"
+                                        />
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${facultyState.accommodationDate === "2026-10-30" ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                          {facultyState.accommodationDate === "2026-10-30" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <div>
+                                          <div className="text-xs font-medium">30th Oct (Day After)</div>
+                                          <div className="text-[10px] text-white/50">Extended stay • Fri night</div>
+                                        </div>
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                                {facultyState.accommodationPlanSlug === "2_days" && (
+                                  <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                    <Calendar size={14} className="text-violet-400 shrink-0" />
+                                    <span>Includes both official fest days: <strong className="text-white">28th &amp; 29th October</strong> (2 Nights • Checkout 30th morning).</span>
+                                  </div>
+                                )}
+                                {facultyState.accommodationPlanSlug === "3_days" && (
+                                  <div className="mt-3 p-3.5 rounded-xl border border-violet-500/30 bg-violet-950/20 backdrop-blur-sm">
+                                    <div className="flex items-center justify-between gap-1.5 text-xs font-semibold text-violet-300 mb-2">
+                                      <div className="flex items-center gap-1.5">
+                                        <Calendar size={13} className="text-violet-400" />
+                                        <span>Choose Extra Day for Faculty 3-Day Accommodation (3 Nights):</span>
+                                      </div>
+                                      <span className="text-[11px] font-mono text-emerald-400 font-semibold">₹1,498 Total</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                      <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer text-xs transition-all ${(facultyState.accommodationDate === "2026-10-27" || facultyState.extraDays === "before_27") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                        <input
+                                          type="radio"
+                                          name="faculty3DaysOption"
+                                          value="2026-10-27"
+                                          checked={facultyState.accommodationDate === "2026-10-27" || facultyState.extraDays === "before_27"}
+                                          onChange={() => {
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationDate: "2026-10-27",
+                                              extraDays: "before_27",
+                                            });
+                                          }}
+                                          className="sr-only"
+                                        />
+                                        <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(facultyState.accommodationDate === "2026-10-27" || facultyState.extraDays === "before_27") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                          {(facultyState.accommodationDate === "2026-10-27" || facultyState.extraDays === "before_27") && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-semibold text-white">27th Oct (Day Before Fest)</span>
+                                            <span className="font-mono text-violet-300 text-[11px]">27–29 Oct</span>
+                                          </div>
+                                          <div className="text-[11px] text-white/50 mt-0.5">Early Arrival • 27th, 28th &amp; 29th Oct (Checkout 30th)</div>
+                                        </div>
+                                      </label>
+
+                                      <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer text-xs transition-all ${(facultyState.accommodationDate === "2026-10-30" || facultyState.extraDays === "after_30") ? "border-violet-400 bg-violet-500/20 text-white font-medium" : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"}`}>
+                                        <input
+                                          type="radio"
+                                          name="faculty3DaysOption"
+                                          value="2026-10-30"
+                                          checked={facultyState.accommodationDate === "2026-10-30" || facultyState.extraDays === "after_30"}
+                                          onChange={() => {
+                                            setFacultyState({
+                                              ...facultyState,
+                                              accommodationDate: "2026-10-30",
+                                              extraDays: "after_30",
+                                            });
+                                          }}
+                                          className="sr-only"
+                                        />
+                                        <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${(facultyState.accommodationDate === "2026-10-30" || facultyState.extraDays === "after_30") ? "border-violet-400 bg-violet-500" : "border-white/30"}`}>
+                                          {(facultyState.accommodationDate === "2026-10-30" || facultyState.extraDays === "after_30") && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-semibold text-white">30th Oct (Day After Fest)</span>
+                                            <span className="font-mono text-violet-300 text-[11px]">28–30 Oct</span>
+                                          </div>
+                                          <div className="text-[11px] text-white/50 mt-0.5">Extended Stay • 28th, 29th &amp; 30th Oct (Checkout 31st)</div>
+                                        </div>
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                                {facultyState.accommodationPlanSlug === "4_days" && (
+                                  <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-2.5 text-xs text-white/70">
+                                    <Calendar size={14} className="text-violet-400 shrink-0" />
+                                    <span>Includes all 4 days: <strong className="text-white">27th to 30th October</strong> (4 Nights • Checkout 31st morning). Day before fest + both fest days + day after fest.</span>
+                                  </div>
+                                )}
                           </Field>
                         </div>
                       )}

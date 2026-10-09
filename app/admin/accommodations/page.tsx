@@ -35,6 +35,92 @@ function maskPhone(phone: string | null | undefined): string {
   return "***";
 }
 
+function getAccommodationStayLabel(acc?: { start_date?: string | null; duration_days?: number | null }): string {
+  if (!acc) return "Unknown";
+  const duration = acc.duration_days ?? 1;
+  const start = acc.start_date ?? "";
+  if (duration === 1) {
+    if (start.includes("27")) return "27 Oct (Day Before)";
+    if (start.includes("29")) return "29 Oct (Day 2)";
+    if (start.includes("30")) return "30 Oct (Day After)";
+    return "28 Oct (Day 1)";
+  }
+  if (duration === 2) return "28–29 Oct (2 Days)";
+  if (duration === 3) {
+    if (start.includes("27")) return "27–29 Oct (3 Days • Day Before)";
+    return "28–30 Oct (3 Days • Day After)";
+  }
+  if (duration === 4) return "27–30 Oct (4 Days • Full Stay)";
+  return start ? `${start} (${duration} Days)` : "Unknown";
+}
+
+function renderAccommodationStayBadge(acc?: { start_date?: string | null; duration_days?: number | null }) {
+  if (!acc) return null;
+  const duration = acc.duration_days ?? 1;
+  const start = acc.start_date ?? "";
+  if (duration === 1) {
+    if (start.includes("27")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-medium">
+          27 Oct (Day Before)
+        </span>
+      );
+    }
+    if (start.includes("29")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium">
+          29 Oct (Day 2)
+        </span>
+      );
+    }
+    if (start.includes("30")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-medium">
+          30 Oct (Day After)
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-medium">
+        28 Oct (Day 1)
+      </span>
+    );
+  }
+  if (duration === 2) {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-medium">
+        28–29 Oct (2 Days)
+      </span>
+    );
+  }
+  if (duration === 3) {
+    if (start.includes("27")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium">
+          27–29 Oct (3 Days • Day Before)
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 text-[10px] font-medium">
+        28–30 Oct (3 Days • Day After)
+      </span>
+    );
+  }
+  if (duration === 4) {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
+        27–30 Oct (4 Days • Full Stay)
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200 text-[10px] font-medium">
+      {start || "Custom Dates"}
+    </span>
+  );
+}
+
 type HostelRecord = { id: string; name: string; gender_eligibility: string; is_active: boolean };
 type FloorRecord = { id: string; hostel_id: string; floor_number: number; name: string | null; is_active: boolean };
 type RoomRecord = { id: string; hostel_id: string; floor_id: string; room_number: string; capacity: number; is_active: boolean };
@@ -1107,11 +1193,23 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
       const matchesType = filterType === "all" || (filterType === "faculty" ? !!p.is_faculty : !p.is_faculty);
 
       let matchesDate = true;
-      if (filterDate === "28") {
-        matchesDate = acc.start_date === "2026-10-28" && acc.duration_days === 1;
+      if (filterDate === "27") {
+        matchesDate = (acc.start_date === "2026-10-27" || acc.start_date?.includes("27")) && acc.duration_days === 1;
+      } else if (filterDate === "28") {
+        matchesDate = (acc.start_date === "2026-10-28" || acc.start_date?.includes("28")) && acc.duration_days === 1;
       } else if (filterDate === "29") {
-        matchesDate = acc.start_date === "2026-10-29" || (acc.duration_days === 1 && acc.start_date?.includes("29"));
-      } else if (filterDate === "both") {
+        matchesDate = (acc.start_date === "2026-10-29" || acc.start_date?.includes("29")) && acc.duration_days === 1;
+      } else if (filterDate === "30") {
+        matchesDate = (acc.start_date === "2026-10-30" || acc.start_date?.includes("30")) && acc.duration_days === 1;
+      } else if (filterDate === "2_days") {
+        matchesDate = acc.duration_days === 2;
+      } else if (filterDate === "3_days_27") {
+        matchesDate = acc.duration_days === 3 && (acc.start_date === "2026-10-27" || acc.start_date?.includes("27"));
+      } else if (filterDate === "3_days_30") {
+        matchesDate = acc.duration_days === 3 && (acc.start_date === "2026-10-28" || acc.start_date?.includes("28") || acc.start_date?.includes("30"));
+      } else if (filterDate === "4_days") {
+        matchesDate = acc.duration_days === 4;
+      } else if (filterDate === "both" || filterDate === "multi") {
         matchesDate = acc.duration_days >= 2;
       }
 
@@ -1297,7 +1395,7 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
     }
     const headers = [
       "Participant ID", "Participant Name", "Type", "Email", "Gender", "State", 
-      "Accommodation Plan", "Duration (Days)", "Amount", "Currency", 
+      "Accommodation Plan", "Stay Details", "Check-In Date", "Check-Out Date", "Duration (Days)", "Amount", "Currency", 
       "Payment Status", "Accommodation Status", "Hostel", "Floor", "Room",
       "Allocation Status", "Checked In", "Checked In At", "Checked Out", "Checked Out At"
     ];
@@ -1317,6 +1415,9 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
         acc.participants?.gender || "",
         `"${(acc.participants?.state || "").replace(/"/g, '""')}"`,
         `"${(plan?.name || "").replace(/"/g, '""')}"`,
+        `"${getAccommodationStayLabel(acc)}"`,
+        acc.start_date || "",
+        acc.end_date || "",
         acc.duration_days,
         acc.amount,
         acc.currency,
@@ -1385,10 +1486,16 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
           {INDIAN_STATES_AND_UT.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select className="border border-black/10 rounded-full px-4 py-2 text-sm text-black bg-white" value={filterDate} onChange={e => setFilterDate(e.target.value)}>
-          <option value="all">All Dates</option>
+          <option value="all">All Dates & Plans</option>
+          <option value="27">27 Oct Only (Day Before)</option>
           <option value="28">28 Oct Only (Day 1)</option>
           <option value="29">29 Oct Only (Day 2)</option>
-          <option value="both">28–29 Oct (2 Days)</option>
+          <option value="30">30 Oct Only (Day After)</option>
+          <option value="2_days">28–29 Oct (2 Days)</option>
+          <option value="3_days_27">27–29 Oct (3 Days • Day Before)</option>
+          <option value="3_days_30">28–30 Oct (3 Days • Day After)</option>
+          <option value="4_days">27–30 Oct (4 Days • Full Stay)</option>
+          <option value="multi">All Multi-Day (2+ Days)</option>
         </select>
         <select 
           className="border border-black/10 rounded-full px-4 py-2 text-sm text-black bg-white" 
@@ -1539,21 +1646,7 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
                   <td className="py-4 px-4 text-black">
                     <div className="font-medium text-xs sm:text-sm">{plan?.name || "Unknown"}</div>
                     <div className="text-[11px] font-mono text-black/50 mt-0.5">
-                      {acc.duration_days === 1 ? (
-                        acc.start_date?.includes("29") ? (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium">
-                            29 Oct (Day 2)
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-medium">
-                            28 Oct (Day 1)
-                          </span>
-                        )
-                      ) : (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-medium">
-                          28–29 Oct (2 Days)
-                        </span>
-                      )}
+                      {renderAccommodationStayBadge(acc)}
                     </div>
                   </td>
                   <td className="py-4 px-4 uppercase text-xs font-semibold text-black">{acc.status}</td>
@@ -2034,10 +2127,22 @@ function PaymentsReport({ data }: { data: DashboardData }) {
   const filtered = data.accommodations.filter(a => filter === "all" || a.status === filter);
 
   const handleExport = () => {
-    const headers = ["Participant ID", "Participant Name", "Plan", "Amount", "Currency", "Payment Status", "Created At"];
+    const headers = ["Participant ID", "Participant Name", "Plan", "Stay Details", "Start Date", "End Date", "Duration (Days)", "Amount", "Currency", "Payment Status", "Created At"];
     const rows = filtered.map(a => {
       const p = data.plans.find(x => x.id === a.accommodation_plan_id);
-      return [a.participants?.participant_id || "", `"${(a.participants?.name||"").replace(/"/g, '""')}"`, `"${(p?.name||"").replace(/"/g, '""')}"`, a.amount, a.currency, a.status, new Date(a.created_at).toLocaleString()];
+      return [
+        a.participants?.participant_id || "",
+        `"${(a.participants?.name||"").replace(/"/g, '""')}"`,
+        `"${(p?.name||"").replace(/"/g, '""')}"`,
+        `"${getAccommodationStayLabel(a)}"`,
+        a.start_date || "",
+        a.end_date || "",
+        a.duration_days,
+        a.amount,
+        a.currency,
+        a.status,
+        new Date(a.created_at).toLocaleString()
+      ];
     });
     exportCSV("saviskar-accommodation-payments.csv", headers, rows);
   };
@@ -2064,6 +2169,7 @@ function PaymentsReport({ data }: { data: DashboardData }) {
             <tr className="border-b border-black/10 text-black/40">
               <th className="pb-3 pr-4 font-semibold">Participant</th>
               <th className="pb-3 px-4 font-semibold">Plan</th>
+              <th className="pb-3 px-4 font-semibold">Stay Dates</th>
               <th className="pb-3 px-4 font-semibold">Amount</th>
               <th className="pb-3 px-4 font-semibold">Status</th>
               <th className="pb-3 px-4 font-semibold">Date</th>
@@ -2079,13 +2185,14 @@ function PaymentsReport({ data }: { data: DashboardData }) {
                     <div className="text-xs text-black/50">{a.participants?.participant_id}</div>
                   </td>
                   <td className="py-4 px-4 text-black">{p?.name}</td>
+                  <td className="py-4 px-4">{renderAccommodationStayBadge(a)}</td>
                   <td className="py-4 px-4 text-black">{a.amount} {a.currency}</td>
                   <td className="py-4 px-4 font-semibold uppercase text-xs">{a.status}</td>
                   <td className="py-4 px-4 text-black/50 text-xs">{new Date(a.created_at).toLocaleString()}</td>
                 </tr>
               );
             })}
-            {filtered.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-black/40">No payments found.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-black/40">No payments found.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -2103,7 +2210,7 @@ function AllocationsReport({ data }: { data: DashboardData }) {
   });
 
   const handleExport = () => {
-    const headers = ["Participant", "Gender", "Plan", "Hostel", "Floor", "Room", "Room Capacity", "Occupancy", "Status"];
+    const headers = ["Participant", "Gender", "Plan", "Stay Details", "Start Date", "End Date", "Duration (Days)", "Hostel", "Floor", "Room", "Room Capacity", "Occupancy", "Status"];
     const rows = filtered.map(a => {
       const h = data.hostels.find(x => x.id === a.hostel_id);
       const r = data.rooms.find(x => x.id === a.room_id);
@@ -2111,7 +2218,7 @@ function AllocationsReport({ data }: { data: DashboardData }) {
       const pl = data.plans.find(x => x.id === a.accommodation_plan_id);
       const status = a.room_id ? "ALLOCATED" : "AWAITING ALLOCATION";
       const occ = r ? data.roomOccupancy[r.id] || 0 : 0;
-      return [`"${(a.participants?.name||"").replace(/"/g, '""')}"`, a.participants?.gender||"", `"${(pl?.name||"").replace(/"/g, '""')}"`, `"${(h?.name||"").replace(/"/g, '""')}"`, f?.floor_number ?? "", `"${(r?.room_number||"").replace(/"/g, '""')}"`, r?.capacity||"", occ, status];
+      return [`"${(a.participants?.name||"").replace(/"/g, '""')}"`, a.participants?.gender||"", `"${(pl?.name||"").replace(/"/g, '""')}"`, `"${getAccommodationStayLabel(a)}"`, a.start_date || "", a.end_date || "", a.duration_days, `"${(h?.name||"").replace(/"/g, '""')}"`, f?.floor_number ?? "", `"${(r?.room_number||"").replace(/"/g, '""')}"`, r?.capacity||"", occ, status];
     });
     exportCSV("saviskar-accommodation-allocation.csv", headers, rows);
   };
@@ -2135,6 +2242,7 @@ function AllocationsReport({ data }: { data: DashboardData }) {
             <tr className="border-b border-black/10 text-black/40">
               <th className="pb-3 pr-4 font-semibold">Participant</th>
               <th className="pb-3 px-4 font-semibold">Gender</th>
+              <th className="pb-3 px-4 font-semibold">Plan & Stay</th>
               <th className="pb-3 px-4 font-semibold">Hostel</th>
               <th className="pb-3 px-4 font-semibold">Floor / Room</th>
               <th className="pb-3 px-4 font-semibold">Status</th>
@@ -2145,6 +2253,7 @@ function AllocationsReport({ data }: { data: DashboardData }) {
               const h = data.hostels.find(x => x.id === a.hostel_id);
               const r = data.rooms.find(x => x.id === a.room_id);
               const f = r ? data.floors.find(x => x.id === r.floor_id) : null;
+              const pl = data.plans.find(x => x.id === a.accommodation_plan_id);
               return (
                 <tr key={a.id} className="border-b border-black/5 hover:bg-black/[0.02]">
                   <td className="py-4 pr-4">
@@ -2152,6 +2261,10 @@ function AllocationsReport({ data }: { data: DashboardData }) {
                     <div className="text-xs text-black/50">{a.participants?.participant_id}</div>
                   </td>
                   <td className="py-4 px-4 uppercase text-xs text-black">{a.participants?.gender}</td>
+                  <td className="py-4 px-4">
+                    <div className="font-medium text-xs sm:text-sm text-black">{pl?.name || "Accommodation"}</div>
+                    <div className="mt-0.5">{renderAccommodationStayBadge(a)}</div>
+                  </td>
                   <td className="py-4 px-4 text-black">{h?.name || "—"}</td>
                   <td className="py-4 px-4 text-black">{r ? `Fl ${f?.floor_number} / Rm ${r.room_number}` : "—"}</td>
                   <td className="py-4 px-4">
@@ -2164,7 +2277,7 @@ function AllocationsReport({ data }: { data: DashboardData }) {
                 </tr>
               );
             })}
-            {filtered.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-black/40">No allocations found.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-black/40">No allocations found.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -2183,11 +2296,25 @@ function LifecycleReport({ data }: { data: DashboardData }) {
   });
 
   const handleExport = () => {
-    const headers = ["Participant", "Hostel/Room", "Allocated", "Checked In", "Checked In At", "Checked Out", "Checked Out At"];
+    const headers = ["Participant", "Plan", "Stay Details", "Start Date", "End Date", "Duration (Days)", "Hostel/Room", "Allocated", "Checked In", "Checked In At", "Checked Out", "Checked Out At"];
     const rows = filtered.map(a => {
+      const p = data.plans.find(x => x.id === a.accommodation_plan_id);
       const h = data.hostels.find(x => x.id === a.hostel_id);
       const r = data.rooms.find(x => x.id === a.room_id);
-      return [`"${(a.participants?.name||"").replace(/"/g, '""')}"`, `"${(h?.name||"")} / Rm ${(r?.room_number||"")}"`, a.room_id?"Yes":"No", a.checked_in?"Yes":"No", a.checked_in_at||"", a.checked_out?"Yes":"No", a.checked_out_at||""];
+      return [
+        `"${(a.participants?.name||"").replace(/"/g, '""')}"`,
+        `"${(p?.name||"").replace(/"/g, '""')}"`,
+        `"${getAccommodationStayLabel(a)}"`,
+        a.start_date || "",
+        a.end_date || "",
+        a.duration_days,
+        `"${(h?.name||"")} / Rm ${(r?.room_number||"")}"`,
+        a.room_id?"Yes":"No",
+        a.checked_in?"Yes":"No",
+        a.checked_in_at||"",
+        a.checked_out?"Yes":"No",
+        a.checked_out_at||""
+      ];
     });
     exportCSV("saviskar-accommodation-lifecycle.csv", headers, rows);
   };
@@ -2211,6 +2338,7 @@ function LifecycleReport({ data }: { data: DashboardData }) {
           <thead>
             <tr className="border-b border-black/10 text-black/40">
               <th className="pb-3 pr-4 font-semibold">Participant</th>
+              <th className="pb-3 px-4 font-semibold">Plan & Stay</th>
               <th className="pb-3 px-4 font-semibold">Allocation</th>
               <th className="pb-3 px-4 font-semibold">Check-in</th>
               <th className="pb-3 px-4 font-semibold">Check-out</th>
@@ -2218,11 +2346,16 @@ function LifecycleReport({ data }: { data: DashboardData }) {
           </thead>
           <tbody>
             {filtered.map(a => {
+              const p = data.plans.find(x => x.id === a.accommodation_plan_id);
               const h = data.hostels.find(x => x.id === a.hostel_id);
               const r = data.rooms.find(x => x.id === a.room_id);
               return (
                 <tr key={a.id} className="border-b border-black/5 hover:bg-black/[0.02]">
                   <td className="py-4 pr-4 font-medium text-black">{a.participants?.name}</td>
+                  <td className="py-4 px-4">
+                    <div className="font-medium text-xs sm:text-sm text-black">{p?.name || "Accommodation"}</div>
+                    <div className="mt-0.5">{renderAccommodationStayBadge(a)}</div>
+                  </td>
                   <td className="py-4 px-4 text-black">{a.room_id ? `${h?.name} / Rm ${r?.room_number}` : "Not Allocated"}</td>
                   <td className="py-4 px-4">
                     {a.checked_in ? (
@@ -2241,7 +2374,7 @@ function LifecycleReport({ data }: { data: DashboardData }) {
                 </tr>
               );
             })}
-            {filtered.length === 0 && <tr><td colSpan={4} className="py-8 text-center text-black/40">No lifecycle data found.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-black/40">No lifecycle data found.</td></tr>}
           </tbody>
         </table>
       </div>

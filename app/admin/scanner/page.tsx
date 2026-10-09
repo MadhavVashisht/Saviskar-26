@@ -808,7 +808,46 @@ export default function ScannerPage() {
                           >
                             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                               <div>
-                                <p className="!text-black text-base font-semibold">{acc.planName}</p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="!text-black text-base font-semibold">{acc.planName}</p>
+                                  {acc.duration_days === 1 ? (
+                                    acc.start_date?.includes("27") ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 text-xs font-medium">
+                                        27 Oct (Day Before)
+                                      </span>
+                                    ) : acc.start_date?.includes("29") ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium">
+                                        29 Oct (Day 2)
+                                      </span>
+                                    ) : acc.start_date?.includes("30") ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-xs font-medium">
+                                        30 Oct (Day After)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
+                                        28 Oct (Day 1)
+                                      </span>
+                                    )
+                                  ) : acc.duration_days === 2 ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium">
+                                      28–29 Oct (2 Days)
+                                    </span>
+                                  ) : acc.duration_days === 3 ? (
+                                    acc.start_date?.includes("27") ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-medium">
+                                        27–29 Oct (3 Days • Day Before)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 text-xs font-medium">
+                                        28–30 Oct (3 Days • Day After)
+                                      </span>
+                                    )
+                                  ) : acc.duration_days === 4 ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium">
+                                      27–30 Oct (4 Days • Full Stay)
+                                    </span>
+                                  ) : null}
+                                </div>
                                 {isAllocated ? (
                                   <p className="mt-1 !text-black/60 text-sm font-medium">
                                     {acc.hostelName} - Floor {acc.floorNumber}, Room {acc.roomNumber}
