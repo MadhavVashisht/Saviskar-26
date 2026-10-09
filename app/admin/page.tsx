@@ -26,6 +26,8 @@ import {
   Phone,
   GraduationCap,
   ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { INDIAN_STATES_AND_UT } from "@/lib/states";
@@ -255,6 +257,8 @@ export default function AdminPage() {
 
   const [paymentOverviewState, setPaymentOverviewState] = useState<"all" | "paid" | "unpaid" | "free">("all");
   const [paymentOverviewCategory, setPaymentOverviewCategory] = useState<"all" | "technical" | "non-technical" | "cultural">("all");
+  const [isPaymentOverviewOpen, setIsPaymentOverviewOpen] = useState(false);
+  const [isEventAnalyticsOpen, setIsEventAnalyticsOpen] = useState(false);
 
   const [selectedParticipant, setSelectedParticipant] =
     useState<Participant | null>(null);
@@ -1686,113 +1690,142 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="mt-6 border-t border-black/[0.05] pt-6">
-            {availableCategories.length > 1 && (
-              <div className="flex flex-wrap gap-2 mb-6">
-                <button
-                  type="button"
-                  onClick={() => setPaymentOverviewCategory("all")}
-                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${
-                    paymentOverviewCategory === "all"
-                      ? "border-black/20 bg-black/[0.03] text-black"
-                      : "border-transparent text-black/40 hover:text-black/70"
-                  }`}
-                >
-                  All Categories
-                </button>
-                {availableCategories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setPaymentOverviewCategory(cat as any)}
-                    className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${
-                      paymentOverviewCategory === cat
-                        ? "border-black/20 bg-black/[0.03] text-black"
-                        : "border-transparent text-black/40 hover:text-black/70"
-                    }`}
-                  >
-                    {cat.replace("-", " ")}
-                  </button>
-                ))}
+          {/* Collapsible Dropdown Toggle */}
+          <div className="mt-6 border-t border-black/[0.05] pt-4">
+            <button
+              type="button"
+              onClick={() => setIsPaymentOverviewOpen((prev) => !prev)}
+              className="flex w-full items-center justify-between rounded-2xl bg-black/[0.02] hover:bg-black/[0.04] px-4 py-3 text-left transition border border-black/[0.04]"
+              aria-expanded={isPaymentOverviewOpen}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-semibold text-black">
+                  {isPaymentOverviewOpen ? "Hide Event Payment Breakdown" : "View Event Payment Breakdown"}
+                </span>
+                <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-[10px] font-bold text-black/50">
+                  {eventAnalytics.length} events
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-black/50">
+                <span>{isPaymentOverviewOpen ? "Collapse" : "Expand"}</span>
+                {isPaymentOverviewOpen ? (
+                  <ChevronUp size={16} className="text-black/60 transition-transform" />
+                ) : (
+                  <ChevronDown size={16} className="text-black/60 transition-transform" />
+                )}
+              </div>
+            </button>
+
+            {isPaymentOverviewOpen && (
+              <div className="mt-5 pt-1 animate-in fade-in duration-200">
+                {availableCategories.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOverviewCategory("all")}
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${
+                        paymentOverviewCategory === "all"
+                          ? "border-black/20 bg-black/[0.03] text-black"
+                          : "border-transparent text-black/40 hover:text-black/70"
+                      }`}
+                    >
+                      All Categories
+                    </button>
+                    {availableCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setPaymentOverviewCategory(cat as any)}
+                        className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition border ${
+                          paymentOverviewCategory === cat
+                            ? "border-black/20 bg-black/[0.03] text-black"
+                            : "border-transparent text-black/40 hover:text-black/70"
+                        }`}
+                      >
+                        {cat.replace("-", " ")}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {eventAnalytics
+                    .filter((event) => {
+                      const isPaidEvent = event.payment_type === "paid";
+                      if (availableCategories.length > 1 && paymentOverviewCategory !== "all") {
+                        if (event.category?.toLowerCase() !== paymentOverviewCategory.toLowerCase()) return false;
+                      }
+                      if (paymentOverviewState === "free") return !isPaidEvent;
+                      if (paymentOverviewState === "paid" || paymentOverviewState === "unpaid") {
+                        if (!isPaidEvent) return false;
+                      }
+                      return true;
+                    })
+                    .map((event) => {
+                      const eventRegs = registrations.filter(r => r.registration.event_id === event.id && r.registration.is_archived !== true);
+                      let matchedCount = 0;
+
+                      eventRegs.forEach(r => {
+                        const isSuccess = r.registration.payment_status === "paid";
+                        if (paymentOverviewState === "paid" && !isSuccess) return;
+                        if (paymentOverviewState === "unpaid" && isSuccess) return;
+                        matchedCount++;
+                      });
+
+                      if (matchedCount === 0 && paymentOverviewState !== "all") return null;
+
+                      const fee = event.registration_fee != null ? `₹${event.registration_fee}` : "Amount unavailable";
+                      const isPaidEvent = event.payment_type === "paid";
+
+                      let badgeClass = "bg-black/[0.04] border-black/10 text-black/45";
+                      let badgeText = "FREE";
+
+                      if (isPaidEvent) {
+                        if (paymentOverviewState === "unpaid" || (paymentOverviewState === "all" && matchedCount > 0)) {
+                          badgeClass = "bg-red-50 text-red-700 border-red-200";
+                          badgeText = `${fee} · PAYMENT PENDING`;
+                        }
+                        if (paymentOverviewState === "paid") {
+                          badgeClass = "bg-green-50 text-green-700 border-green-200";
+                          badgeText = `${fee} · PAID`;
+                        }
+                      }
+
+                      return (
+                        <div key={`po-${event.id}`} className="rounded-[20px] bg-black/[0.02] border border-black/[0.04] p-5 flex flex-col justify-between">
+                          <div>
+                            <p className="truncate text-[10px] uppercase tracking-[0.16em] text-black/40">
+                              {event.category ?? "Event"}
+                            </p>
+                            <p className="mt-1 truncate text-sm font-semibold text-black">
+                              {event.name}
+                            </p>
+                            <div className="mt-2.5">
+                              {isPaidEvent ? (
+                                <span className={`rounded-full px-2 py-1 text-[8px] font-bold uppercase tracking-wider border ${paymentOverviewState === 'all'
+                                  ? 'bg-black/[0.04] text-black/60 border-black/10'
+                                  : badgeClass
+                                  }`}>
+                                  {paymentOverviewState === 'all' ? `${fee} · PAID EVENT` : badgeText}
+                                </span>
+                              ) : (
+                                <span className="rounded-full bg-black/[0.04] border border-black/10 px-2 py-1 text-[8px] font-bold uppercase tracking-wider text-black/45">
+                                  FREE
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-5">
+                            <p className="text-2xl font-semibold text-black leading-none">
+                              {matchedCount} <span className="text-[9px] font-medium text-black/40 uppercase tracking-wider align-middle ml-1">registrations</span>
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
               </div>
             )}
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {eventAnalytics
-                .filter((event) => {
-                  const isPaidEvent = event.payment_type === "paid";
-                  if (availableCategories.length > 1 && paymentOverviewCategory !== "all") {
-                    if (event.category?.toLowerCase() !== paymentOverviewCategory.toLowerCase()) return false;
-                  }
-                  if (paymentOverviewState === "free") return !isPaidEvent;
-                  if (paymentOverviewState === "paid" || paymentOverviewState === "unpaid") {
-                    if (!isPaidEvent) return false;
-                  }
-                  return true;
-                })
-                .map((event) => {
-                  const eventRegs = registrations.filter(r => r.registration.event_id === event.id && r.registration.is_archived !== true);
-                  let matchedCount = 0;
-
-                  eventRegs.forEach(r => {
-                    const isSuccess = r.registration.payment_status === "paid";
-                    if (paymentOverviewState === "paid" && !isSuccess) return;
-                    if (paymentOverviewState === "unpaid" && isSuccess) return;
-                    matchedCount++;
-                  });
-
-                  if (matchedCount === 0 && paymentOverviewState !== "all") return null;
-
-                  const fee = event.registration_fee != null ? `₹${event.registration_fee}` : "Amount unavailable";
-                  const isPaidEvent = event.payment_type === "paid";
-
-                  let badgeClass = "bg-black/[0.04] border-black/10 text-black/45";
-                  let badgeText = "FREE";
-
-                  if (isPaidEvent) {
-                    if (paymentOverviewState === "unpaid" || (paymentOverviewState === "all" && matchedCount > 0)) {
-                      badgeClass = "bg-red-50 text-red-700 border-red-200";
-                      badgeText = `${fee} · PAYMENT PENDING`;
-                    }
-                    if (paymentOverviewState === "paid") {
-                      badgeClass = "bg-green-50 text-green-700 border-green-200";
-                      badgeText = `${fee} · PAID`;
-                    }
-                  }
-
-                  return (
-                    <div key={`po-${event.id}`} className="rounded-[20px] bg-black/[0.02] border border-black/[0.04] p-5 flex flex-col justify-between">
-                      <div>
-                        <p className="truncate text-[10px] uppercase tracking-[0.16em] text-black/40">
-                          {event.category ?? "Event"}
-                        </p>
-                        <p className="mt-1 truncate text-sm font-semibold text-black">
-                          {event.name}
-                        </p>
-                        <div className="mt-2.5">
-                          {isPaidEvent ? (
-                            <span className={`rounded-full px-2 py-1 text-[8px] font-bold uppercase tracking-wider border ${paymentOverviewState === 'all'
-                              ? 'bg-black/[0.04] text-black/60 border-black/10'
-                              : badgeClass
-                              }`}>
-                              {paymentOverviewState === 'all' ? `${fee} · PAID EVENT` : badgeText}
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-black/[0.04] border border-black/10 px-2 py-1 text-[8px] font-bold uppercase tracking-wider text-black/45">
-                              FREE
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-5">
-                        <p className="text-2xl font-semibold text-black leading-none">
-                          {matchedCount} <span className="text-[9px] font-medium text-black/40 uppercase tracking-wider align-middle ml-1">registrations</span>
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
           </div>
         </div>
 
@@ -1802,31 +1835,65 @@ export default function AdminPage() {
           0 && (
             <div className="mb-8 rounded-[28px] bg-white p-6 shadow-[0_20px_80px_rgba(0,0,0,0.04)] md:p-8">
 
-              <div className="flex items-end justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
                     Event analytics
                   </p>
 
-                  <h2 className="mt-2 text-xl font-semibold text-black md:text-2xl">
-                    Registration breakdown
-                  </h2>
+                  <div className="mt-1 flex items-center gap-3">
+                    <h2 className="text-xl font-semibold text-black md:text-2xl">
+                      Registration breakdown
+                    </h2>
+                    <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-[10px] font-bold text-black/50">
+                      {eventAnalytics.length} events
+                    </span>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEventFilter(
-                      "all"
-                    )
-                  }
-                  className="text-xs text-black hover:text-black"
-                >
-                  View all
-                </button>
+                <div className="flex items-center gap-2">
+                  {eventFilter !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => setEventFilter("all")}
+                      className="rounded-full bg-black/5 px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/10 transition"
+                    >
+                      Clear filter
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsEventAnalyticsOpen((prev) => !prev)}
+                    className="flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] hover:bg-black/[0.06] px-4 py-2 text-xs font-semibold text-black transition"
+                    aria-expanded={isEventAnalyticsOpen}
+                  >
+                    <span>{isEventAnalyticsOpen ? "Hide Breakdown" : "View Breakdown"}</span>
+                    {isEventAnalyticsOpen ? (
+                      <ChevronUp size={15} className="text-black/60" />
+                    ) : (
+                      <ChevronDown size={15} className="text-black/60" />
+                    )}
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {!isEventAnalyticsOpen && eventFilter !== "all" && (
+                <div className="mt-4 flex items-center justify-between rounded-xl bg-black/[0.02] border border-black/[0.04] px-4 py-2 text-xs">
+                  <span className="text-black/60">
+                    Filtered by: <span className="font-semibold text-black">{events.find(e => e.id === eventFilter)?.name || eventFilter}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEventFilter("all")}
+                    className="text-xs font-medium text-black underline underline-offset-2 hover:opacity-70"
+                  >
+                    Reset to all
+                  </button>
+                </div>
+              )}
+
+              {isEventAnalyticsOpen && (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-200">
                 {eventAnalytics.map(
                   (event) => (
                     <button
@@ -1937,9 +2004,9 @@ export default function AdminPage() {
                         </p>
                       </div>
                     </button>
-                  )
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
