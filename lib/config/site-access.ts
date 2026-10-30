@@ -282,7 +282,12 @@ export async function getSiteAccessState(
   // In automated test environments without a live DB, return fallback defaults immediately
   if (process.env.NODE_ENV === "test" && process.env.TEST_LIVE_DB !== "true") {
     const fallback = { ...DEFAULT_SITE_ACCESS };
-    const defaultAccAvailability = { ...DEFAULT_ACCOMMODATION_AVAILABILITY };
+    const defaultAccAvailability = testOverrideAccommodationAvailability
+      ? { ...testOverrideAccommodationAvailability }
+      : ACCOMMODATION_OPTIONS.reduce((acc, opt) => {
+          acc[opt.id] = true;
+          return acc;
+        }, {} as Record<string, boolean>);
     cachedAccess = { data: fallback, expiresAt: now + CACHE_TTL_MS };
     cachedLockTimestamp = null;
     cachedRegLockTimestamp = null;

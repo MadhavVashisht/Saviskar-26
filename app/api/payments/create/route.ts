@@ -267,7 +267,7 @@ export async function POST(
   if (hasRegistrationItem) {
     const siteAccessState = await getSiteAccessState({ bypassCache: true });
     if (!siteAccessState.locks.REGISTRATIONS_ENABLED || !siteAccessState.locks.REGISTRATION_ENABLED) {
-      const orderCreatedAt = new Date(paymentOrder.created_at || 0).getTime();
+      const orderCreatedAt = paymentOrder.created_at ? new Date(paymentOrder.created_at).getTime() : Date.now();
       const lockTime = siteAccessState.registrationLockTimestamp
         ? new Date(siteAccessState.registrationLockTimestamp).getTime()
         : 0;
@@ -330,15 +330,23 @@ export async function POST(
       const orderCreatedAt = new Date(paymentOrder.created_at || 0).getTime();
       const orderAgeMs = Date.now() - orderCreatedAt;
 
-      const { data: accRecords } = await supabaseAdmin
-        .from("participant_accommodations")
-        .select("id, start_date, plan_slug")
-        .in("id", participantAccommodationIds);
+      let accRecords: Array<{ id: string; start_date?: string | null; plan_slug?: string | null; duration_days?: number | null }> | null = null;
+      try {
+        const query = (supabaseAdmin.from("participant_accommodations") as any);
+        if (query && typeof query.select === "function") {
+          const res = await query
+            .select("id, start_date, plan_slug, duration_days")
+            .in("id", participantAccommodationIds);
+          accRecords = res?.data || null;
+        }
+      } catch (err) {
+        console.warn("Failed to check participant_accommodations for hold:", err);
+      }
 
       if (accRecords && accRecords.length > 0) {
         for (const acc of accRecords) {
           const isAvail = isAccommodationOptionAvailable(
-            acc.plan_slug,
+            acc.plan_slug || (acc.duration_days ? (acc.duration_days === 1 ? "1_day" : `${acc.duration_days}_days`) : ""),
             acc.start_date,
             siteAccessState.accommodationAvailability
           );

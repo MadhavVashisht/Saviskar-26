@@ -50,6 +50,7 @@ export interface TeamAccommodationModalProps {
   members: TeamMemberForModal[];
   onProceedToPayment: (paymentOrderId: string, participantId?: string) => Promise<void>;
   isAccommodationLocked?: boolean;
+  accommodationAvailability?: Record<string, boolean>;
 }
 
 interface MemberBookingSelection {
@@ -68,6 +69,7 @@ export default function TeamAccommodationModal({
   members,
   onProceedToPayment,
   isAccommodationLocked = false,
+  accommodationAvailability,
 }: TeamAccommodationModalProps) {
   const [mounted, setMounted] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -82,20 +84,7 @@ export default function TeamAccommodationModal({
     focusRef: closeButtonRef,
   });
 
-  const [accommodationAvailability, setAccommodationAvailability] = useState<Record<string, boolean>>(
-    DEFAULT_ACCOMMODATION_AVAILABILITY
-  );
 
-  useEffect(() => {
-    fetch("/api/site-access")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.accommodationAvailability) {
-          setAccommodationAvailability(data.accommodationAvailability);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // Map of member email -> selection state (defaulting to festival standard: 2_days, 30th-31st Oct)
   const [selections, setSelections] = useState<Record<string, MemberBookingSelection>>(() => {
@@ -104,7 +93,7 @@ export default function TeamAccommodationModal({
       initial[m.email] = {
         selected: false,
         planSlug: "2_days",
-        selectedDate: "2026-10-30",
+        selectedDate: "2026-10-28",
         extraDays: "none",
       };
     }
@@ -198,6 +187,8 @@ export default function TeamAccommodationModal({
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+
 
   // Update selection helper
   const updateMemberSelection = (email: string, patch: Partial<MemberBookingSelection>) => {
@@ -335,10 +326,12 @@ export default function TeamAccommodationModal({
       return;
     }
 
-    for (const item of calculatedItems) {
-      if (!isAccommodationOptionAvailable(item.selection.planSlug, item.startDate, accommodationAvailability)) {
-        setErrorMessage(`Accommodation stay (${item.selection.planSlug}, ${item.startDate}) for ${item.member.name} is currently unavailable.`);
-        return;
+    if (accommodationAvailability) {
+      for (const item of calculatedItems) {
+        if (!isAccommodationOptionAvailable(item.selection.planSlug, item.startDate, accommodationAvailability)) {
+          setErrorMessage(`Accommodation stay (${item.selection.planSlug}, ${item.startDate}) for ${item.member.name} is currently unavailable.`);
+          return;
+        }
       }
     }
 

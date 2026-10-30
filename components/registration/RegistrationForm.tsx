@@ -6528,6 +6528,7 @@ export default function RegistrationForm({
               }))}
               onProceedToPayment={handleModalPayment}
               isAccommodationLocked={isAccommodationLocked}
+              accommodationAvailability={accommodationAvailability}
             />
           )}
 

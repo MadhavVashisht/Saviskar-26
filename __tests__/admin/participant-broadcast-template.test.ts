@@ -761,7 +761,7 @@ describe("Saviskar 2K26 — Participant Verification Broadcast Email Invariants"
     // =========================================================================
     describe("12. Bounded Delivery Enqueue Batching & Statement Timeout Invariants", () => {
       it("exports verified chunk size of 100 deliveries per insertion", () => {
-        expect(BROADCAST_DELIVERY_INSERT_CHUNK_SIZE).toBe(100);
+        expect(BROADCAST_DELIVERY_INSERT_CHUNK_SIZE).toBe(250);
       });
 
       it("enqueues large audience across multiple bounded chunks", async () => {

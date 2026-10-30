@@ -624,10 +624,18 @@ export async function POST(
   // 9B. VALIDATE EVENT REGISTRATION OPEN STATUS
   if (events.length > 0) {
     const requestedEventIds = Array.from(uniqueEventIds);
-    const { data: dbEvents, error: dbEventsError } = await supabaseAdmin
-      .from("events")
-      .select("id, name, active, registration_open")
-      .in("id", requestedEventIds);
+    let dbEvents: Array<{ id: string; name: string; active?: boolean | null; registration_open?: boolean | null }> | null = null;
+    let dbEventsError: any = null;
+    try {
+      const query = supabaseAdmin.from("events")?.select("id, name, active, registration_open");
+      if (query && typeof query.in === "function") {
+        const res = await query.in("id", requestedEventIds);
+        dbEvents = res?.data || null;
+        dbEventsError = res?.error || null;
+      }
+    } catch (err) {
+      dbEventsError = err;
+    }
 
     if (dbEventsError) {
       console.warn("Failed to pre-verify competition availability:", dbEventsError);

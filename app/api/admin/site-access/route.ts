@@ -98,7 +98,7 @@ export async function PATCH(request: Request) {
         {
           error:
             auth.status === 403
-              ? "Access denied. Only Primary Master Admins have authorization to lock or unlock site pages and availability controls."
+              ? "Access denied. Only Primary Master Admins have authorization to lock or unlock site pages."
               : auth.error,
         },
         { status: auth.status }

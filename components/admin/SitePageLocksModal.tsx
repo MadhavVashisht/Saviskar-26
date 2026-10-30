@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useMemo } from "react";
+import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react";
 import {
   X,
   Lock,
@@ -159,6 +159,10 @@ export function SitePageLocksModal({
   );
   const [competitions, setCompetitions] = useState<Array<any>>([]);
   const [competitionsLoading, setCompetitionsLoading] = useState(false);
+  const [competitionsError, setCompetitionsError] = useState<string | null>(null);
+
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
   const [expandedSection, setExpandedSection] = useState<"none" | "competitions" | "accommodations">("none");
   const [togglingKey, setTogglingKey] = useState<SitePageKey | null>(null);
@@ -181,28 +185,56 @@ export function SitePageLocksModal({
     }
   }, [siteAccess]);
 
+  // Stable callback to fetch site access and competition state
+  const loadSiteState = useCallback(async () => {
+    setCompetitionsLoading(true);
+    setCompetitionsError(null);
+    try {
+      const res = await fetch("/api/admin/site-access");
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data?.siteAccess) {
+        setLocks(data.siteAccess);
+        onUpdateRef.current?.(data.siteAccess);
+      }
+      if (data?.accommodationAvailability) {
+        setAccommodationAvailability(data.accommodationAvailability);
+      }
+      if (Array.isArray(data?.competitions)) {
+        setCompetitions(data.competitions);
+      } else {
+        setCompetitions([]);
+      }
+    } catch (err: any) {
+      console.warn("Failed to load admin site-access state:", err);
+      setCompetitionsError(err?.message || "Failed to load competition catalog from database.");
+    } finally {
+      setCompetitionsLoading(false);
+    }
+  }, []);
+
   // Ensure fresh locks and availability data on modal open
   useEffect(() => {
     if (isOpen) {
-      setCompetitionsLoading(true);
-      fetch("/api/admin/site-access")
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data?.siteAccess) {
-            setLocks(data.siteAccess);
-            onUpdate?.(data.siteAccess);
-          }
-          if (data?.accommodationAvailability) {
-            setAccommodationAvailability(data.accommodationAvailability);
-          }
-          if (Array.isArray(data?.competitions)) {
-            setCompetitions(data.competitions);
-          }
-        })
-        .catch((err) => console.warn("Failed to load admin site-access state:", err))
-        .finally(() => setCompetitionsLoading(false));
+      loadSiteState();
     }
-  }, [isOpen, onUpdate]);
+  }, [isOpen, loadSiteState]);
+
+  // Lock body scroll and pause Lenis while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const globalLenis = (window as unknown as { __lenis?: { stop: () => void; start: () => void } }).__lenis;
+    if (globalLenis) globalLenis.stop();
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      if (globalLenis) globalLenis.start();
+    };
+  }, [isOpen]);
 
   const filteredCards = useMemo(() => {
     if (!searchQuery.trim()) return PAGE_CARDS;
@@ -524,8 +556,8 @@ export function SitePageLocksModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative flex flex-col w-full max-w-5xl max-h-[92vh] rounded-3xl border border-black/10 bg-white shadow-2xl overflow-hidden text-black">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
+      <div className="relative flex flex-col w-full max-w-5xl max-h-[92vh] my-auto shrink-0 rounded-3xl border border-black/10 bg-white shadow-2xl overflow-hidden text-black" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-black/10 bg-neutral-900 px-6 py-4 sm:px-8 text-white shrink-0">
           <div className="flex items-center gap-3">
@@ -636,7 +668,7 @@ export function SitePageLocksModal({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-8 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5 sm:px-8 space-y-6 focus:outline-none" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
           {/* Modules Grid */}
           <div className="grid gap-3.5 sm:grid-cols-2">
             {filteredCards.map((card) => {
@@ -900,8 +932,18 @@ export function SitePageLocksModal({
                   />
                 </div>
 
-                {/* Category Pills */}
+                {/* Category Pills and Reload Action */}
                 <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={loadSiteState}
+                    disabled={competitionsLoading}
+                    className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1 text-[11px] font-semibold text-black/70 hover:bg-neutral-100 transition cursor-pointer disabled:opacity-50"
+                    title="Refresh competition catalog from database"
+                  >
+                    <RefreshCw size={11} className={competitionsLoading ? "animate-spin text-violet-600" : ""} />
+                    <span>Refresh</span>
+                  </button>
                   {competitionCategories.map((cat) => (
                     <button
                       key={cat}
@@ -920,15 +962,53 @@ export function SitePageLocksModal({
               </div>
 
               {/* Competitions Table / List */}
-              <div className="max-h-96 overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-xs divide-y divide-black/5">
+              <div className="max-h-96 overflow-y-auto overscroll-contain rounded-2xl border border-black/10 bg-white shadow-xs divide-y divide-black/5" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
                 {competitionsLoading ? (
                   <div className="p-8 text-center text-xs text-black/50">
                     <RefreshCw size={18} className="animate-spin mx-auto text-violet-600 mb-2" />
                     <span>Loading competition catalog from database...</span>
                   </div>
+                ) : competitionsError ? (
+                  <div className="p-8 text-center text-xs text-rose-700 bg-rose-50/50 space-y-3">
+                    <AlertTriangle size={20} className="mx-auto text-rose-600" />
+                    <p className="font-semibold">{competitionsError}</p>
+                    <button
+                      type="button"
+                      onClick={loadSiteState}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 transition cursor-pointer shadow-xs"
+                    >
+                      <RefreshCw size={12} />
+                      <span>Retry Loading</span>
+                    </button>
+                  </div>
                 ) : filteredCompetitions.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-black/40">
-                    No competitions match the filter criteria.
+                  <div className="p-8 text-center text-xs text-black/40 space-y-2">
+                    <p>
+                      {competitions.length === 0
+                        ? "No competitions found in database."
+                        : "No competitions match the filter criteria."}
+                    </p>
+                    {competitions.length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={loadSiteState}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3.5 py-1 text-xs font-semibold text-black hover:bg-neutral-100 transition cursor-pointer"
+                      >
+                        <RefreshCw size={12} />
+                        <span>Reload Competitions</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCompSearchQuery("");
+                          setCompCategoryFilter("All");
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-white px-3 py-1 text-xs text-black hover:bg-neutral-100 transition cursor-pointer"
+                      >
+                        <span>Clear Filters</span>
+                      </button>
+                    )}
                   </div>
                 ) : (
                   filteredCompetitions.map((comp) => {

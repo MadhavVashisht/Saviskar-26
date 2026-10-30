@@ -150,7 +150,7 @@ process.env.RESUME_TOKEN_SECRET = "test-resume-token-secret-must-be-32-chars-lon
 describe("Granular Availability Control — Unit & Integration Test Suite", () => {
   beforeEach(() => {
     clearSiteAccessCache();
-    __setTestSiteAccess(null);
+    __setTestSiteAccess(null, null, null, DEFAULT_ACCOMMODATION_AVAILABILITY);
     mockAuditLogInsert = null;
     mockRpcHandler = null;
     mockFromHandler = null;

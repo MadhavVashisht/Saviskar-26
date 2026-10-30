@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
     if (participantEventId) {
       const siteAccessState = await getSiteAccessState({ bypassCache: true });
       if (!siteAccessState.locks.REGISTRATIONS_ENABLED || !siteAccessState.locks.REGISTRATION_ENABLED) {
-        const orderCreatedAt = new Date(paymentOrderData?.created_at || 0).getTime();
+        const orderCreatedAt = paymentOrderData?.created_at ? new Date(paymentOrderData.created_at).getTime() : Date.now();
         const lockTime = siteAccessState.registrationLockTimestamp
           ? new Date(siteAccessState.registrationLockTimestamp).getTime()
           : 0;
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
     // Option A: If recovering an accommodation, verify pre-lock creation & non-expiration
     if (participantAccommodationId) {
       const siteAccessState = await getSiteAccessState({ bypassCache: true });
-      const orderCreatedAt = new Date(paymentOrderData?.created_at || 0).getTime();
+      const orderCreatedAt = paymentOrderData?.created_at ? new Date(paymentOrderData.created_at).getTime() : Date.now();
       const orderAgeMs = Date.now() - orderCreatedAt;
 
       if (!siteAccessState.locks.ACCOMMODATION_ENABLED) {

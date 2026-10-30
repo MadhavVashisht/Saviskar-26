@@ -253,7 +253,7 @@ describe("SAVISKAR 2026: Multi-Booking Concurrency, Overlap Safeguards & Payment
       expect(registrationFormContent).toContain('const is28Booked = isDateBookedByParticipant("2026-10-28", confirmedAccommodations);');
       expect(registrationFormContent).toContain('const is29Booked = isDateBookedByParticipant("2026-10-29", confirmedAccommodations);');
       expect(registrationFormContent).toContain('const is30Booked = isDateBookedByParticipant("2026-10-30", confirmedAccommodations);');
-      expect(registrationFormContent).toContain("disabled={is28Booked}");
+      expect(registrationFormContent).toContain("disabled={is28Booked || !is28Avail}");
     });
 
     it("B. Badges plan cards with Booked and Overlap indicators", () => {
