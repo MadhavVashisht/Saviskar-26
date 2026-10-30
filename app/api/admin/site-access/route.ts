@@ -55,14 +55,23 @@ export async function GET(request: Request) {
     const supabaseAdmin = getSupabaseAdmin();
     if (supabaseAdmin) {
       try {
-        const { data: compData } = await supabaseAdmin
-          .from("events")
-          .select(
-            "id, name, slug, category, registration_type, min_team_size, max_team_size, payment_type, registration_fee, payment_unit, registration_open, active"
-          )
-          .eq("active", true)
-          .order("name", { ascending: true });
-        competitions = compData || [];
+        const queryPromise = Promise.resolve(
+          supabaseAdmin
+            .from("events")
+            .select(
+              "id, name, slug, category, registration_type, min_team_size, max_team_size, payment_type, registration_fee, payment_unit, registration_open, active"
+            )
+            .eq("active", true)
+            .order("name", { ascending: true })
+        );
+
+        const timeoutMs = process.env.NODE_ENV === "test" ? 300 : 3000;
+        const timeoutPromise = new Promise<{ data: any[] | null }>((resolve) =>
+          setTimeout(() => resolve({ data: null }), timeoutMs)
+        );
+
+        const result: any = await Promise.race([queryPromise, timeoutPromise]);
+        competitions = result?.data || [];
       } catch (e) {
         console.warn("Failed to load events for site-access admin view:", e);
       }
