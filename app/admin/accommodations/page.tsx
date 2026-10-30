@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   getCanonicalStayLabel,
-  calculateRoomDateOccupancy,
+calculateRoomDateOccupancy,
   matchesAccommodationDateFilter,
   buildParticipantActiveStaysMap,
 } from "@/lib/accommodation-dates";

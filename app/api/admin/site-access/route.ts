@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import {
   requireAdmin,
@@ -10,6 +11,8 @@ import {
   getSiteAccessState,
   clearSiteAccessCache,
   DEFAULT_SITE_ACCESS,
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+  ACCOMMODATION_OPTIONS,
   SITE_PAGE_DEFINITIONS,
   SITE_ACCESS_AUDIT_TARGET_ID,
   type SitePageKey,
@@ -45,15 +48,35 @@ export async function GET(request: Request) {
       );
     }
 
-    const currentAccess = await getSiteAccess();
+    const state = await getSiteAccessState({ bypassCache: true });
     const isPrimary = isPrimaryMaster(auth.user);
+
+    let competitions: any[] = [];
+    const supabaseAdmin = getSupabaseAdmin();
+    if (supabaseAdmin) {
+      try {
+        const { data: compData } = await supabaseAdmin
+          .from("events")
+          .select(
+            "id, name, slug, category, registration_type, min_team_size, max_team_size, payment_type, registration_fee, payment_unit, registration_open, active"
+          )
+          .eq("active", true)
+          .order("name", { ascending: true });
+        competitions = compData || [];
+      } catch (e) {
+        console.warn("Failed to load events for site-access admin view:", e);
+      }
+    }
 
     return NextResponse.json(
       {
         success: true,
-        siteAccess: currentAccess,
+        siteAccess: state.locks,
         isPrimary,
         definitions: SITE_PAGE_DEFINITIONS,
+        accommodationAvailability: state.accommodationAvailability,
+        accommodationOptions: ACCOMMODATION_OPTIONS,
+        competitions,
       },
       { headers: { "Cache-Control": "no-store" } }
     );
@@ -75,7 +98,7 @@ export async function PATCH(request: Request) {
         {
           error:
             auth.status === 403
-              ? "Access denied. Only Primary Master Admins have authorization to lock or unlock site pages."
+              ? "Access denied. Only Primary Master Admins have authorization to lock or unlock site pages and availability controls."
               : auth.error,
         },
         { status: auth.status }
@@ -94,6 +117,12 @@ export async function PATCH(request: Request) {
       key?: string;
       enabled?: boolean;
       locks?: Partial<SiteAccessConfig>;
+      accommodationAvailability?: Record<string, boolean>;
+      toggleAccommodation?: { optionId: string; enabled: boolean };
+      resetAccommodationToDefault?: boolean;
+      toggleCompetition?: { eventId: string; registrationOpen: boolean };
+      bulkCompetitions?: { lockAll: boolean };
+      competitionLocks?: Record<string, boolean>;
     };
 
     const currentState = await getSiteAccessState({ bypassCache: true });
@@ -102,6 +131,40 @@ export async function PATCH(request: Request) {
     let accommodationLockedAt = currentState.accommodationLockTimestamp;
     let registrationLockedAt = currentState.registrationLockTimestamp;
 
+    const updatedAccommodationAvailability: Record<string, boolean> = {
+      ...currentState.accommodationAvailability,
+    };
+    const updatedCompetitionLocks: Record<string, boolean> = {
+      ...currentState.competitionLocks,
+    };
+
+    let changeDescription = "Site page locks updated successfully.";
+
+    const hasPageLockUpdate =
+      (body.key && typeof body.enabled === "boolean") ||
+      (body.locks && typeof body.locks === "object");
+
+    const hasAccommodationUpdate =
+      Boolean(body.toggleAccommodation) ||
+      Boolean(body.accommodationAvailability && typeof body.accommodationAvailability === "object") ||
+      Boolean(body.resetAccommodationToDefault);
+
+    const hasCompetitionUpdate =
+      Boolean(body.toggleCompetition) ||
+      Boolean(body.bulkCompetitions) ||
+      Boolean(body.competitionLocks && typeof body.competitionLocks === "object");
+
+    if (!hasPageLockUpdate && !hasAccommodationUpdate && !hasCompetitionUpdate) {
+      return NextResponse.json(
+        {
+          error:
+            "Provide a valid page lock mutation, accommodation availability update, or competition toggle.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 1. Process Page Locks
     if (body.key && typeof body.enabled === "boolean") {
       const validKey = body.key as SitePageKey;
       if (!(validKey in DEFAULT_SITE_ACCESS)) {
@@ -114,12 +177,10 @@ export async function PATCH(request: Request) {
 
       if (validKey === "ACCOMMODATION_ENABLED") {
         if (!body.enabled) {
-          // Lock transition: if previously unlocked or missing timestamp, record fresh timestamp
           if (currentLocks.ACCOMMODATION_ENABLED !== false || !accommodationLockedAt) {
             accommodationLockedAt = new Date().toISOString();
           }
         } else {
-          // Unlock transition: clear timestamp
           accommodationLockedAt = null;
         }
       }
@@ -139,6 +200,7 @@ export async function PATCH(request: Request) {
           registrationLockedAt = null;
         }
       }
+      changeDescription = `${SITE_PAGE_DEFINITIONS[validKey]?.name || validKey} has been ${body.enabled ? "unlocked" : "locked"}.`;
     } else if (body.locks && typeof body.locks === "object") {
       for (const [k, v] of Object.entries(body.locks)) {
         if (k in DEFAULT_SITE_ACCESS && typeof v === "boolean") {
@@ -156,7 +218,21 @@ export async function PATCH(request: Request) {
         }
       }
 
-      const regVal = body.locks.REGISTRATION_ENABLED ?? body.locks.REGISTRATIONS_ENABLED;
+      let regVal: boolean | undefined = undefined;
+      if (typeof body.locks.REGISTRATION_ENABLED === "boolean" && typeof body.locks.REGISTRATIONS_ENABLED === "boolean") {
+        if (body.locks.REGISTRATIONS_ENABLED !== currentLocks.REGISTRATIONS_ENABLED) {
+          regVal = body.locks.REGISTRATIONS_ENABLED;
+        } else if (body.locks.REGISTRATION_ENABLED !== currentLocks.REGISTRATION_ENABLED) {
+          regVal = body.locks.REGISTRATION_ENABLED;
+        } else {
+          regVal = body.locks.REGISTRATION_ENABLED;
+        }
+      } else if (typeof body.locks.REGISTRATION_ENABLED === "boolean") {
+        regVal = body.locks.REGISTRATION_ENABLED;
+      } else if (typeof body.locks.REGISTRATIONS_ENABLED === "boolean") {
+        regVal = body.locks.REGISTRATIONS_ENABLED;
+      }
+
       if (typeof regVal === "boolean") {
         updatedLocks.REGISTRATIONS_ENABLED = regVal;
         updatedLocks.REGISTRATION_ENABLED = regVal;
@@ -171,11 +247,49 @@ export async function PATCH(request: Request) {
           registrationLockedAt = null;
         }
       }
-    } else {
-      return NextResponse.json(
-        { error: "Provide either { key, enabled } or { locks: { ... } }." },
-        { status: 400 }
-      );
+      changeDescription = "Site page locks updated successfully.";
+    }
+
+    // 2. Process Granular Accommodation Availability
+    if (body.toggleAccommodation) {
+      const { optionId, enabled } = body.toggleAccommodation;
+      if (typeof optionId === "string" && typeof enabled === "boolean") {
+        updatedAccommodationAvailability[optionId] = enabled;
+        changeDescription = `Accommodation option ${optionId} is now ${enabled ? "available" : "unavailable"}.`;
+      }
+    } else if (body.resetAccommodationToDefault) {
+      for (const k of Object.keys(DEFAULT_ACCOMMODATION_AVAILABILITY)) {
+        updatedAccommodationAvailability[k] = DEFAULT_ACCOMMODATION_AVAILABILITY[k];
+      }
+      changeDescription = "Accommodation availability reset to default initial policy.";
+    } else if (body.accommodationAvailability && typeof body.accommodationAvailability === "object") {
+      for (const [k, v] of Object.entries(body.accommodationAvailability)) {
+        if (typeof v === "boolean") {
+          updatedAccommodationAvailability[k] = v;
+        }
+      }
+      changeDescription = "Accommodation availability options updated.";
+    }
+
+    // 3. Process Granular Competition Locks
+    if (body.toggleCompetition) {
+      const { eventId, registrationOpen } = body.toggleCompetition;
+      if (typeof eventId === "string" && typeof registrationOpen === "boolean") {
+        updatedCompetitionLocks[eventId] = registrationOpen;
+        changeDescription = `Competition registration has been ${registrationOpen ? "unlocked (opened)" : "locked (closed)"}.`;
+      }
+    } else if (body.bulkCompetitions) {
+      const targetOpen = !body.bulkCompetitions.lockAll;
+      changeDescription = targetOpen
+        ? "All active competitions unlocked for registration."
+        : "All active competitions locked against registration.";
+    } else if (body.competitionLocks && typeof body.competitionLocks === "object") {
+      for (const [eventId, isOpen] of Object.entries(body.competitionLocks)) {
+        if (typeof isOpen === "boolean") {
+          updatedCompetitionLocks[eventId] = isOpen;
+        }
+      }
+      changeDescription = "Competition registration locks updated.";
     }
 
     const auditDetails = {
@@ -187,7 +301,12 @@ export async function PATCH(request: Request) {
       },
       accommodation_locked_at: accommodationLockedAt,
       registration_locked_at: registrationLockedAt,
-      changed_key: body.key || "multiple",
+      accommodation_availability: updatedAccommodationAvailability,
+      competition_locks: updatedCompetitionLocks,
+      toggle_competition: body.toggleCompetition,
+      bulk_competitions: body.bulkCompetitions,
+      apply_competition_locks: body.competitionLocks,
+      changed_key: body.key || "granular_availability",
       changed_value: typeof body.enabled === "boolean" ? body.enabled : undefined,
       updated_by: auth.user.email,
       updated_at: new Date().toISOString(),
@@ -195,8 +314,6 @@ export async function PATCH(request: Request) {
 
     // Database-level Synchronization:
     // Execute atomic RPC with exclusive advisory lock to eliminate races with booking creation.
-    // Fail closed: Never bypass the synchronization boundary with a direct insert, and never report
-    // success unless the atomic RPC successfully commits.
     const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc("update_site_page_locks", {
       p_admin_id: auth.user.id,
       p_target_id: SITE_ACCESS_AUDIT_TARGET_ID,
@@ -222,13 +339,26 @@ export async function PATCH(request: Request) {
 
     clearSiteAccessCache();
 
+    try {
+      revalidatePath("/register");
+      revalidatePath("/schedule");
+      revalidatePath("/starnight");
+      revalidatePath("/gallery");
+      revalidatePath("/sponsors");
+      revalidatePath("/team");
+      revalidatePath("/legacy");
+      revalidatePath("/events");
+    } catch {
+      // Ignore static generation store errors in offline/test environments
+    }
+
     return NextResponse.json(
       {
         success: true,
         siteAccess: updatedLocks,
-        message: body.key
-          ? `${SITE_PAGE_DEFINITIONS[body.key as SitePageKey]?.name || body.key} has been ${body.enabled ? "unlocked" : "locked"}.`
-          : "Site page locks updated successfully.",
+        accommodationAvailability: updatedAccommodationAvailability,
+        competitionLocks: updatedCompetitionLocks,
+        message: changeDescription,
       },
       { headers: { "Cache-Control": "no-store" } }
     );

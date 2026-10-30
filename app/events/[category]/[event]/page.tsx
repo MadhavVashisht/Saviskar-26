@@ -61,7 +61,7 @@ export default async function EventPage({
   }>;
 }) {
   const { category, event } = await params;
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
 
   if (!siteAccess.EVENT_DETAILS_ENABLED) {
     return (

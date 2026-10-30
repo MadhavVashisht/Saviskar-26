@@ -5,6 +5,26 @@
  * public pages on the site directly from the admin panel.
  */
 
+import {
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+  type AccommodationOptionDefinition,
+  type AccommodationPlanSlug,
+  ACCOMMODATION_OPTIONS,
+  isAccommodationOptionAvailable,
+  getAccommodationOptionId,
+  getAccommodationOptionById,
+} from "./availability";
+
+export {
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+  type AccommodationOptionDefinition,
+  type AccommodationPlanSlug,
+  ACCOMMODATION_OPTIONS,
+  isAccommodationOptionAvailable,
+  getAccommodationOptionId,
+  getAccommodationOptionById,
+};
+
 export const DEFAULT_SITE_ACCESS = {
   // Registrations portal (/register and POST /api/register)
   REGISTRATIONS_ENABLED: true,
@@ -165,16 +185,22 @@ export interface SiteAccessState {
   locks: SiteAccessConfig;
   accommodationLockTimestamp: string | null;
   registrationLockTimestamp: string | null;
+  accommodationAvailability: Record<string, boolean>;
+  competitionLocks: Record<string, boolean>;
 }
 
 let cachedAccess: { data: SiteAccessConfig; expiresAt: number } | null = null;
 let cachedLockTimestamp: string | null = null;
 let cachedRegLockTimestamp: string | null = null;
+let cachedAccommodationAvailability: Record<string, boolean> | null = null;
+let cachedCompetitionLocks: Record<string, boolean> | null = null;
 const CACHE_TTL_MS = 5000; // 5s in-memory cache
 
 let testOverrideLocks: SiteAccessConfig | null = null;
 let testOverrideLockTimestamp: string | null = null;
 let testOverrideRegLockTimestamp: string | null = null;
+let testOverrideAccommodationAvailability: Record<string, boolean> | null = null;
+let testOverrideCompetitionLocks: Record<string, boolean> | null = null;
 
 /**
  * Test helper to safely simulate lock configurations in unit tests
@@ -182,12 +208,16 @@ let testOverrideRegLockTimestamp: string | null = null;
 export function __setTestSiteAccess(
   overrides: Partial<SiteAccessConfig> | null,
   lockTimestamp: string | null = null,
-  registrationLockTimestamp: string | null = null
+  registrationLockTimestamp: string | null = null,
+  accommodationAvailabilityOverrides?: Record<string, boolean> | null,
+  competitionLocksOverrides?: Record<string, boolean> | null
 ) {
   if (overrides === null) {
     testOverrideLocks = null;
     testOverrideLockTimestamp = null;
     testOverrideRegLockTimestamp = null;
+    testOverrideAccommodationAvailability = null;
+    testOverrideCompetitionLocks = null;
   } else {
     testOverrideLocks = {
       ...DEFAULT_SITE_ACCESS,
@@ -201,13 +231,20 @@ export function __setTestSiteAccess(
     }
     testOverrideLockTimestamp = lockTimestamp;
     testOverrideRegLockTimestamp = registrationLockTimestamp;
+    testOverrideAccommodationAvailability = accommodationAvailabilityOverrides
+      ? { ...accommodationAvailabilityOverrides }
+      : null;
+    testOverrideCompetitionLocks = competitionLocksOverrides
+      ? { ...competitionLocksOverrides }
+      : null;
   }
   clearSiteAccessCache();
 }
 
 /**
- * Returns the full site access state including lock configuration and
- * authoritative accommodation and registration lock timestamps (if locked).
+ * Returns the full site access state including lock configuration,
+ * authoritative accommodation and registration lock timestamps (if locked),
+ * and granular availability settings for accommodations and competitions.
  */
 export async function getSiteAccessState(
   options?: GetSiteAccessOptions
@@ -217,25 +254,47 @@ export async function getSiteAccessState(
       locks: { ...testOverrideLocks },
       accommodationLockTimestamp: testOverrideLockTimestamp,
       registrationLockTimestamp: testOverrideRegLockTimestamp,
+      accommodationAvailability: testOverrideAccommodationAvailability
+        ? { ...testOverrideAccommodationAvailability }
+        : { ...DEFAULT_ACCOMMODATION_AVAILABILITY },
+      competitionLocks: testOverrideCompetitionLocks
+        ? { ...testOverrideCompetitionLocks }
+        : {},
     };
   }
 
   const now = Date.now();
-  if (!options?.bypassCache && cachedAccess && cachedAccess.expiresAt > now) {
+  if (
+    !options?.bypassCache &&
+    cachedAccess &&
+    cachedAccess.expiresAt > now &&
+    cachedAccommodationAvailability
+  ) {
     return {
       locks: cachedAccess.data,
       accommodationLockTimestamp: cachedLockTimestamp,
       registrationLockTimestamp: cachedRegLockTimestamp,
+      accommodationAvailability: cachedAccommodationAvailability,
+      competitionLocks: cachedCompetitionLocks || {},
     };
   }
 
   // In automated test environments without a live DB, return fallback defaults immediately
   if (process.env.NODE_ENV === "test" && process.env.TEST_LIVE_DB !== "true") {
     const fallback = { ...DEFAULT_SITE_ACCESS };
+    const defaultAccAvailability = { ...DEFAULT_ACCOMMODATION_AVAILABILITY };
     cachedAccess = { data: fallback, expiresAt: now + CACHE_TTL_MS };
     cachedLockTimestamp = null;
     cachedRegLockTimestamp = null;
-    return { locks: fallback, accommodationLockTimestamp: null, registrationLockTimestamp: null };
+    cachedAccommodationAvailability = defaultAccAvailability;
+    cachedCompetitionLocks = {};
+    return {
+      locks: fallback,
+      accommodationLockTimestamp: null,
+      registrationLockTimestamp: null,
+      accommodationAvailability: defaultAccAvailability,
+      competitionLocks: {},
+    };
   }
 
   try {
@@ -246,6 +305,13 @@ export async function getSiteAccessState(
       const { createClient } = await import("@supabase/supabase-js");
       const client = createClient(supabaseUrl, supabaseSecretKey, {
         auth: { persistSession: false, autoRefreshToken: false },
+        global: {
+          fetch: (url, init) =>
+            fetch(url, {
+              ...init,
+              cache: "no-store",
+            }),
+        },
       });
 
       const queryPromise = client
@@ -273,6 +339,9 @@ export async function getSiteAccessState(
         if (merged.REGISTRATIONS_ENABLED === false || merged.REGISTRATION_ENABLED === false) {
           merged.REGISTRATIONS_ENABLED = false;
           merged.REGISTRATION_ENABLED = false;
+        } else if (merged.REGISTRATIONS_ENABLED === true || merged.REGISTRATION_ENABLED === true) {
+          merged.REGISTRATIONS_ENABLED = true;
+          merged.REGISTRATION_ENABLED = true;
         }
 
         let accLockTimestamp: string | null = null;
@@ -302,14 +371,32 @@ export async function getSiteAccessState(
           }
         }
 
+        const mergedAccAvailability: Record<string, boolean> = {
+          ...DEFAULT_ACCOMMODATION_AVAILABILITY,
+          ...(data.details?.accommodation_availability &&
+          typeof data.details.accommodation_availability === "object"
+            ? data.details.accommodation_availability
+            : {}),
+        };
+
+        const mergedCompLocks: Record<string, boolean> =
+          data.details?.competition_locks &&
+          typeof data.details.competition_locks === "object"
+            ? data.details.competition_locks
+            : {};
+
         cachedAccess = { data: merged, expiresAt: now + CACHE_TTL_MS };
         cachedLockTimestamp = accLockTimestamp;
         cachedRegLockTimestamp = regLockTimestamp;
+        cachedAccommodationAvailability = mergedAccAvailability;
+        cachedCompetitionLocks = mergedCompLocks;
 
         return {
           locks: merged,
           accommodationLockTimestamp: accLockTimestamp,
           registrationLockTimestamp: regLockTimestamp,
+          accommodationAvailability: mergedAccAvailability,
+          competitionLocks: mergedCompLocks,
         };
       }
     }
@@ -318,10 +405,19 @@ export async function getSiteAccessState(
   }
 
   const fallback = { ...DEFAULT_SITE_ACCESS };
+  const fallbackAcc = { ...DEFAULT_ACCOMMODATION_AVAILABILITY };
   cachedAccess = { data: fallback, expiresAt: now + CACHE_TTL_MS };
   cachedLockTimestamp = null;
   cachedRegLockTimestamp = null;
-  return { locks: fallback, accommodationLockTimestamp: null, registrationLockTimestamp: null };
+  cachedAccommodationAvailability = fallbackAcc;
+  cachedCompetitionLocks = {};
+  return {
+    locks: fallback,
+    accommodationLockTimestamp: null,
+    registrationLockTimestamp: null,
+    accommodationAvailability: fallbackAcc,
+    competitionLocks: {},
+  };
 }
 
 /**
@@ -342,6 +438,8 @@ export function clearSiteAccessCache() {
   cachedAccess = null;
   cachedLockTimestamp = null;
   cachedRegLockTimestamp = null;
+  cachedAccommodationAvailability = null;
+  cachedCompetitionLocks = null;
 }
 
 // Synchronous fallback export for legacy backwards compatibility

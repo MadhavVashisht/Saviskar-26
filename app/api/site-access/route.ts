@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { getSiteAccess } from "@/lib/config/site-access";
+import { getSiteAccessState } from "@/lib/config/site-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const siteAccess = await getSiteAccess();
+  const state = await getSiteAccessState();
   return NextResponse.json(
-    { siteAccess },
+    {
+      siteAccess: state.locks,
+      accommodationAvailability: state.accommodationAvailability,
+      competitionLocks: state.competitionLocks,
+    },
     {
       headers: {
         "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10",

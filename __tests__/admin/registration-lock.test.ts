@@ -21,6 +21,20 @@ import { POST as postVerifyOtp } from "@/app/api/auth/verify-otp/route";
 import { POST as postPaymentCreate } from "@/app/api/payments/create/route";
 import { POST as postPaymentRecover } from "@/app/api/payments/recover/route";
 import { POST as postTeamAccommodation } from "@/app/api/team/accommodation/route";
+import RegisterPage, { dynamic as registerDynamic, revalidate as registerRevalidate } from "@/app/register/page";
+import * as nextCache from "next/cache";
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+}));
+
+vi.mock("@/components/ui/Navbar", () => ({ default: () => null }));
+vi.mock("@/components/ui/Footer", () => ({ default: () => null }));
+vi.mock("@/components/ui/MouseSpotlight", () => ({ default: () => null }));
+vi.mock("@/components/registration/RegistrationFlowManager", () => ({
+  default: (props: any) => ({ type: "RegistrationFlowManager", props }),
+}));
 
 vi.mock("next/server", async (importOriginal) => {
   const mod = await importOriginal<typeof import("next/server")>();
@@ -784,5 +798,232 @@ describe("Phase 2: Temporary Registration-Form Lock Architecture", () => {
 
     // Duplicate index removed from Migration 1
     expect(mig1Content).not.toContain('CREATE INDEX IF NOT EXISTS "idx_admin_audit_logs_site_page_locks"');
+  });
+
+  // ==============================================================================
+  // Phase 4: Public Route vs Admin Sync & Dynamic Revalidation Suite
+  // ==============================================================================
+
+  // 18. Admin unlocks Participant Registration Form -> /register displays the registration form
+  it("18. Admin unlocks Participant Registration Form -> /register displays registration form", async () => {
+    __setTestSiteAccess({ REGISTRATION_ENABLED: true, REGISTRATIONS_ENABLED: true });
+
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: false,
+      email: "",
+    } as any);
+
+    const jsx: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+
+    // When unlocked, the page renders the full layout main element
+    expect(jsx.type).toBe("main");
+
+    // Must NOT be the TerminalPlaceholder
+    expect(jsx.props?.classification).toBeUndefined();
+  });
+
+  // 19. Admin locks Participant Registration Form -> /register displays lockdown screen
+  it("19. Admin locks Participant Registration Form -> /register displays lockdown screen", async () => {
+    __setTestSiteAccess({ REGISTRATION_ENABLED: false, REGISTRATIONS_ENABLED: false });
+
+    const jsx: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+
+    // When locked, the page returns TerminalPlaceholder directly
+    expect(jsx.props?.classification).toBe("ACCESS RESTRICTED // REGISTRATION PAUSED");
+    expect(jsx.props?.moduleCode).toBe("ACCREDITATION.SYS");
+    expect(jsx.props?.estimatedRelease).toBe("TEMPORARILY PAUSED BY ADMINISTRATION");
+  });
+
+  // 20. Direct navigation to /register respects current persisted lock state dynamically
+  it("20. Direct navigation to /register is dynamic and never statically cached", () => {
+    expect(registerDynamic).toBe("force-dynamic");
+    expect(registerRevalidate).toBe(0);
+  });
+
+  // 21. Registration API requests are rejected when locked
+  it("21. Direct API requests to /api/register are rejected with 403 when registration is locked", async () => {
+    __setTestSiteAccess({ REGISTRATION_ENABLED: false, REGISTRATIONS_ENABLED: false });
+
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: true,
+      email: "directapi@test.edu",
+    } as any);
+
+    const req = new NextRequest("http://localhost:3000/api/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Test Participant",
+        email: "directapi@test.edu",
+        events: [{ eventId: "e1" }],
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await postRegister(req);
+    const data = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(data.code).toBe("REGISTRATION_LOCKED");
+    expect(data.error).toContain("Participant registration is temporarily paused");
+  });
+
+  // 22. Registration API requests work when unlocked, subject to normal validation
+  it("22. Registration API requests work when unlocked, subject to normal validation", async () => {
+    __setTestSiteAccess({ REGISTRATION_ENABLED: true, REGISTRATIONS_ENABLED: true });
+
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: true,
+      email: "valid@test.edu",
+    } as any);
+
+    const eventUuid = "a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d";
+
+    mockRpcHandler = async (name) => {
+      if (name === "register_participant_events") {
+        return {
+          data: [
+            {
+              participant_id: "SVK26-VALID",
+              participant_event_id: "pe-valid-1",
+              event_id: eventUuid,
+              event_name: "Valid Event",
+              status: "added",
+              payment_order_id: "po-valid-1",
+            },
+          ],
+          error: null,
+        };
+      }
+      return { data: null, error: null };
+    };
+
+    mockFromHandler = (table: string) => {
+      if (table === "participants") {
+        return makeQueryChain({
+          id: "p-valid-uuid",
+          participant_id: "SVK26-VALID",
+          email: "valid@test.edu",
+        });
+      }
+      if (table === "payment_orders") {
+        return makeQueryChain({
+          id: "po-valid-1",
+          order_reference: "ORD-VALID-1",
+          amount: 150,
+          currency: "INR",
+          status: "pending",
+        });
+      }
+      if (table === "participant_events") {
+        return makeQueryChain([
+          {
+            id: "pe-valid-1",
+            participant_id: "p-valid-uuid",
+            event_id: eventUuid,
+            registration_status: "pending",
+            payment_status: "pending",
+            payment_amount: 150,
+            events: {
+              id: eventUuid,
+              name: "Valid Event",
+              registration_type: "individual",
+              registration_fee: 150,
+              payment_type: "paid",
+            },
+          },
+        ]);
+      }
+      return makeQueryChain(null);
+    };
+
+    const req = new NextRequest("http://localhost:3000/api/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Valid User",
+        college: "CGC Landran",
+        email: "valid@test.edu",
+        phone: "9876543210",
+        events: [{ eventId: eventUuid, members: [] }],
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await postRegister(req);
+    const data = await res.json();
+
+    expect([200, 201]).toContain(res.status);
+    expect(data.success).toBe(true);
+    expect(data.participantId).toBe("SVK26-VALID");
+  });
+
+  // 23. Campus Accommodation Booking lock remains independent of Participant Registration Form lock
+  it("23. Campus Accommodation Booking lock remains independent of Participant Registration Form lock", async () => {
+    // Case A: Accommodation locked, Registration unlocked
+    __setTestSiteAccess({ ACCOMMODATION_ENABLED: false, REGISTRATION_ENABLED: true, REGISTRATIONS_ENABLED: true });
+
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: false,
+      email: "",
+    } as any);
+
+    const jsxUnlockedReg: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+    expect(jsxUnlockedReg.type).toBe("main");
+
+    // Case B: Accommodation unlocked, Registration locked
+    __setTestSiteAccess({ ACCOMMODATION_ENABLED: true, REGISTRATION_ENABLED: false, REGISTRATIONS_ENABLED: false });
+
+    const jsxLockedReg: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+    expect(jsxLockedReg.props?.classification).toBe("ACCESS RESTRICTED // REGISTRATION PAUSED");
+  });
+
+  // 24. A failed lock-state fetch does not silently create an inconsistent state or bypass server-side security
+  it("24. A failed lock-state fetch does not bypass server-side registration security", async () => {
+    // When DB query fails, fallback defaults apply safely without crashing
+    clearSiteAccessCache();
+    __setTestSiteAccess(null);
+
+    const access = await getSiteAccess();
+    expect(access.REGISTRATION_ENABLED).toBe(DEFAULT_SITE_ACCESS.REGISTRATION_ENABLED);
+    expect(access.REGISTRATIONS_ENABLED).toBe(DEFAULT_SITE_ACCESS.REGISTRATIONS_ENABLED);
+    expect(access.REGISTRATION_ENABLED).toBe(access.REGISTRATIONS_ENABLED);
+  });
+
+  // 25. Admin and public page use the same lock identifier and authoritative state
+  it("25. Admin and public page use the same synchronized lock identifiers and trigger route revalidation", async () => {
+    vi.spyOn(serverLib, "requirePrimaryMasterAdmin").mockResolvedValue({
+      authorized: true,
+      user: { id: "master-uuid", email: "jashandeep00030@gmail.com" } as any,
+    } as any);
+
+    let passedDetails: any = null;
+    mockRpcHandler = async (name, params) => {
+      if (name === "update_site_page_locks") {
+        passedDetails = params.p_details;
+        return { data: { success: true, audit_id: "audit-sync-test" }, error: null };
+      }
+      return { data: null, error: null };
+    };
+
+    // Toggle REGISTRATIONS_ENABLED via PATCH
+    const req = new NextRequest("http://localhost:3000/api/admin/site-access", {
+      method: "PATCH",
+      body: JSON.stringify({ key: "REGISTRATIONS_ENABLED", enabled: false }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await patchSiteAccessApi(req);
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.success).toBe(true);
+
+    // Both REGISTRATIONS_ENABLED and REGISTRATION_ENABLED are synchronized in the response and audit log
+    expect(data.siteAccess.REGISTRATIONS_ENABLED).toBe(false);
+    expect(data.siteAccess.REGISTRATION_ENABLED).toBe(false);
+    expect(passedDetails.locks.REGISTRATIONS_ENABLED).toBe(false);
+    expect(passedDetails.locks.REGISTRATION_ENABLED).toBe(false);
+
+    // Verifies revalidatePath was called for /register
+    expect(nextCache.revalidatePath).toHaveBeenCalledWith("/register");
   });
 });

@@ -16,6 +16,10 @@ import {
 import {
   calculateStayDates,
 } from "@/lib/accommodation-dates";
+import {
+  isAccommodationOptionAvailable,
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+} from "@/lib/config/site-access";
 
 export interface ExistingStay {
   id: string;
@@ -59,10 +63,24 @@ export default function AddAccommodationModal({
     focusRef: closeButtonRef,
   });
   const [planSlug, setPlanSlug] = useState("1_day");
-  const [selectedDate, setSelectedDate] = useState("2026-10-28");
+  const [selectedDate, setSelectedDate] = useState("2026-10-31");
   const [extraDays, setExtraDays] = useState<"none" | "before_27" | "after_30" | "both">("none");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [accommodationAvailability, setAccommodationAvailability] = useState<Record<string, boolean>>(
+    DEFAULT_ACCOMMODATION_AVAILABILITY
+  );
+
+  useEffect(() => {
+    fetch("/api/site-access")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.accommodationAvailability) {
+          setAccommodationAvailability(data.accommodationAvailability);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Calculate stay dates
   const { effectiveSlug, effectiveDate, startDate, endDate, durationDays, price } = useMemo(() => {
@@ -130,6 +148,11 @@ export default function AddAccommodationModal({
   const handleSubmit = async () => {
     if (isAccommodationLocked) {
       setErrorMessage("Campus Accommodation Booking Paused — Hostel allocations are temporarily closed by administration. Event registrations remain open.");
+      return;
+    }
+
+    if (!isAccommodationOptionAvailable(effectiveSlug, startDate, accommodationAvailability)) {
+      setErrorMessage("The selected accommodation dates are currently unavailable. Please choose an active date.");
       return;
     }
 
@@ -326,11 +349,21 @@ export default function AddAccommodationModal({
                   }}
                   className="w-full rounded-xl border border-white/15 bg-zinc-900 px-4 py-3 text-sm text-white outline-none focus:border-emerald-400 font-mono"
                 >
-                  <option value="2026-10-27">27 Oct (Day Before)</option>
-                  <option value="2026-10-28">28 Oct (Day 1)</option>
-                  <option value="2026-10-29">29 Oct (Day 2)</option>
-                  <option value="2026-10-30">30 Oct (Day After)</option>
-                  <option value="2026-10-31">31 Oct (Day 4 • Checkout 1 Nov)</option>
+                  <option value="2026-10-27" disabled={!isAccommodationOptionAvailable("1_day", "2026-10-27", accommodationAvailability)}>
+                    27 Oct (Day Before) {!isAccommodationOptionAvailable("1_day", "2026-10-27", accommodationAvailability) ? "— Unavailable" : ""}
+                  </option>
+                  <option value="2026-10-28" disabled={!isAccommodationOptionAvailable("1_day", "2026-10-28", accommodationAvailability)}>
+                    28 Oct (Day 1) {!isAccommodationOptionAvailable("1_day", "2026-10-28", accommodationAvailability) ? "— Unavailable" : ""}
+                  </option>
+                  <option value="2026-10-29" disabled={!isAccommodationOptionAvailable("1_day", "2026-10-29", accommodationAvailability)}>
+                    29 Oct (Day 2) {!isAccommodationOptionAvailable("1_day", "2026-10-29", accommodationAvailability) ? "— Unavailable" : ""}
+                  </option>
+                  <option value="2026-10-30" disabled={!isAccommodationOptionAvailable("1_day", "2026-10-30", accommodationAvailability)}>
+                    30 Oct (Day After) {!isAccommodationOptionAvailable("1_day", "2026-10-30", accommodationAvailability) ? "— Unavailable" : ""}
+                  </option>
+                  <option value="2026-10-31" disabled={!isAccommodationOptionAvailable("1_day", "2026-10-31", accommodationAvailability)}>
+                    31 Oct (Day 4 • Checkout 1 Nov) {!isAccommodationOptionAvailable("1_day", "2026-10-31", accommodationAvailability) ? "— Unavailable" : ""}
+                  </option>
                 </select>
               )}
 
@@ -344,8 +377,12 @@ export default function AddAccommodationModal({
                   }}
                   className="w-full rounded-xl border border-white/15 bg-zinc-900 px-4 py-3 text-sm text-white outline-none focus:border-emerald-400 font-mono"
                 >
-                  <option value="2026-10-28">28–29 Oct (Standard 2 Days • Checkout 30 Oct) — ₹999</option>
-                  <option value="2026-10-30">30–31 Oct (Weekend Extended • Checkout 1 Nov) — ₹999</option>
+                  <option value="2026-10-28" disabled={!isAccommodationOptionAvailable("2_days", "2026-10-28", accommodationAvailability)}>
+                    28–29 Oct (Standard 2 Days • Checkout 30 Oct) — ₹999 {!isAccommodationOptionAvailable("2_days", "2026-10-28", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
+                  <option value="2026-10-30" disabled={!isAccommodationOptionAvailable("2_days", "2026-10-30", accommodationAvailability)}>
+                    30–31 Oct (Weekend Extended • Checkout 1 Nov) — ₹999 {!isAccommodationOptionAvailable("2_days", "2026-10-30", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
                 </select>
               )}
 
@@ -360,9 +397,15 @@ export default function AddAccommodationModal({
                   }}
                   className="w-full rounded-xl border border-white/15 bg-zinc-900 px-4 py-3 text-sm text-white outline-none focus:border-emerald-400 font-mono"
                 >
-                  <option value="2026-10-27">27–29 Oct (Early Arrival • Checkout 30 Oct) — ₹1,498</option>
-                  <option value="2026-10-28">28–30 Oct (Fest + Day After • Checkout 31 Oct) — ₹1,498</option>
-                  <option value="2026-10-29">29–31 Oct (Extended Stay • Checkout 1 Nov) — ₹1,498</option>
+                  <option value="2026-10-27" disabled={!isAccommodationOptionAvailable("3_days", "2026-10-27", accommodationAvailability)}>
+                    27–29 Oct (Early Arrival • Checkout 30 Oct) — ₹1,498 {!isAccommodationOptionAvailable("3_days", "2026-10-27", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
+                  <option value="2026-10-28" disabled={!isAccommodationOptionAvailable("3_days", "2026-10-28", accommodationAvailability)}>
+                    28–30 Oct (Fest + Day After • Checkout 31 Oct) — ₹1,498 {!isAccommodationOptionAvailable("3_days", "2026-10-28", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
+                  <option value="2026-10-29" disabled={!isAccommodationOptionAvailable("3_days", "2026-10-29", accommodationAvailability)}>
+                    29–31 Oct (Extended Stay • Checkout 1 Nov) — ₹1,498 {!isAccommodationOptionAvailable("3_days", "2026-10-29", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
                 </select>
               )}
 
@@ -377,8 +420,12 @@ export default function AddAccommodationModal({
                   }}
                   className="w-full rounded-xl border border-white/15 bg-zinc-900 px-4 py-3 text-sm text-white outline-none focus:border-emerald-400 font-mono"
                 >
-                  <option value="2026-10-27">27–30 Oct (Full Fest Stay • Checkout 31 Oct) — ₹1,997</option>
-                  <option value="2026-10-28">28–31 Oct (Extended Full Stay • Checkout 1 Nov) — ₹1,997</option>
+                  <option value="2026-10-27" disabled={!isAccommodationOptionAvailable("4_days", "2026-10-27", accommodationAvailability)}>
+                    27–30 Oct (Full Fest Stay • Checkout 31 Oct) — ₹1,997 {!isAccommodationOptionAvailable("4_days", "2026-10-27", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
+                  <option value="2026-10-28" disabled={!isAccommodationOptionAvailable("4_days", "2026-10-28", accommodationAvailability)}>
+                    28–31 Oct (Extended Full Stay • Checkout 1 Nov) — ₹1,997 {!isAccommodationOptionAvailable("4_days", "2026-10-28", accommodationAvailability) ? "(Unavailable)" : ""}
+                  </option>
                 </select>
               )}
             </div>

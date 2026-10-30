@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
       const verifiedKeys = selectedItemKeys.filter((k: string) => eligibleKeySet.has(k));
       if (verifiedKeys.length === 0) {
         return NextResponse.json(
-          { error: "None of the selected registrations qualify for certificates under main check-in and payment rules." },
+          { error: "None of the selected registrations qualify for certificates." },
           { status: 400 }
         );
       }

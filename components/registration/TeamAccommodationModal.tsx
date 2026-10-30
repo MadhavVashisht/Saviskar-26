@@ -16,6 +16,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { calculateStayDates } from "@/lib/accommodation-dates";
+import {
+  isAccommodationOptionAvailable,
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+} from "@/lib/config/site-access";
 
 export interface TeamMemberForModal {
   id: string;
@@ -78,14 +82,29 @@ export default function TeamAccommodationModal({
     focusRef: closeButtonRef,
   });
 
-  // Map of member email -> selection state (defaulting to festival standard: 2_days, 28th-30th Oct)
+  const [accommodationAvailability, setAccommodationAvailability] = useState<Record<string, boolean>>(
+    DEFAULT_ACCOMMODATION_AVAILABILITY
+  );
+
+  useEffect(() => {
+    fetch("/api/site-access")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.accommodationAvailability) {
+          setAccommodationAvailability(data.accommodationAvailability);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Map of member email -> selection state (defaulting to festival standard: 2_days, 30th-31st Oct)
   const [selections, setSelections] = useState<Record<string, MemberBookingSelection>>(() => {
     const initial: Record<string, MemberBookingSelection> = {};
     for (const m of members) {
       initial[m.email] = {
         selected: false,
         planSlug: "2_days",
-        selectedDate: "2026-10-28",
+        selectedDate: "2026-10-30",
         extraDays: "none",
       };
     }
@@ -314,6 +333,13 @@ export default function TeamAccommodationModal({
     if (calculatedItems.length === 0) {
       setErrorMessage("Please select at least one team member for accommodation.");
       return;
+    }
+
+    for (const item of calculatedItems) {
+      if (!isAccommodationOptionAvailable(item.selection.planSlug, item.startDate, accommodationAvailability)) {
+        setErrorMessage(`Accommodation stay (${item.selection.planSlug}, ${item.startDate}) for ${item.member.name} is currently unavailable.`);
+        return;
+      }
     }
 
     if (hasAnyConflict) {

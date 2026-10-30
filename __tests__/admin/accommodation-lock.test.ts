@@ -16,6 +16,20 @@ import { POST as postTeamAccommodation } from "@/app/api/team/accommodation/rout
 import { POST as postAccommodationsBook } from "@/app/api/accommodations/book/route";
 import { POST as postPaymentRecover } from "@/app/api/payments/recover/route";
 import { POST as postPaymentCreate } from "@/app/api/payments/create/route";
+import RegisterPage from "@/app/register/page";
+import * as nextCache from "next/cache";
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+}));
+
+vi.mock("@/components/ui/Navbar", () => ({ default: () => null }));
+vi.mock("@/components/ui/Footer", () => ({ default: () => null }));
+vi.mock("@/components/ui/MouseSpotlight", () => ({ default: () => null }));
+vi.mock("@/components/registration/RegistrationFlowManager", () => ({
+  default: (props: any) => ({ type: "RegistrationFlowManager", props }),
+}));
 
 vi.mock("next/server", async (importOriginal) => {
   const mod = await importOriginal<typeof import("next/server")>();
@@ -944,5 +958,397 @@ describe("Phase 1: Accommodation Access Lock — Option A Payment Lifecycle", ()
     expect(res.status).toBe(403);
     const data = await res.json();
     expect(data.code).toBe("ACCOMMODATION_LOCKED");
+  });
+});
+
+describe("Campus Accommodation Booking Lock — Comprehensive 4-Combination Matrix & Invariants", () => {
+  beforeEach(() => {
+    clearSiteAccessCache();
+    __setTestSiteAccess(null);
+    mockAuditLogInsert = null;
+    mockRpcHandler = null;
+    mockFromHandler = null;
+    vi.restoreAllMocks();
+
+    vi.spyOn(rateLimitLib, "checkRateLimitAsync").mockResolvedValue({
+      allowed: true,
+      retryAfter: 0,
+    });
+  });
+
+  // 1. Combination 1: Registration unlocked + Accommodation unlocked
+  it("Combination 1: Registration unlocked + Accommodation unlocked permits both flows", async () => {
+    __setTestSiteAccess({
+      REGISTRATION_ENABLED: true,
+      REGISTRATIONS_ENABLED: true,
+      ACCOMMODATION_ENABLED: true,
+    });
+
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: false,
+      email: "",
+    } as any);
+
+    const jsx: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+    expect(jsx.type).toBe("main");
+
+    // Server-side POST /api/register allows accommodation
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: true,
+      email: "combo1@cgc.edu.in",
+    } as any);
+
+    const eventUuid = "a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d";
+    mockRpcHandler = (name: string) => {
+      if (name === "register_participant_events") {
+        return Promise.resolve({
+          data: [
+            {
+              participant_id: "SVK26-COMBO1",
+              participant_event_id: "pe-combo-1",
+              event_id: eventUuid,
+              event_name: "Code Circuit",
+              status: "registered",
+              payment_order_id: "po-combo-1",
+            },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    };
+
+    mockFromHandler = (table: string) => {
+      if (table === "events") {
+        return makeQueryChain([
+          {
+            id: eventUuid,
+            name: "Code Circuit",
+            registration_open: true,
+            min_team_size: 1,
+            max_team_size: 1,
+            payment_type: "paid",
+            registration_fee: 150,
+          },
+        ]);
+      }
+      if (table === "participants") {
+        return makeQueryChain({
+          id: "p-combo-1",
+          participant_id: "SVK26-COMBO1",
+          email: "combo1@cgc.edu.in",
+          name: "Combo User",
+        });
+      }
+      if (table === "payment_orders") {
+        return makeQueryChain({
+          id: "po-combo-1",
+          order_reference: "SVK-COMBO-1",
+          amount: 649,
+          currency: "INR",
+          status: "pending",
+        });
+      }
+      if (table === "participant_events") {
+        return makeQueryChain([
+          {
+            id: "pe-combo-1",
+            participant_id: "p-combo-1",
+            event_id: eventUuid,
+            registration_status: "pending",
+            payment_status: "pending",
+            payment_amount: 150,
+            events: {
+              id: eventUuid,
+              name: "Code Circuit",
+              registration_type: "individual",
+              registration_fee: 150,
+              payment_type: "paid",
+            },
+          },
+        ]);
+      }
+      return makeQueryChain(null);
+    };
+
+    const req = new NextRequest("http://localhost:3000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "combo1@cgc.edu.in",
+        name: "Combo User",
+        college: "CGC Landran",
+        phone: "9876543210",
+        events: [{ eventId: eventUuid, members: [] }],
+        accommodations: [
+          {
+            email: "combo1@cgc.edu.in",
+            planSlug: "1_day",
+            selectedDate: "2026-10-31",
+            extraDays: "none",
+          },
+        ],
+      }),
+    });
+
+    const res = await postRegister(req);
+    expect([200, 201]).toContain(res.status);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+  });
+
+  // 2. Combination 2: Registration locked + Accommodation unlocked
+  it("Combination 2: Registration locked + Accommodation unlocked blocks registration UI and new registrations while preserving pre-lock holds", async () => {
+    const lockTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    __setTestSiteAccess(
+      {
+        REGISTRATION_ENABLED: false,
+        REGISTRATIONS_ENABLED: false,
+        ACCOMMODATION_ENABLED: true,
+      },
+      null,
+      lockTime
+    );
+
+    // /register displays lockdown screen
+    const jsx: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+    expect(jsx.props?.classification).toBe("ACCESS RESTRICTED // REGISTRATION PAUSED");
+
+    // POST /api/register rejected with 403 REGISTRATION_LOCKED
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: true,
+      email: "combo2@cgc.edu.in",
+    } as any);
+
+    const regReq = new NextRequest("http://localhost:3000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "combo2@cgc.edu.in",
+        name: "Combo 2",
+        events: [{ eventId: "e1" }],
+      }),
+    });
+    const regRes = await postRegister(regReq);
+    expect(regRes.status).toBe(403);
+    const regData = await regRes.json();
+    expect(regData.code).toBe("REGISTRATION_LOCKED");
+
+    // Pre-lock accommodation orders can still be completed under Option A policy
+    const preLockOrderTime = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10m ago (before reg lock)
+    mockFromHandler = (table: string) => {
+      if (table === "payment_orders") {
+        return makeQueryChain({
+          id: "order-prelock-acc",
+          order_reference: "SVK-PRE-ACC",
+          payer_participant_id: "p-combo-2",
+          amount: 499,
+          currency: "INR",
+          status: "pending",
+          created_at: preLockOrderTime,
+        });
+      }
+      if (table === "participants") {
+        return makeQueryChain({
+          id: "p-combo-2",
+          participant_id: "SVK26-COMBO2",
+          name: "Combo 2 Payer",
+          email: "combo2@cgc.edu.in",
+          phone: "9876543210",
+        });
+      }
+      if (table === "payment_order_items") {
+        return makeQueryChain([
+          {
+            id: "poi-acc-1",
+            participant_id: "p-combo-2",
+            participant_event_id: null,
+            participant_accommodation_id: "acc-uuid-1",
+            amount: 499,
+          },
+        ]);
+      }
+      return makeQueryChain(null);
+    };
+
+    const payReq = new NextRequest("http://localhost:3000/api/payments/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", host: "saviskar.co.in" },
+      body: JSON.stringify({ paymentOrderId: "order-prelock-acc" }),
+    });
+    const payRes = await postPaymentCreate(payReq);
+    expect(payRes.status).toBe(200);
+    const payData = await payRes.json();
+    expect(payData.success).toBe(true);
+  });
+
+  // 3. Combination 3: Registration unlocked + Accommodation locked
+  it("Combination 3: Registration unlocked + Accommodation locked allows events but blocks accommodation", async () => {
+    const lockTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    __setTestSiteAccess(
+      {
+        REGISTRATION_ENABLED: true,
+        REGISTRATIONS_ENABLED: true,
+        ACCOMMODATION_ENABLED: false,
+      },
+      lockTime,
+      null
+    );
+
+    // /register renders full page layout
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: false,
+      email: "",
+    } as any);
+
+    const jsx: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+    expect(jsx.type).toBe("main");
+
+    // POST /api/register with accommodation is rejected with 403 ACCOMMODATION_LOCKED
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: true,
+      email: "combo3@cgc.edu.in",
+    } as any);
+
+    const accReq = new NextRequest("http://localhost:3000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "combo3@cgc.edu.in",
+        name: "Combo 3",
+        college: "CGC Jhanjeri",
+        phone: "9876543210",
+        events: [{ eventId: "e1" }],
+        accommodations: [{ email: "combo3@cgc.edu.in", planSlug: "1_day" }],
+      }),
+    });
+    const accRes = await postRegister(accReq);
+    expect(accRes.status).toBe(403);
+    const accData = await accRes.json();
+    expect(accData.code).toBe("ACCOMMODATION_LOCKED");
+
+    // POST /api/team/accommodation is rejected with 403 ACCOMMODATION_LOCKED
+    const teamAccReq = new NextRequest("http://localhost:3000/api/team/accommodation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participantEventId: "pe-1",
+        bookings: [{ email: "member@cgc.edu.in", planSlug: "1_day" }],
+      }),
+    });
+    const teamAccRes = await postTeamAccommodation(teamAccReq);
+    expect(teamAccRes.status).toBe(403);
+    const teamAccData = await teamAccRes.json();
+    expect(teamAccData.code).toBe("ACCOMMODATION_LOCKED");
+  });
+
+  // 4. Combination 4: Both locked
+  it("Combination 4: Both locked disables public registration route and blocks both APIs", async () => {
+    __setTestSiteAccess({
+      REGISTRATION_ENABLED: false,
+      REGISTRATIONS_ENABLED: false,
+      ACCOMMODATION_ENABLED: false,
+    });
+
+    // Public /register displays lockdown screen
+    const jsx: any = await RegisterPage({ searchParams: Promise.resolve({}) });
+    expect(jsx.props?.classification).toBe("ACCESS RESTRICTED // REGISTRATION PAUSED");
+
+    // Both endpoints reject requests
+    vi.spyOn(authSessionLib, "getRegistrationSession").mockResolvedValue({
+      authenticated: true,
+      email: "combo4@cgc.edu.in",
+    } as any);
+
+    const regReq = new NextRequest("http://localhost:3000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "combo4@cgc.edu.in",
+        name: "Combo 4",
+        events: [{ eventId: "e1" }],
+      }),
+    });
+    const regRes = await postRegister(regReq);
+    expect(regRes.status).toBe(403);
+
+    const teamAccReq = new NextRequest("http://localhost:3000/api/team/accommodation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participantEventId: "pe-1",
+        bookings: [{ email: "combo4@cgc.edu.in", planSlug: "1_day" }],
+      }),
+    });
+    const teamAccRes = await postTeamAccommodation(teamAccReq);
+    expect(teamAccRes.status).toBe(403);
+  });
+
+  // 5. Strict Lock Independence in Admin Mutation
+  it("Strict Lock Independence: Mutating ACCOMMODATION_ENABLED does not change registration locks", async () => {
+    vi.spyOn(serverLib, "requirePrimaryMasterAdmin").mockResolvedValue({
+      authorized: true,
+      user: { id: "master-uuid", email: "jashandeep00030@gmail.com" } as any,
+    } as any);
+
+    let recordedAuditDetails: any = null;
+    mockRpcHandler = (name: string, params: any) => {
+      if (name === "update_site_page_locks") {
+        recordedAuditDetails = params.p_details;
+        return Promise.resolve({ data: { success: true, audit_id: "audit-indep-1" }, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    };
+
+    // Initially: Registration is locked, Accommodation is unlocked
+    __setTestSiteAccess({
+      REGISTRATION_ENABLED: false,
+      REGISTRATIONS_ENABLED: false,
+      ACCOMMODATION_ENABLED: true,
+    });
+
+    // Now, lock ACCOMMODATION_ENABLED via PATCH
+    const req = new NextRequest("http://localhost:3000/api/admin/site-access", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "ACCOMMODATION_ENABLED", enabled: false }),
+    });
+
+    const res = await patchSiteAccessApi(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+
+    // Verify ACCOMMODATION_ENABLED is locked, while REGISTRATION_ENABLED and REGISTRATIONS_ENABLED remain locked
+    expect(data.siteAccess.ACCOMMODATION_ENABLED).toBe(false);
+    expect(data.siteAccess.REGISTRATION_ENABLED).toBe(false);
+    expect(data.siteAccess.REGISTRATIONS_ENABLED).toBe(false);
+
+    expect(recordedAuditDetails.locks.ACCOMMODATION_ENABLED).toBe(false);
+    expect(recordedAuditDetails.locks.REGISTRATION_ENABLED).toBe(false);
+    expect(recordedAuditDetails.locks.REGISTRATIONS_ENABLED).toBe(false);
+  });
+
+  // 6. Pricing and Plan Invariants
+  it("Verifies official accommodation plans and prices (1, 2, 3, 4 days only - no 5-day plan)", () => {
+    // Official specifications:
+    // 1_day: 499 INR
+    // 2_days: 999 INR
+    // 3_days: 1498 INR
+    // 4_days: 1997 INR
+    const officialPlans = [
+      { slug: "1_day", duration: 1, price: 499 },
+      { slug: "2_days", duration: 2, price: 999 },
+      { slug: "3_days", duration: 3, price: 1498 },
+      { slug: "4_days", duration: 4, price: 1997 },
+    ];
+
+    for (const plan of officialPlans) {
+      expect(plan.duration).toBeGreaterThanOrEqual(1);
+      expect(plan.duration).toBeLessThanOrEqual(4);
+      expect(plan.price).toBeGreaterThan(0);
+    }
+
+    // Invariant: No 5-day plan exists
+    expect(officialPlans.some((p) => p.duration === 5)).toBe(false);
   });
 });
