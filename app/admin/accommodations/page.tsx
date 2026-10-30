@@ -18,7 +18,11 @@ import {
   ChevronDown,
   ChevronRight
 } from "lucide-react";
-import { getCanonicalStayLabel } from "@/lib/accommodation-dates";
+import {
+  getCanonicalStayLabel,
+  matchesAccommodationDateFilter,
+  buildParticipantActiveStaysMap,
+} from "@/lib/accommodation-dates";
 import { exportAccommodationXlsx } from "@/lib/admin/accommodation-excel-export";
 import { groupAccommodationRecords, paginateGroupedAccommodations, getGroupControlsId, getGroupHeaderId, groupRecordsByParticipant, ParticipantAccommodationEntry } from "@/lib/admin/accommodation-grouping";
 import { ParticipantDetailDialog } from "@/components/admin/ParticipantDetailDialog";
@@ -1315,6 +1319,10 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<"allocate" | "check-in" | "check-out" | null>(null);
 
+  const participantActiveStaysMap = useMemo(() => {
+    return buildParticipantActiveStaysMap(data?.accommodations || []);
+  }, [data?.accommodations]);
+
   const filtered = useMemo(() => {
     if (!data) return [];
     return data.accommodations.filter(acc => {
@@ -1440,38 +1448,13 @@ function RegistrationsTable({ data, onRefresh, initialFilters = {} }: { data: Da
       const matchesType =
         filterType === "all" || (filterType === "faculty" ? !!p.is_faculty : !p.is_faculty);
 
-      let matchesDate = true;
-      if (filterDate === "27") {
-        matchesDate = normStart === "2026-10-27" && acc.duration_days === 1;
-      } else if (filterDate === "28") {
-        matchesDate = normStart === "2026-10-28" && acc.duration_days === 1;
-      } else if (filterDate === "29") {
-        matchesDate = normStart === "2026-10-29" && acc.duration_days === 1;
-      } else if (filterDate === "30") {
-        matchesDate = normStart === "2026-10-30" && acc.duration_days === 1;
-      } else if (filterDate === "31") {
-        matchesDate = normStart === "2026-10-31" && acc.duration_days === 1;
-      } else if (filterDate === "2_days") {
-        matchesDate = acc.duration_days === 2 && normStart === "2026-10-28";
-      } else if (filterDate === "2_days_30") {
-        matchesDate = acc.duration_days === 2 && normStart === "2026-10-30";
-      } else if (filterDate === "3_days_27") {
-        matchesDate = acc.duration_days === 3 && normStart === "2026-10-27";
-      } else if (filterDate === "3_days_30") {
-        matchesDate = acc.duration_days === 3 && (normStart === "2026-10-28" || normStart === "2026-10-30");
-      } else if (filterDate === "3_days_29") {
-        matchesDate = acc.duration_days === 3 && normStart === "2026-10-29";
-      } else if (filterDate === "4_days") {
-        matchesDate = acc.duration_days === 4 && normStart === "2026-10-27";
-      } else if (filterDate === "4_days_28") {
-        matchesDate = acc.duration_days === 4 && normStart === "2026-10-28";
-      } else if (filterDate === "both" || filterDate === "multi") {
-        matchesDate = acc.duration_days >= 2;
-      }
+      const pId = (p.participant_id || acc.participant_id || "").trim();
+      const activeStays = participantActiveStaysMap.get(pId);
+      const matchesDate = matchesAccommodationDateFilter(acc, filterDate, activeStays);
 
       return matchesSearch && matchesStatus && matchesGender && matchesState && matchesDuration && matchesStartDate && matchesCheckoutDate && matchesCheckIn && matchesHostel && matchesRoom && matchesType && matchesDate;
     });
-  }, [data, search, filterStatus, filterGender, filterType, filterState, filterDuration, filterStartDate, filterCheckoutDate, filterCheckIn, filterHostel, filterRoom, filterDate]);
+  }, [data, search, filterStatus, filterGender, filterType, filterState, filterDuration, filterStartDate, filterCheckoutDate, filterCheckIn, filterHostel, filterRoom, filterDate, participantActiveStaysMap]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(50);

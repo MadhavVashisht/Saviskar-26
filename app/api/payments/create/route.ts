@@ -33,7 +33,11 @@ import {
 } from "@/lib/payments/resume-token";
 import { getCanonicalPaymentBaseUrl } from "@/lib/payments/canonical-url";
 import { CHECKOUT_EXPIRATION_THRESHOLD_MS } from "@/lib/accommodation-expiration";
-import { getSiteAccessState, getSiteAccess } from "@/lib/config/site-access";
+import {
+  getSiteAccessState,
+  getSiteAccess,
+  isAccommodationOptionAvailable,
+} from "@/lib/config/site-access";
 
 function errorResponse(
   message: string,
@@ -314,6 +318,50 @@ export async function POST(
           403,
           "ACCOMMODATION_LOCKED"
         );
+      }
+    }
+
+    // Granular Accommodation Availability Safeguard
+    const participantAccommodationIds = orderItems
+      .map((item) => item.participant_accommodation_id)
+      .filter(Boolean);
+
+    if (participantAccommodationIds.length > 0) {
+      const orderCreatedAt = new Date(paymentOrder.created_at || 0).getTime();
+      const orderAgeMs = Date.now() - orderCreatedAt;
+
+      const { data: accRecords } = await supabaseAdmin
+        .from("participant_accommodations")
+        .select("id, start_date, plan_slug")
+        .in("id", participantAccommodationIds);
+
+      if (accRecords && accRecords.length > 0) {
+        for (const acc of accRecords) {
+          const isAvail = isAccommodationOptionAvailable(
+            acc.plan_slug,
+            acc.start_date,
+            siteAccessState.accommodationAvailability
+          );
+          if (!isAvail) {
+            if (orderAgeMs >= CHECKOUT_EXPIRATION_THRESHOLD_MS) {
+              return errorResponse(
+                "This accommodation booking hold has expired and the selected accommodation option is currently unavailable.",
+                403,
+                "ACCOMMODATION_DATES_UNAVAILABLE"
+              );
+            }
+            const lockTime = siteAccessState.accommodationLockTimestamp
+              ? new Date(siteAccessState.accommodationLockTimestamp).getTime()
+              : 0;
+            if (lockTime > 0 && orderCreatedAt >= lockTime) {
+              return errorResponse(
+                "The selected accommodation option is currently unavailable.",
+                403,
+                "ACCOMMODATION_DATES_UNAVAILABLE"
+              );
+            }
+          }
+        }
       }
     }
   }

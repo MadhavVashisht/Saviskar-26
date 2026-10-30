@@ -3,6 +3,9 @@ import LegacyView from "@/components/legacy/LegacyView";
 import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import { getSiteAccess } from "@/lib/config/site-access";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "The Legacy | Saviskar 2026 — Aevorian Reverie",
   description:
@@ -16,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LegacyPage() {
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
 
   if (!siteAccess.LEGACY_ENABLED) {
     return (

@@ -1196,7 +1196,7 @@ export async function sendRegistrationEmail(
         ? `${data.idempotencyKey}_${recipient.participantId}`
         : undefined;
 
-      let { data: resData, error: resError } = await resend.emails.send(
+      const sendArgs: [any, any?] = [
         {
           from: fromEmail,
           to: [destinationEmail],
@@ -1205,8 +1205,12 @@ export async function sendRegistrationEmail(
           headers: recipientIdempKey ? { "X-Entity-Ref-ID": recipientIdempKey } : undefined,
           ...(attachments ? { attachments } : {}),
         },
-        recipientIdempKey ? ({ idempotencyKey: recipientIdempKey } as any) : undefined
-      );
+      ];
+      if (recipientIdempKey) {
+        sendArgs.push({ idempotencyKey: recipientIdempKey } as any);
+      }
+
+      let { data: resData, error: resError } = await (resend.emails.send as any)(...sendArgs);
 
       if (resError && (resError as { statusCode?: number; message?: string }).statusCode === 403 && String((resError as { message?: string }).message || "").includes("domain is not verified")) {
         if (guardActive) {
@@ -1220,7 +1224,7 @@ export async function sendRegistrationEmail(
         }
 
         console.warn(`[REGISTER EMAIL] Domain not verified in Resend. Retrying with onboarding fallback...`);
-        const fallbackRes = await resend.emails.send(
+        const fallbackArgs: [any, any?] = [
           {
             from: "Saviskar 2026 <onboarding@resend.dev>",
             to: [destinationEmail],
@@ -1229,8 +1233,12 @@ export async function sendRegistrationEmail(
             headers: recipientIdempKey ? { "X-Entity-Ref-ID": recipientIdempKey } : undefined,
             ...(attachments ? { attachments } : {}),
           },
-          recipientIdempKey ? ({ idempotencyKey: recipientIdempKey } as any) : undefined
-        );
+        ];
+        if (recipientIdempKey) {
+          fallbackArgs.push({ idempotencyKey: recipientIdempKey } as any);
+        }
+
+        const fallbackRes = await (resend.emails.send as any)(...fallbackArgs);
         resData = fallbackRes.data;
         resError = fallbackRes.error;
       }

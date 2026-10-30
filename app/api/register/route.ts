@@ -4,8 +4,16 @@ import { sendRegistrationEmail } from "@/lib/send-registration-email";
 import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 import { generatePaymentResumeUrl } from "@/lib/payments/resume-token";
 import { getRegistrationSession } from "@/lib/auth/session";
-import { getSiteAccess } from "@/lib/config/site-access";
-import { calculateStayDates, isValidAccommodationDate } from "@/lib/accommodation-dates";
+import {
+  getSiteAccess,
+  getSiteAccessState,
+  isAccommodationOptionAvailable,
+} from "@/lib/config/site-access";
+import {
+  calculateStayDates,
+  isValidAccommodationDate,
+  getCanonicalStayLabel,
+} from "@/lib/accommodation-dates";
 import { formatAccommodationOverlapError } from "@/lib/accommodation-expiration";
 
 type MemberInput = {
@@ -613,6 +621,29 @@ export async function POST(
     );
   }
 
+  // 9B. VALIDATE EVENT REGISTRATION OPEN STATUS
+  if (events.length > 0) {
+    const requestedEventIds = Array.from(uniqueEventIds);
+    const { data: dbEvents, error: dbEventsError } = await supabaseAdmin
+      .from("events")
+      .select("id, name, active, registration_open")
+      .in("id", requestedEventIds);
+
+    if (dbEventsError) {
+      console.warn("Failed to pre-verify competition availability:", dbEventsError);
+    } else if (dbEvents && dbEvents.length > 0) {
+      for (const ev of dbEvents) {
+        if (ev.active === false || ev.registration_open === false) {
+          return errorResponse(
+            `Registration for competition "${ev.name}" is currently closed.`,
+            403,
+            "EVENT_REGISTRATION_CLOSED"
+          );
+        }
+      }
+    }
+  }
+
   // =====================================================
   // 10. NORMALIZE FOR DATABASE RPC
   // =====================================================
@@ -639,8 +670,8 @@ export async function POST(
           event.members.map(
             (member) => {
               const idCardPath =
-                (member.idCardStoragePath && !member.idCardStoragePath.startsWith(`${authenticatedEmail}/`)) 
-                  ? null 
+                (member.idCardStoragePath && !member.idCardStoragePath.startsWith(`${authenticatedEmail}/`))
+                  ? null
                   : member.idCardStoragePath;
               const memberCollege = member.college || college;
 
@@ -694,7 +725,7 @@ export async function POST(
     }
 
     const facIdCardStoragePath = cleanString(rawFac.idCardStoragePath, 255);
-    
+
     if (facIdCardStoragePath && !facIdCardStoragePath.startsWith(`${authenticatedEmail}/`)) {
       return errorResponse("Invalid faculty ID card storage path ownership.", 403);
     }
@@ -795,11 +826,27 @@ export async function POST(
         );
       }
 
-      const { startDate, endDate } = calculateStayDates(
+      const { startDate, endDate, durationDays } = calculateStayDates(
         effectivePlanSlug,
         selectedDate,
         rawExtraDays
       );
+
+      const siteAccessState = await getSiteAccessState({ bypassCache: true });
+      if (
+        !isAccommodationOptionAvailable(
+          effectivePlanSlug,
+          startDate,
+          siteAccessState.accommodationAvailability
+        )
+      ) {
+        const canonicalLabel = getCanonicalStayLabel(startDate, durationDays);
+        return errorResponse(
+          `Accommodation option ${canonicalLabel} (${effectivePlanSlug}) is currently unavailable.`,
+          403,
+          "ACCOMMODATION_DATES_UNAVAILABLE"
+        );
+      }
 
       const existingStays = participantStays.get(accEmail) || [];
 
@@ -947,6 +994,28 @@ export async function POST(
         "Participant registration is temporarily paused by administration. Please check back shortly.",
         403,
         "REGISTRATION_LOCKED"
+      );
+    }
+    if (
+      code === "SVK14" ||
+      message.includes("EVENT_REGISTRATION_CLOSED") ||
+      message.includes("Event registration is closed")
+    ) {
+      return errorResponse(
+        message || "Registration for one or more selected competitions is currently closed.",
+        403,
+        "EVENT_REGISTRATION_CLOSED"
+      );
+    }
+    if (
+      code === "SVK15" ||
+      message.includes("ACCOMMODATION_DATES_UNAVAILABLE") ||
+      message.includes("Accommodation dates are unavailable")
+    ) {
+      return errorResponse(
+        message || "The selected accommodation dates are currently unavailable.",
+        403,
+        "ACCOMMODATION_DATES_UNAVAILABLE"
       );
     }
     if (code === "SVK07" || code === "SVK08" || code === "SVK09" || code === "SVK10") {
@@ -1197,7 +1266,7 @@ export async function POST(
     // We update in series; there are usually very few members (1-10)
     for (const update of participantUpdates) {
       const updatePayload: Record<string, string> = {};
-      
+
       // Strict validation for allowed gender values
       if (update.gender && ["male", "female", "other"].includes(update.gender)) {
         updatePayload.gender = update.gender;

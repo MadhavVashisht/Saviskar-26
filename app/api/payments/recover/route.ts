@@ -7,7 +7,10 @@ import {
   createPaymentResumeToken,
 } from "@/lib/payments/resume-token";
 import { getCanonicalPaymentBaseUrl } from "@/lib/payments/canonical-url";
-import { getSiteAccessState } from "@/lib/config/site-access";
+import {
+  getSiteAccessState,
+  isAccommodationOptionAvailable,
+} from "@/lib/config/site-access";
 import { CHECKOUT_EXPIRATION_THRESHOLD_MS } from "@/lib/accommodation-expiration";
 
 function errorResponse(message: string, status: number, code?: string) {
@@ -79,6 +82,8 @@ export async function POST(request: NextRequest) {
   let participantData: { id: string; participant_id: string; email: string } | null = null;
   let amount = 0;
   let itemEventId: string | null = null;
+  let accommodationPlanSlug: string | null = null;
+  let accommodationStartDate: string | null = null;
 
   if (participantEventId) {
     const { data: pe, error: peError } = await supabaseAdmin
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
     const { data: pa, error: paError } = await supabaseAdmin
       .from("participant_accommodations")
       .select(`
-        id, status, amount, payment_order_id, start_date, end_date,
+        id, status, amount, payment_order_id, start_date, end_date, plan_slug,
         participants!inner(participant_id, id, email)
       `)
       .eq("id", participantAccommodationId)
@@ -121,6 +126,9 @@ export async function POST(request: NextRequest) {
     if (paError || !pa) {
       return errorResponse("Accommodation booking not found.", 404);
     }
+
+    accommodationPlanSlug = (pa as any).plan_slug || null;
+    accommodationStartDate = pa.start_date || null;
 
     const rawParticipant = pa.participants;
     participantData = Array.isArray(rawParticipant) ? rawParticipant[0] : rawParticipant;
@@ -277,8 +285,10 @@ export async function POST(request: NextRequest) {
     // Option A: If recovering an accommodation, verify pre-lock creation & non-expiration
     if (participantAccommodationId) {
       const siteAccessState = await getSiteAccessState({ bypassCache: true });
+      const orderCreatedAt = new Date(paymentOrderData?.created_at || 0).getTime();
+      const orderAgeMs = Date.now() - orderCreatedAt;
+
       if (!siteAccessState.locks.ACCOMMODATION_ENABLED) {
-        const orderCreatedAt = new Date(paymentOrderData?.created_at || 0).getTime();
         const lockTime = siteAccessState.accommodationLockTimestamp
           ? new Date(siteAccessState.accommodationLockTimestamp).getTime()
           : 0;
@@ -291,13 +301,40 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const orderAgeMs = Date.now() - orderCreatedAt;
         if (orderAgeMs >= CHECKOUT_EXPIRATION_THRESHOLD_MS) {
           return errorResponse(
             "This accommodation booking hold has expired and accommodation is currently closed by administration.",
             403,
             "ACCOMMODATION_LOCKED"
           );
+        }
+      }
+
+      // Check granular accommodation availability
+      if (accommodationPlanSlug && accommodationStartDate) {
+        const isAvail = isAccommodationOptionAvailable(
+          accommodationPlanSlug,
+          accommodationStartDate,
+          siteAccessState.accommodationAvailability
+        );
+        if (!isAvail) {
+          if (orderAgeMs >= CHECKOUT_EXPIRATION_THRESHOLD_MS) {
+            return errorResponse(
+              "This accommodation booking hold has expired and the selected accommodation option is currently unavailable.",
+              403,
+              "ACCOMMODATION_DATES_UNAVAILABLE"
+            );
+          }
+          const lockTime = siteAccessState.accommodationLockTimestamp
+            ? new Date(siteAccessState.accommodationLockTimestamp).getTime()
+            : 0;
+          if (lockTime > 0 && orderCreatedAt >= lockTime) {
+            return errorResponse(
+              "The selected accommodation option is currently unavailable.",
+              403,
+              "ACCOMMODATION_DATES_UNAVAILABLE"
+            );
+          }
         }
       }
     }

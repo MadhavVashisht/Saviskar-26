@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Navbar from "@/components/ui/Navbar";
 import Hero from "@/components/starnight/Hero/Hero";
 import PastPerformances from "@/components/starnight/PastPerformances/PastPerformances";
 import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import { getSiteAccess } from "@/lib/config/site-access";
 
-const GuessArtist = dynamic(
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const GuessArtist = nextDynamic(
   () => import("@/components/starnight/GuessArtist/GuessArtist")
 );
-const LightsOut = dynamic(
+const LightsOut = nextDynamic(
   () => import("@/components/starnight/LightsOut/LightsOut")
 );
-const StarNightReveal = dynamic(
+const StarNightReveal = nextDynamic(
   () => import("@/components/starnight/StarNightReveal")
 );
 
@@ -100,7 +103,7 @@ const jsonLdStarNight = {
 };
 
 export default async function StarNightPage() {
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
   const schemaScript = (
     <script
       type="application/ld+json"

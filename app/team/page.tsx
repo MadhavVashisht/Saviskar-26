@@ -3,6 +3,9 @@ import TeamView from "@/components/team/TeamView";
 import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import { getSiteAccess } from "@/lib/config/site-access";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Organising Team & Student Council (SAC) | CGC Saviskar 2026 — CGC University Mohali",
   description:
@@ -35,7 +38,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TeamPage() {
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
 
   if (!siteAccess.TEAM_ENABLED) {
     return (

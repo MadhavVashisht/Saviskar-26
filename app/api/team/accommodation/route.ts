@@ -15,10 +15,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getRegistrationSession } from "@/lib/auth/session";
 import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
-import { calculateStayDates, isValidAccommodationDate } from "@/lib/accommodation-dates";
+import {
+  calculateStayDates,
+  isValidAccommodationDate,
+  getCanonicalStayLabel,
+} from "@/lib/accommodation-dates";
 import { formatAccommodationOverlapError } from "@/lib/accommodation-expiration";
 import { getPaymentGateway } from "@/lib/payments";
-import { getSiteAccess } from "@/lib/config/site-access";
+import {
+  getSiteAccess,
+  getSiteAccessState,
+  isAccommodationOptionAvailable,
+} from "@/lib/config/site-access";
 
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -312,11 +320,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { startDate, endDate } = calculateStayDates(
+    const { startDate, endDate, durationDays } = calculateStayDates(
       effectivePlanSlug,
       selectedDate,
       rawExtraDays
     );
+
+    const siteAccessState = await getSiteAccessState({ bypassCache: true });
+    if (
+      !isAccommodationOptionAvailable(
+        effectivePlanSlug,
+        startDate,
+        siteAccessState.accommodationAvailability
+      )
+    ) {
+      const canonicalLabel = getCanonicalStayLabel(startDate, durationDays);
+      return errorResponse(
+        `Accommodation option ${canonicalLabel} (${effectivePlanSlug}) is currently unavailable.`,
+        403,
+        "ACCOMMODATION_DATES_UNAVAILABLE"
+      );
+    }
 
     // Check payload intra-member overlaps
     const existingStaysInPayload = payloadMemberStays.get(email) || [];

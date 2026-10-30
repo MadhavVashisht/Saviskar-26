@@ -3,6 +3,9 @@ import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import { getSiteAccess } from "@/lib/config/site-access";
 import ScheduleView from "@/components/schedule/ScheduleView";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Festival Schedule & Campus Radar | CGC Saviskar 2026 — CGC University Mohali",
   description:
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SchedulePage() {
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
 
   if (!siteAccess.SCHEDULE_ENABLED) {
     return (

@@ -11,6 +11,11 @@ import {
   EXPECTED_TEMPLATE_HASH,
 } from "@/lib/certificates/generator";
 import {
+  renderCertificateEmailHtml,
+  renderCertificateEmailText,
+  renderCertificateTeamBackupEmailHtml,
+} from "./certificate-email-template";
+import {
   isHybridDevelopmentModeActive,
   isPreviewDeployment,
   isProductionReadOnlyEnabled,
@@ -117,7 +122,7 @@ export async function createGeneralBroadcastCampaign(
     throw new Error(`Failed to create broadcast campaign: ${campErr?.message}`);
   }
 
-  // 2. Insert delivery rows
+  // 2. Insert delivery rows in safe chunks (250 items per batch) to prevent gateway payload timeouts
   const deliveries = cleanEmails.map((email) => ({
     campaign_id: campaign.id,
     recipient_email: email,
@@ -131,10 +136,14 @@ export async function createGeneralBroadcastCampaign(
     idempotency_key: generateDeliveryIdempotencyKey(campaign.id, email, "general"),
   }));
 
-  const { error: delErr } = await supabaseAdmin.from("broadcast_deliveries").insert(deliveries);
-  if (delErr) {
-    await supabaseAdmin.from("broadcast_campaigns").delete().eq("id", campaign.id);
-    throw new Error(`Failed to enqueue broadcast deliveries: ${delErr.message}`);
+  const CHUNK_SIZE = 250;
+  for (let i = 0; i < deliveries.length; i += CHUNK_SIZE) {
+    const chunk = deliveries.slice(i, i + CHUNK_SIZE);
+    const { error: delErr } = await supabaseAdmin.from("broadcast_deliveries").insert(chunk);
+    if (delErr) {
+      await supabaseAdmin.from("broadcast_campaigns").delete().eq("id", campaign.id);
+      throw new Error(`Failed to enqueue broadcast deliveries (batch ${Math.floor(i / CHUNK_SIZE) + 1}): ${delErr.message}`);
+    }
   }
 
   return { campaignId: campaign.id, totalDeliveries: cleanEmails.length };
@@ -218,12 +227,13 @@ export async function createCertificateCampaign(
         // In hybrid mode or for synthetic fixtures, the referenced registration rows may exist only in hosted Supabase.
         // We verify if the target row exists in the campaign database before setting relational foreign keys.
         // The schema's original_* columns permanently preserve the authoritative immutable UUIDs.
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         let fkParticipantEventId: string | null = null;
         let fkParticipantEventMemberId: string | null = null;
         let fkParticipantId: string | null = null;
         let fkEventId: string | null = null;
 
-        if (c.participantEventId) {
+        if (c.participantEventId && UUID_REGEX.test(c.participantEventId)) {
           const { data: peExists } = await supabaseAdmin
             .from("participant_events")
             .select("id")
@@ -232,7 +242,7 @@ export async function createCertificateCampaign(
           if (peExists) fkParticipantEventId = peExists.id;
         }
 
-        if (c.memberId) {
+        if (c.memberId && UUID_REGEX.test(c.memberId)) {
           const { data: memExists } = await supabaseAdmin
             .from("participant_event_members")
             .select("id")
@@ -241,7 +251,7 @@ export async function createCertificateCampaign(
           if (memExists) fkParticipantEventMemberId = memExists.id;
         }
 
-        if (c.participantId) {
+        if (c.participantId && UUID_REGEX.test(c.participantId)) {
           const { data: pExists } = await supabaseAdmin
             .from("participants")
             .select("id")
@@ -250,7 +260,7 @@ export async function createCertificateCampaign(
           if (pExists) fkParticipantId = pExists.id;
         }
 
-        if (c.eventId) {
+        if (c.eventId && UUID_REGEX.test(c.eventId)) {
           const { data: evExists } = await supabaseAdmin
             .from("events")
             .select("id")
@@ -259,14 +269,19 @@ export async function createCertificateCampaign(
           if (evExists) fkEventId = evExists.id;
         }
 
+        const originalPeId =
+          (c.participantEventId && UUID_REGEX.test(c.participantEventId) ? c.participantEventId : null) ||
+          (c.accommodationId && UUID_REGEX.test(c.accommodationId) ? c.accommodationId : null) ||
+          "00000000-0000-0000-0000-000000000000";
+
         const { data: newCert, error: insErr } = await supabaseAdmin
           .from("participation_certificates")
           .insert({
             certificate_number: certNumber,
             issue_source_key: c.issueSourceKey,
-            original_participant_event_id: c.participantEventId,
-            original_member_row_id: c.memberId || null,
-            original_participant_id: c.participantId || null,
+            original_participant_event_id: originalPeId,
+            original_member_row_id: (c.memberId && UUID_REGEX.test(c.memberId)) ? c.memberId : null,
+            original_participant_id: (c.participantId && UUID_REGEX.test(c.participantId)) ? c.participantId : null,
             participant_event_id: fkParticipantEventId,
             participant_event_member_id: fkParticipantEventMemberId,
             participant_id: fkParticipantId,
@@ -310,6 +325,44 @@ export async function createCertificateCampaign(
         const recipientName = certs[0]?.recipientName || "Participant";
         const idempKey = generateDeliveryIdempotencyKey(createdCampaignId, normEmail, "individual");
 
+        // Dynamic personalization per recipient
+        const isLegacyDefault =
+          !params.bodyHtml ||
+          params.bodyHtml.includes("Congratulations on your active participation in Saviskar 2026 at CGC University, Mohali!");
+
+        const primaryCert = certs[0];
+        const primaryEventName = primaryCert?.eventName || "Saviskar 2026";
+        const primaryCertNumber = primaryCert?.certificateNumber;
+        const isStayOnly = Boolean(primaryCert?.isStayOnly);
+
+        let bodyHtml = params.bodyHtml;
+        let bodyText = params.bodyText || "";
+
+        if (isLegacyDefault) {
+          bodyHtml = renderCertificateEmailHtml({
+            recipientName,
+            eventName: primaryEventName,
+            certificateNumber: primaryCertNumber,
+            isStayOnly,
+          });
+          bodyText = renderCertificateEmailText({
+            recipientName,
+            eventName: primaryEventName,
+            certificateNumber: primaryCertNumber,
+            isStayOnly,
+          });
+        } else {
+          // Token replacement for custom admin HTML templates
+          bodyHtml = params.bodyHtml
+            .replace(/\{\{\s*recipient_name\s*\}\}|\{\{\s*name\s*\}\}/gi, recipientName)
+            .replace(/\{\{\s*event_name\s*\}\}/gi, primaryEventName)
+            .replace(/\{\{\s*certificate_number\s*\}\}/gi, primaryCertNumber || "");
+          bodyText = (params.bodyText || params.bodyHtml.replace(/<[^>]+>/g, " ").trim())
+            .replace(/\{\{\s*recipient_name\s*\}\}|\{\{\s*name\s*\}\}/gi, recipientName)
+            .replace(/\{\{\s*event_name\s*\}\}/gi, primaryEventName)
+            .replace(/\{\{\s*certificate_number\s*\}\}/gi, primaryCertNumber || "");
+        }
+
         deliveryRows.push({
           id: deliveryId,
           campaign_id: createdCampaignId,
@@ -319,8 +372,8 @@ export async function createCertificateCampaign(
           part_number: 1,
           total_parts: 1,
           subject: params.subject.trim(),
-          body_html: params.bodyHtml,
-          body_text: params.bodyText || params.bodyHtml.replace(/<[^>]+>/g, " ").trim(),
+          body_html: bodyHtml,
+          body_text: bodyText,
           status: "queued",
           idempotency_key: idempKey,
         });
@@ -370,17 +423,30 @@ export async function createCertificateCampaign(
               ? `${params.subject.trim()} [Part ${partNumber} of ${totalParts}] - ${teamName}`
               : `${params.subject.trim()} - ${teamName}`;
 
+          const teamLeaderName = teamCerts.find((c) => c.isTeamLeader)?.recipientName || `${teamName} Leader`;
+          const partBodyHtml = renderCertificateTeamBackupEmailHtml({
+            teamName,
+            leaderName: teamLeaderName,
+            partNumber,
+            totalParts,
+            members: partCerts.map((c) => ({
+              recipientName: c.recipientName,
+              eventName: c.eventName,
+              certificateNumber: c.certificateNumber,
+            })),
+          });
+
           deliveryRows.push({
             id: deliveryId,
             campaign_id: createdCampaignId,
             recipient_email: contactEmail,
-            recipient_name: `${teamName} Leader`,
+            recipient_name: teamLeaderName,
             channel: "team_backup",
             part_number: partNumber,
             total_parts: totalParts,
             subject: partSubject,
-            body_html: params.bodyHtml,
-            body_text: params.bodyText || params.bodyHtml.replace(/<[^>]+>/g, " ").trim(),
+            body_html: partBodyHtml,
+            body_text: partBodyHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
             status: "queued",
             idempotency_key: idempKey,
           });
@@ -401,16 +467,23 @@ export async function createCertificateCampaign(
       throw new Error("No deliveries could be formed (both individual and team options produced 0 recipients with valid emails).");
     }
 
-    // 4. Insert delivery rows and attachment manifests
-    const { error: insDelErr } = await supabaseAdmin.from("broadcast_deliveries").insert(deliveryRows);
-    if (insDelErr) {
-      throw new Error(`Failed to enqueue certificate deliveries: ${insDelErr.message}`);
+    // 4. Insert delivery rows and attachment manifests in safe batches of 250 rows to prevent payload timeouts
+    const CHUNK_SIZE = 250;
+    for (let i = 0; i < deliveryRows.length; i += CHUNK_SIZE) {
+      const chunk = deliveryRows.slice(i, i + CHUNK_SIZE);
+      const { error: insDelErr } = await supabaseAdmin.from("broadcast_deliveries").insert(chunk);
+      if (insDelErr) {
+        throw new Error(`Failed to enqueue certificate deliveries (batch ${Math.floor(i / CHUNK_SIZE) + 1}): ${insDelErr.message}`);
+      }
     }
 
     if (attachmentLinks.length > 0) {
-      const { error: insAttErr } = await supabaseAdmin.from("broadcast_delivery_attachments").insert(attachmentLinks);
-      if (insAttErr) {
-        throw new Error(`Failed to link certificate attachments: ${insAttErr.message}`);
+      for (let i = 0; i < attachmentLinks.length; i += CHUNK_SIZE) {
+        const chunk = attachmentLinks.slice(i, i + CHUNK_SIZE);
+        const { error: insAttErr } = await supabaseAdmin.from("broadcast_delivery_attachments").insert(chunk);
+        if (insAttErr) {
+          throw new Error(`Failed to link certificate attachments (batch ${Math.floor(i / CHUNK_SIZE) + 1}): ${insAttErr.message}`);
+        }
       }
     }
 

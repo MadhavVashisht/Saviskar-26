@@ -3,6 +3,9 @@ import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import SponsorsView from "@/components/sponsors/SponsorsView";
 import { getSiteAccess } from "@/lib/config/site-access";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Official Partners & Strategic Allies | CGC Saviskar 2026 — CGC University Mohali",
   description:
@@ -16,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SponsorsPage() {
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
 
   if (!siteAccess.SPONSORS_ENABLED) {
     return (
