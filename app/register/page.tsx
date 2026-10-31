@@ -11,6 +11,9 @@ import Navbar from "@/components/ui/Navbar";
 import TerminalPlaceholder from "@/components/ui/TerminalPlaceholder";
 import { getSiteAccess } from "@/lib/config/site-access";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Register & Claim Passes | CGC Saviskar 2026 — CGC University Mohali",
   description:
@@ -60,7 +63,7 @@ export default async function RegisterPage({
 }: {
   searchParams: Promise<{ from?: string }>;
 }) {
-  const siteAccess = await getSiteAccess();
+  const siteAccess = await getSiteAccess({ bypassCache: true });
   if (!siteAccess.REGISTRATIONS_ENABLED || !siteAccess.REGISTRATION_ENABLED) {
     return (
       <TerminalPlaceholder

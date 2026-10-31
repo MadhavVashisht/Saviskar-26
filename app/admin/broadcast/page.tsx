@@ -31,6 +31,11 @@ import {
   validateGeneralBroadcastInput,
   buildGeneralCampaignPayload,
 } from "@/lib/broadcast/participant-broadcast-template";
+import {
+  CERTIFICATE_EMAIL_SUBJECT,
+  CERTIFICATE_CAMPAIGN_DEFAULT_TITLE,
+  renderCertificateEmailHtml,
+} from "@/lib/broadcast/certificate-email-template";
 
 interface GeneralRecipient {
   normalizedEmail: string;
@@ -47,6 +52,7 @@ interface GeneralRecipient {
 
 interface CertificateCandidate {
   participantEventId: string;
+  accommodationId?: string | null;
   memberId?: string | null;
   participantId?: string | null;
   recipientName: string;
@@ -68,6 +74,7 @@ interface CertificateCandidate {
   certificateEligible: boolean;
   ineligibilityReason?: string | null;
   issueSourceKey: string;
+  isStayOnly?: boolean;
 }
 
 interface CampaignItem {
@@ -116,16 +123,23 @@ export default function AdminBroadcastPage() {
   const [generalRecipientsError, setGeneralRecipientsError] = useState<string | null>(null);
 
   // Certificate state
-  const [certTitle, setCertTitle] = useState("Saviskar 2026 Participation Certificates");
-  const [certSubject, setCertSubject] = useState("Your Official Certificate of Participation - Saviskar 2026");
-  const [certBodyHtml, setCertBodyHtml] = useState(
-    `<p>Dear Participant,</p>\n<p>Congratulations on your active participation in Saviskar 2026 at CGC University, Mohali!</p>\n<p>Please find attached your official Certificate of Participation.</p>\n<p>Warm regards,<br/>Organizing Committee, Saviskar 2026</p>`
-  );
+  const [certTitle, setCertTitle] = useState(CERTIFICATE_CAMPAIGN_DEFAULT_TITLE);
+  const [certSubject, setCertSubject] = useState(CERTIFICATE_EMAIL_SUBJECT);
+  const [certBodyHtml, setCertBodyHtml] = useState(() => renderCertificateEmailHtml());
+  const [showCertEmailPreview, setShowCertEmailPreview] = useState(false);
   const [certCandidates, setCertCandidates] = useState<CertificateCandidate[]>([]);
   const [selectedCertKeys, setSelectedCertKeys] = useState<Set<string>>(new Set());
   const [certSearch, setCertSearch] = useState("");
   const [certEventFilter, setCertEventFilter] = useState<string>("all");
-  const [certMainCheckInOnly, setCertMainCheckInOnly] = useState(true);
+  const [certCategoryFilter, setCertCategoryFilter] = useState<"all" | "event" | "stay-only" | "missing-email">("all");
+  const [certMainCheckInOnly, setCertMainCheckInOnly] = useState(false);
+  const [certStats, setCertStats] = useState<{
+    totalRecipients?: number;
+    totalCertificates?: number;
+    eventCertificates?: number;
+    stayOnlyCertificates?: number;
+    missingEmails?: number;
+  }>({});
   const [sendIndividual, setSendIndividual] = useState(true);
   const [sendTeamBackup, setSendTeamBackup] = useState(true);
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(false);
@@ -298,6 +312,13 @@ export default function AdminBroadcastPage() {
       const data = await res.json();
       if (res.ok && data.recipients) {
         setCertCandidates(data.recipients);
+        setCertStats({
+          totalRecipients: data.uniqueRecipientsCount,
+          totalCertificates: data.total,
+          eventCertificates: data.eventCertificatesCount,
+          stayOnlyCertificates: data.stayOnlyCount,
+          missingEmails: data.missingEmailCount,
+        });
         if (typeof data.isHybridMode === "boolean") {
           setIsHybridMode(data.isHybridMode);
         }
@@ -397,6 +418,15 @@ export default function AdminBroadcastPage() {
       if (certMainCheckInOnly && !c.mainCheckedIn) {
         return false;
       }
+      if (certCategoryFilter === "event" && (c.isStayOnly || c.eventId === "stay-only")) {
+        return false;
+      }
+      if (certCategoryFilter === "stay-only" && !c.isStayOnly && c.eventId !== "stay-only") {
+        return false;
+      }
+      if (certCategoryFilter === "missing-email" && c.recipientEmail && c.isValidEmail) {
+        return false;
+      }
       if (certEventFilter !== "all" && c.eventId !== certEventFilter) {
         return false;
       }
@@ -411,7 +441,41 @@ export default function AdminBroadcastPage() {
       }
       return true;
     });
-  }, [certCandidates, certMainCheckInOnly, certEventFilter, certSearch]);
+  }, [certCandidates, certMainCheckInOnly, certCategoryFilter, certEventFilter, certSearch]);
+
+  // Selected certificate metrics for pre-enqueue breakdown
+  const selectedCertSummary = useMemo(() => {
+    const selectedList = certCandidates.filter((c) => selectedCertKeys.has(c.issueSourceKey));
+    const validEmails = selectedList.filter((c) => c.recipientEmail && c.isValidEmail).length;
+    const stayOnly = selectedList.filter((c) => c.isStayOnly || c.eventId === "stay-only").length;
+    const eventCerts = selectedList.length - stayOnly;
+    const missingEmails = selectedList.filter((c) => !c.recipientEmail || !c.isValidEmail).length;
+    return {
+      total: selectedList.length,
+      validEmails,
+      stayOnly,
+      eventCerts,
+      missingEmails,
+    };
+  }, [certCandidates, selectedCertKeys]);
+
+  // Overall candidate summary metrics
+  const overallCertMetrics = useMemo(() => {
+    const total = certCandidates.length;
+    const stayOnly = certCandidates.filter((c) => c.isStayOnly || c.eventId === "stay-only").length;
+    const eventCerts = total - stayOnly;
+    const missingEmails = certCandidates.filter((c) => !c.recipientEmail || !c.isValidEmail).length;
+    const uniqueParticipants = new Set(
+      certCandidates.map((c) => c.participantId || (c.recipientEmail ? c.recipientEmail.toLowerCase() : c.issueSourceKey))
+    ).size;
+    return {
+      total,
+      stayOnly,
+      eventCerts,
+      missingEmails,
+      uniqueParticipants: certStats.totalRecipients || uniqueParticipants,
+    };
+  }, [certCandidates, certStats.totalRecipients]);
 
   // Unique Events for Certificate filter
   const uniqueEvents = useMemo(() => {
@@ -1200,19 +1264,24 @@ export default function AdminBroadcastPage() {
                     <span>Saviskar 2026 Participation Certificate Engine</span>
                   </h2>
                   <p className="text-xs text-black/50 leading-relaxed max-w-2xl">
-                    Strictly requires authoritative Main Registration Desk Check-In (
-                    <code className="rounded bg-black/[0.04] px-1 py-0.5 font-mono text-black/70 border border-black/5">
-                      main_checked_in = true
-                    </code>
-                    ) and validated payment completion (via{" "}
-                    <code className="rounded bg-black/[0.04] px-1 py-0.5 font-mono text-black/70 border border-black/5">
-                      evaluateEventPaymentStatus()
-                    </code>
-                    ). Generates 1 individual PDF per person-event.
+                    Every individual participant in Saviskar 2026 (solo event registrants, team members, and stay-only accommodation delegates) is eligible to receive an official Certificate of Participation. Main desk check-in is not required. Generates 1 authentic certificate per person-event (or &ldquo;Saviskar 2026&rdquo; for stay-only delegates).
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCertEmailPreview(!showCertEmailPreview)}
+                    className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-semibold transition ${
+                      showCertEmailPreview
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white text-black/70 hover:bg-black/[0.04] hover:text-black"
+                    }`}
+                  >
+                    <Eye size={14} />
+                    <span>{showCertEmailPreview ? "Hide Email Preview" : "Preview Premium Email"}</span>
+                  </button>
+
                   <button
                     onClick={handlePreviewCertificatePdf}
                     disabled={previewPdfLoading}
@@ -1226,6 +1295,76 @@ export default function AdminBroadcastPage() {
                     <span>Preview Certificate PDF</span>
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Premium Certificate Email Preview Container */}
+            {showCertEmailPreview && (
+              <div className="rounded-3xl border border-black/15 bg-neutral-100 p-6 shadow-inner">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-5 py-3 text-xs border border-black/10 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-black">Subject:</span>
+                    <span className="text-black/80 font-mono text-xs">{certSubject}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-black/60 text-xs">
+                    <span>Sender:</span>
+                    <code className="rounded bg-black/[0.04] px-2 py-0.5 font-mono text-black/80 border border-black/5">
+                      Saviskar Updates &lt;broadcast@updates.saviskar.co.in&gt;
+                    </code>
+                  </div>
+                </div>
+                <div className="mb-3 text-[11px] text-black/60">
+                  <span className="font-semibold text-black">Personalization Preview:</span> Each recipient receives a customized email with their name, registered event, unique certificate ID, and attached high-resolution PDF.
+                </div>
+                <iframe
+                  title="Premium Certificate Email Preview"
+                  srcDoc={renderCertificateEmailHtml({
+                    recipientName: "Amanpreet Kaur",
+                    eventName: "RoboWars: National Championship 2026",
+                    certificateNumber: "SAV26-ROBO-1042",
+                  })}
+                  className="h-[620px] w-full rounded-2xl border border-black/10 bg-white shadow-sm"
+                  sandbox="allow-same-origin"
+                />
+              </div>
+            )}
+
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-black/50 block">Unique Individuals</span>
+                <span className="text-xl font-mono font-bold text-black mt-1 block">
+                  {overallCertMetrics.uniqueParticipants.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-black/40">Registered persons</span>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-black/50 block">Total Certificates</span>
+                <span className="text-xl font-mono font-bold text-black mt-1 block">
+                  {overallCertMetrics.total.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-black/40">Event + Stay certificates</span>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-black/50 block">Event Certificates</span>
+                <span className="text-xl font-mono font-bold text-black mt-1 block">
+                  {overallCertMetrics.eventCerts.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-black/40">Solo & team members</span>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-black/50 block">Stay-Only Delegates</span>
+                <span className="text-xl font-mono font-bold text-black mt-1 block">
+                  {overallCertMetrics.stayOnly.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-black/40">&ldquo;Saviskar 2026&rdquo; certificates</span>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-black/50 block">Missing Emails</span>
+                <span className={`text-xl font-mono font-bold mt-1 block ${overallCertMetrics.missingEmails > 0 ? "text-amber-600" : "text-black"}`}>
+                  {overallCertMetrics.missingEmails.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-black/40">Eligible but undeliverable</span>
               </div>
             </div>
 
@@ -1300,10 +1439,43 @@ export default function AdminBroadcastPage() {
                 </p>
               </div>
 
+              {/* Campaign Enqueue Preview Breakdown */}
+              <div className="rounded-2xl border border-black/10 bg-black/[0.02] p-4 mb-4">
+                <div className="text-xs font-semibold text-black mb-2 flex items-center justify-between">
+                  <span>Campaign Enqueue Preview</span>
+                  <span className="font-mono text-[11px] text-black/60">
+                    {selectedCertSummary.total} / {filteredCertCandidates.length} Selected
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="rounded-xl border border-black/5 bg-white p-2.5 shadow-2xs">
+                    <span className="text-black/50 block text-[11px]">Event Certificates:</span>
+                    <span className="font-mono font-bold text-black">{selectedCertSummary.eventCerts}</span>
+                  </div>
+                  <div className="rounded-xl border border-black/5 bg-white p-2.5 shadow-2xs">
+                    <span className="text-black/50 block text-[11px]">Stay-Only (&ldquo;Saviskar 2026&rdquo;):</span>
+                    <span className="font-mono font-bold text-black">{selectedCertSummary.stayOnly}</span>
+                  </div>
+                  <div className="rounded-xl border border-black/5 bg-white p-2.5 shadow-2xs">
+                    <span className="text-black/50 block text-[11px]">Email Deliveries:</span>
+                    <span className="font-mono font-bold text-emerald-700">{selectedCertSummary.validEmails}</span>
+                  </div>
+                  <div className="rounded-xl border border-black/5 bg-white p-2.5 shadow-2xs">
+                    <span className="text-black/50 block text-[11px]">Missing Email (DB only):</span>
+                    <span className="font-mono font-bold text-amber-600">{selectedCertSummary.missingEmails}</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                 <div className="text-xs text-black/50">
-                  Eligible Selected:{" "}
-                  <span className="font-mono font-bold text-black">{selectedCertKeys.size}</span> items
+                  Total Enqueue Target:{" "}
+                  <span className="font-mono font-bold text-black">{selectedCertKeys.size}</span> certificates
+                  {selectedCertSummary.missingEmails > 0 && (
+                    <span className="text-amber-600 ml-2 font-medium">
+                      ({selectedCertSummary.missingEmails} without email will be stored in database only)
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1317,7 +1489,7 @@ export default function AdminBroadcastPage() {
                       ? "Enqueue Disabled (Read-Only Mode)"
                       : isPreviewMode
                       ? "Enqueue Disabled (Preview Mode)"
-                      : "Enqueue Certificate Campaign"}
+                      : `Enqueue Campaign (${selectedCertKeys.size} Certificates)`}
                   </span>
                 </button>
               </div>
@@ -1369,6 +1541,33 @@ export default function AdminBroadcastPage() {
                     placeholder="Search candidate name, event, team or email..."
                     className="w-full rounded-full border border-black/10 bg-black/[0.02] pl-9 pr-4 py-2 text-xs text-black placeholder:text-black/35 focus:border-black focus:bg-white focus:outline-none transition"
                   />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-black/45 flex items-center gap-1 mr-1">
+                    <Filter size={12} /> Category:
+                  </span>
+                  {[
+                    { key: "all", label: "All" },
+                    { key: "event", label: "Event Registrants" },
+                    { key: "stay-only", label: "Stay-Only" },
+                    { key: "missing-email", label: "Missing Email" },
+                  ].map((cat) => {
+                    const active = certCategoryFilter === cat.key;
+                    return (
+                      <button
+                        key={cat.key}
+                        onClick={() => setCertCategoryFilter(cat.key as any)}
+                        className={`rounded-full px-3 py-1 text-[11px] font-semibold transition border ${
+                          active
+                            ? "border-black bg-black text-white shadow-xs"
+                            : "border-black/10 bg-black/[0.02] text-black/60 hover:bg-black/[0.06] hover:text-black"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <select
@@ -1447,9 +1646,9 @@ export default function AdminBroadcastPage() {
                         </th>
                         <th className="p-3.5 w-14 font-bold text-black/50">S. No.</th>
                         <th className="p-3.5 font-bold">Recipient Name</th>
-                        <th className="p-3.5 font-bold">Event Name</th>
-                        <th className="p-3.5 font-bold">Roster / Team</th>
-                        <th className="p-3.5 font-bold">Main Desk Check-In</th>
+                        <th className="p-3.5 font-bold">Certificate Event</th>
+                        <th className="p-3.5 font-bold">Category / Team</th>
+                        <th className="p-3.5 font-bold">Desk Check-In</th>
                         <th className="p-3.5 font-bold">Payment Status</th>
                         <th className="p-3.5 font-bold text-right">Eligibility</th>
                       </tr>
@@ -1499,13 +1698,26 @@ export default function AdminBroadcastPage() {
                                   </span>
                                 ) : null}
                               </div>
-                              {c.recipientEmail && (
+                              {c.recipientEmail ? (
                                 <div className="font-mono text-[10px] text-black/50">{c.recipientEmail}</div>
+                              ) : (
+                                <div className="font-mono text-[10px] text-amber-600 font-medium">No email registered</div>
                               )}
                             </td>
-                            <td className="p-3.5 font-medium text-black/80">{c.eventName}</td>
+                            <td className="p-3.5 font-medium text-black/80">
+                              <div className="flex items-center gap-1.5">
+                                <span>{c.eventName}</span>
+                                {(c.isStayOnly || c.eventId === "stay-only") && (
+                                  <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[9px] font-bold text-purple-700">
+                                    Stay-Only
+                                  </span>
+                                )}
+                              </div>
+                            </td>
                             <td className="p-3.5">
-                              {c.isTeam ? (
+                              {(c.isStayOnly || c.eventId === "stay-only") ? (
+                                <span className="text-black/50 text-xs">Accommodation</span>
+                              ) : c.isTeam ? (
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-semibold text-black">{c.teamName}</span>
                                   {c.isTeamLeader && (
@@ -1515,7 +1727,7 @@ export default function AdminBroadcastPage() {
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-black/40 text-xs">Solo</span>
+                                <span className="text-black/40 text-xs">Solo Registrant</span>
                               )}
                             </td>
                             <td className="p-3.5">
@@ -1536,13 +1748,17 @@ export default function AdminBroadcastPage() {
                                   )}
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                                  <XCircle size={10} /> {c.eventCheckedIn ? "Arena Only" : "Not Checked-In"}
+                                <span className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-black/5 px-2 py-0.5 text-[10px] font-medium text-black/60">
+                                  {c.eventCheckedIn ? "Arena Only" : "Not Checked-In"}
                                 </span>
                               )}
                             </td>
                             <td className="p-3.5">
-                              {c.isFree ? (
+                              {(c.isStayOnly || c.eventId === "stay-only") ? (
+                                <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-800">
+                                  Stay Confirmed
+                                </span>
+                              ) : c.isFree ? (
                                 <span className="inline-flex items-center rounded-full border border-black/10 bg-black/5 px-2 py-0.5 text-[10px] font-bold text-black/70">
                                   Free Event
                                 </span>
@@ -1558,9 +1774,18 @@ export default function AdminBroadcastPage() {
                             </td>
                             <td className="p-3.5 text-right">
                               {c.certificateEligible ? (
-                                <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-bold text-emerald-800 text-[11px]">
-                                  Eligible
-                                </span>
+                                !c.recipientEmail || !c.isValidEmail ? (
+                                  <div className="flex flex-col items-end">
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                                      <AlertTriangle size={10} /> Eligible (No Email)
+                                    </span>
+                                    <span className="font-mono text-[9px] text-black/45 mt-0.5">Database snapshot</span>
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-bold text-emerald-800 text-[11px]">
+                                    Eligible
+                                  </span>
+                                )
                               ) : (
                                 <div className="flex flex-col items-end">
                                   <span className="inline-flex items-center rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 font-semibold text-black/60 text-[10px]">

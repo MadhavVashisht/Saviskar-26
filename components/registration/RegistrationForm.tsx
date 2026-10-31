@@ -28,6 +28,7 @@ import {
   CreditCard,
   ExternalLink,
   LogOut,
+  Lock,
   Calendar,
   RefreshCw,
 } from "lucide-react";
@@ -41,6 +42,10 @@ import { INDIAN_STATES_AND_UT } from "@/lib/states";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { calculateStayDates } from "@/lib/accommodation-dates";
 import { submitPayUCheckoutForm } from "@/lib/payments/checkout-form";
+import {
+  isAccommodationOptionAvailable,
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+} from "@/lib/config/site-access";
 
 export function formatAccommodationDate(
   duration: number,
@@ -173,6 +178,7 @@ type EventOption = {
   payment_type: "free" | "paid" | null;
   registration_fee: number | null;
   payment_unit: "per_student" | "per_team" | null;
+  registration_open?: boolean | null;
 };
 
 type TeamMember = {
@@ -371,9 +377,12 @@ export default function RegistrationForm({
     Record<string, EventRegistrationState>
   >({});
   const [mainAccommodationSlug, setMainAccommodationSlug] = useState("");
-  const [mainAccommodationDate, setMainAccommodationDate] = useState<"2026-10-27" | "2026-10-28" | "2026-10-29" | "2026-10-30" | "2026-10-31">("2026-10-28");
+  const [mainAccommodationDate, setMainAccommodationDate] = useState<"2026-10-27" | "2026-10-28" | "2026-10-29" | "2026-10-30" | "2026-10-31">("2026-10-31");
   const [mainExtraDays, setMainExtraDays] = useState<"none" | "before_27" | "after_30" | "both">("none");
   const [mainIdCardStoragePath, setMainIdCardStoragePath] = useState("");
+  const [accommodationAvailability, setAccommodationAvailability] = useState<Record<string, boolean>>(
+    DEFAULT_ACCOMMODATION_AVAILABILITY
+  );
 
   useEffect(() => {
     if (isAccommodationLocked) {
@@ -493,10 +502,24 @@ export default function RegistrationForm({
           max_team_size,
           payment_type,
           registration_fee,
-          payment_unit
+          payment_unit,
+          registration_open
         `)
         .eq("active", true)
         .order("name", { ascending: true });
+
+      // Fetch dynamic granular accommodation availability
+      try {
+        const siteAccessRes = await fetch("/api/site-access");
+        if (siteAccessRes.ok) {
+          const siteAccessJson = await siteAccessRes.json();
+          if (siteAccessJson?.accommodationAvailability) {
+            setAccommodationAvailability(siteAccessJson.accommodationAvailability);
+          }
+        }
+      } catch (e) {
+        console.warn("Using fallback accommodation availability policy:", e);
+      }
 
       const { data: accData } = await supabase
         .from("accommodation_plans")
@@ -536,7 +559,11 @@ export default function RegistrationForm({
       );
 
       if (match) {
-        setSelectedEventIds([match.id]);
+        if (match.registration_open === false) {
+          setErrorMessage(`Registration for competition "${match.name}" is currently closed.`);
+        } else {
+          setSelectedEventIds([match.id]);
+        }
       }
     } catch (err) {
       console.error("Exception loading events:", err);
@@ -1181,6 +1208,12 @@ export default function RegistrationForm({
    */
   function toggleEvent(eventId: string) {
     setErrorMessage("");
+
+    const targetEvent = eventOptions.find((e) => e.id === eventId);
+    if (targetEvent && targetEvent.registration_open === false) {
+      setErrorMessage(`Registration for competition "${targetEvent.name}" is currently closed.`);
+      return;
+    }
 
     setSelectedEventIds((current) => {
       if (current.includes(eventId)) {
@@ -3648,6 +3681,7 @@ export default function RegistrationForm({
                           <AnimatePresence initial={false}>
                             {visibleEvents.map((event, index) => {
                               const selected = selectedEventIds.includes(event.id);
+                              const isClosed = event.registration_open === false;
                               const team = isTeamEvent(event);
                               const fee =
                                 event.payment_type === "paid"
@@ -3666,26 +3700,33 @@ export default function RegistrationForm({
                                   }}
                                   key={event.id}
                                   type="button"
-                                  onClick={() => toggleEvent(event.id)}
-                                  className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${selected
+                                  disabled={isClosed}
+                                  onClick={() => !isClosed && toggleEvent(event.id)}
+                                  className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition-all ${
+                                    isClosed
+                                      ? "border-l-4 border-l-rose-500/40 bg-rose-950/15 opacity-70 cursor-not-allowed"
+                                      : selected
                                       ? "bg-violet-950/35 border-l-4 border-l-violet-400 hover:bg-violet-950/45 shadow-[inset_0_0_30px_rgba(168,85,247,0.08)]"
                                       : "border-l-4 border-l-transparent hover:bg-white/[0.04]"
-                                    }`}
+                                  }`}
                                 >
-                                  {/* CHECK */}
+                                  {/* CHECK / LOCK ICON */}
                                   <div
-                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${selected
+                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
+                                      isClosed
+                                        ? "border border-rose-500/40 bg-rose-500/20 text-rose-300"
+                                        : selected
                                         ? "bg-violet-400 text-black shadow-[0_0_12px_#c084fc]"
                                         : "border border-white/20 text-transparent group-hover:border-white/40"
-                                      }`}
+                                    }`}
                                   >
-                                    <Check size={13} />
+                                    {isClosed ? <Lock size={12} /> : <Check size={13} />}
                                   </div>
 
                                   {/* NAME */}
                                   <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                                      <h4 className="truncate text-[15px] font-medium tracking-tight text-white md:text-base">
+                                      <h4 className={`truncate text-[15px] font-medium tracking-tight md:text-base ${isClosed ? "text-white/70 line-through decoration-rose-500/40" : "text-white"}`}>
                                         {event.name}
                                       </h4>
 
@@ -3697,6 +3738,12 @@ export default function RegistrationForm({
                                       >
                                         {event.category}
                                       </span>
+
+                                      {isClosed && (
+                                        <span className="rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider border border-rose-500/30 bg-rose-500/20 text-rose-300">
+                                          Registration Closed
+                                        </span>
+                                      )}
                                     </div>
 
                                     <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-white/45">
@@ -3732,10 +3779,13 @@ export default function RegistrationForm({
 
                                   <ArrowRight
                                     size={14}
-                                    className={`shrink-0 transition-transform ${selected
+                                    className={`shrink-0 transition-transform ${
+                                      isClosed
+                                        ? "text-rose-500/30"
+                                        : selected
                                         ? "text-violet-300"
                                         : "text-white/20 group-hover:translate-x-1 group-hover:text-white/60"
-                                      }`}
+                                    }`}
                                   />
                                 </motion.button>
                               );
@@ -4068,6 +4118,12 @@ export default function RegistrationForm({
                                             const is29Booked = isDateBookedByParticipant("2026-10-29", confirmedAccommodations);
                                             const is30Booked = isDateBookedByParticipant("2026-10-30", confirmedAccommodations);
                                             const is31Booked = isDateBookedByParticipant("2026-10-31", confirmedAccommodations);
+
+                                            const is27Avail = isAccommodationOptionAvailable("1_day", "2026-10-27", accommodationAvailability);
+                                            const is28Avail = isAccommodationOptionAvailable("1_day", "2026-10-28", accommodationAvailability);
+                                            const is29Avail = isAccommodationOptionAvailable("1_day", "2026-10-29", accommodationAvailability);
+                                            const is30Avail = isAccommodationOptionAvailable("1_day", "2026-10-30", accommodationAvailability);
+                                            const is31Avail = isAccommodationOptionAvailable("1_day", "2026-10-31", accommodationAvailability);
                                             return (
                                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
                                                 <label className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs transition-all ${
@@ -4081,9 +4137,9 @@ export default function RegistrationForm({
                                                     type="radio"
                                                     name="mainAccommodationDate"
                                                     value="2026-10-27"
-                                                    disabled={is27Booked}
+                                                    disabled={is27Booked || !is27Avail}
                                                     checked={mainAccommodationDate === "2026-10-27"}
-                                                    onChange={() => setMainAccommodationDate("2026-10-27")}
+                                                    onChange={() => is27Avail && setMainAccommodationDate("2026-10-27")}
                                                     className="sr-only"
                                                   />
                                                   <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
@@ -4114,9 +4170,9 @@ export default function RegistrationForm({
                                                     type="radio"
                                                     name="mainAccommodationDate"
                                                     value="2026-10-28"
-                                                    disabled={is28Booked}
+                                                    disabled={is28Booked || !is28Avail}
                                                     checked={mainAccommodationDate === "2026-10-28"}
-                                                    onChange={() => setMainAccommodationDate("2026-10-28")}
+                                                    onChange={() => is28Avail && setMainAccommodationDate("2026-10-28")}
                                                     className="sr-only"
                                                   />
                                                   <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
@@ -4147,9 +4203,9 @@ export default function RegistrationForm({
                                                     type="radio"
                                                     name="mainAccommodationDate"
                                                     value="2026-10-29"
-                                                    disabled={is29Booked}
+                                                    disabled={is29Booked || !is29Avail}
                                                     checked={mainAccommodationDate === "2026-10-29"}
-                                                    onChange={() => setMainAccommodationDate("2026-10-29")}
+                                                    onChange={() => is29Avail && setMainAccommodationDate("2026-10-29")}
                                                     className="sr-only"
                                                   />
                                                   <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
@@ -4180,9 +4236,9 @@ export default function RegistrationForm({
                                                     type="radio"
                                                     name="mainAccommodationDate"
                                                     value="2026-10-30"
-                                                    disabled={is30Booked}
+                                                    disabled={is30Booked || !is30Avail}
                                                     checked={mainAccommodationDate === "2026-10-30"}
-                                                    onChange={() => setMainAccommodationDate("2026-10-30")}
+                                                    onChange={() => is30Avail && setMainAccommodationDate("2026-10-30")}
                                                     className="sr-only"
                                                   />
                                                   <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
@@ -4213,9 +4269,9 @@ export default function RegistrationForm({
                                                     type="radio"
                                                     name="mainAccommodationDate"
                                                     value="2026-10-31"
-                                                    disabled={is31Booked}
+                                                    disabled={is31Booked || !is31Avail}
                                                     checked={mainAccommodationDate === "2026-10-31"}
-                                                    onChange={() => setMainAccommodationDate("2026-10-31")}
+                                                    onChange={() => is31Avail && setMainAccommodationDate("2026-10-31")}
                                                     className="sr-only"
                                                   />
                                                   <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
@@ -6472,6 +6528,7 @@ export default function RegistrationForm({
               }))}
               onProceedToPayment={handleModalPayment}
               isAccommodationLocked={isAccommodationLocked}
+              accommodationAvailability={accommodationAvailability}
             />
           )}
 

@@ -132,7 +132,8 @@ export function isLocalDevelopmentMfaBypassAllowed(): boolean {
       return false;
     }
 
-    return true;
+    // 4. Require explicit opt-in AFTER validating verified local disposable Supabase stack
+    return process.env.LOCAL_DEV_TEST_BYPASS_MFA === "true";
   } catch {
     return false;
   }

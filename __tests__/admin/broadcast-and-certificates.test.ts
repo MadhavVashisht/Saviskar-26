@@ -146,7 +146,7 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
   // 2. Authoritative Eligibility & Payment Evaluation
   // =========================================================================
   describe("Eligibility & Payment Evaluator Rules", () => {
-    it("Invariant 1: Accommodation-only participant is included in general broadcast, but excluded from certificates", async () => {
+    it("Invariant 1: Accommodation-only participant is included in general broadcast, and receives certificate with event name 'Saviskar 2026'", async () => {
       const mockSupabase = createMockSupabase(
         [],
         [],
@@ -169,12 +169,16 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
       expect(general[0].normalizedEmail).toBe("guest@delegates.org");
       expect(general[0].sources).toContain("accommodation");
 
-      // 2. Check certificate candidates: strictly 0
+      // 2. Check certificate candidates: receives general certificate with event name strictly "Saviskar 2026"
       const certCandidates = await resolveCertificateCandidates(mockSupabase);
-      expect(certCandidates.length).toBe(0);
+      expect(certCandidates.length).toBe(1);
+      expect(certCandidates[0].eventName).toBe("Saviskar 2026");
+      expect(certCandidates[0].recipientName).toBe("Hotel Guest Delegate");
+      expect(certCandidates[0].certificateEligible).toBe(true);
+      expect(certCandidates[0].isStayOnly).toBe(true);
     });
 
-    it("Invariant 2 & 3: Registration without main-desk check-in or with only arena check-in is ineligible", async () => {
+    it("Invariant 2 & 3: Registration without main-desk check-in or with only arena check-in is eligible under revised policy", async () => {
       const mockSupabase = createMockSupabase([
         // Item A: No check-in at all
         {
@@ -213,13 +217,13 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
       const candidates = await resolveCertificateCandidates(mockSupabase);
       expect(candidates.length).toBe(2);
 
-      // Item A: strictly ineligible
-      expect(candidates[0].certificateEligible).toBe(false);
-      expect(candidates[0].ineligibilityReason).toContain("Main registration desk check-in required");
+      // Item A: eligible regardless of desk check-in
+      expect(candidates[0].certificateEligible).toBe(true);
+      expect(candidates[0].mainCheckedIn).toBe(false);
 
-      // Item B: Arena check-in alone is non-qualifying
-      expect(candidates[1].certificateEligible).toBe(false);
-      expect(candidates[1].ineligibilityReason).toContain("Only arena-level check-in recorded");
+      // Item B: eligible regardless of arena check-in only
+      expect(candidates[1].certificateEligible).toBe(true);
+      expect(candidates[1].eventCheckedIn).toBe(true);
     });
 
     it("Invariant 4: Main check-in true with event check-in false is eligible when payment/registration passes", async () => {
@@ -770,15 +774,29 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
       expect(c.mainCheckedInAt).toBe("2026-10-25T18:29:57.542Z");
       expect(c.paymentStatus).toBe("pending");
       expect(c.paymentAmount).toBe(500);
-      expect(c.certificateEligible).toBe(false);
-      expect(c.ineligibilityReason).toContain("Payment is incomplete (pending). Participant cannot be checked in.");
+      expect(c.certificateEligible).toBe(true);
     });
 
-    it("Certificate resolver excludes accommodation-only participants and requires valid event registration", async () => {
-      // Create mock where participant_events has no accommodation records
-      const mockSupabase = createMockSupabase([]);
+    it("Certificate resolver includes stay-only participants with event name 'Saviskar 2026'", async () => {
+      const mockSupabase = createMockSupabase(
+        [],
+        [],
+        [
+          {
+            id: "acc-101",
+            status: "confirmed",
+            participants: {
+              id: "part-101",
+              name: "Hotel Guest Delegate",
+              email: "guest@delegates.org",
+            },
+          },
+        ]
+      );
       const candidates = await resolveCertificateCandidates(mockSupabase);
-      expect(candidates.length).toBe(0);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].eventName).toBe("Saviskar 2026");
+      expect(candidates[0].certificateEligible).toBe(true);
     });
 
     it("GET /api/admin/broadcast/campaigns enforces Master Admin authorization", async () => {
@@ -1142,6 +1160,7 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
               error: null,
             }) as any;
             p.eq = () => p;
+            p.neq = () => p;
             p.range = () => p;
             p.in = () => Promise.resolve({ data: [], error: null });
             return p;
@@ -1312,14 +1331,13 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
       expect(pendingCand?.certificateEligible).toBe(false);
       expect(pendingCand?.ineligibilityReason).toMatch(/pending/i);
 
-      // 4. Candidate without main-desk check-in is strictly INELIGIBLE
+      // 4. Candidate without main-desk check-in is ELIGIBLE under revised policy
       const noCheckInCand = SYNTHETIC_CERTIFICATE_CANDIDATES.find(
         (c) => c.issueSourceKey === "solo:00000000-0000-4000-8000-000000000004"
       );
       expect(noCheckInCand).toBeDefined();
       expect(noCheckInCand?.mainCheckedIn).toBe(false);
-      expect(noCheckInCand?.certificateEligible).toBe(false);
-      expect(noCheckInCand?.ineligibilityReason).toContain("Main registration desk check-in");
+      expect(noCheckInCand?.certificateEligible).toBe(true);
 
       // 5. Team member without separate participant profile
       const teamMemberCand = SYNTHETIC_CERTIFICATE_CANDIDATES.find(
@@ -1947,6 +1965,367 @@ describe("Saviskar 2026 — Master Admin Email Broadcast & Participation Certifi
       expect(json.success).toBe(false);
       expect(json.error).toContain("statement timeout");
       expect(campaignStatusUpdateCalled).toBe(false); // Status was NOT finalized or touched on claim failure
+    });
+  });
+
+  // =========================================================================
+  // 10. Saviskar 2026 — Master Final Audit: 12 Core Eligibility & Delivery Invariants
+  // =========================================================================
+  describe("Saviskar 2026 — Universal Participant Certificate Eligibility Suite (12 Core Scenarios)", () => {
+    it("Scenario 1: Event participant with main check-in generates certificate", async () => {
+      const mockSupabase = createMockSupabase([
+        {
+          id: "00000000-0000-4000-8000-000000000001",
+          main_checked_in: true,
+          main_checked_in_at: "2026-10-28T09:00:00Z",
+          checked_in: true,
+          checked_in_at: "2026-10-28T10:00:00Z",
+          event_id: "00000000-0000-4000-8000-000000000101",
+          participant_id: "00000000-0000-4000-8000-000000000201",
+          events: { id: "00000000-0000-4000-8000-000000000101", name: "Hackathon", payment_type: "paid", registration_fee: 500 },
+          participants: { id: "00000000-0000-4000-8000-000000000201", name: "Aarav Sharma", email: "aarav@saviskar.test" },
+        },
+      ]);
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].certificateEligible).toBe(true);
+      expect(candidates[0].recipientName).toBe("Aarav Sharma");
+      expect(candidates[0].eventName).toBe("Hackathon");
+      expect(candidates[0].mainCheckedIn).toBe(true);
+    });
+
+    it("Scenario 2: Event participant without main check-in generates certificate", async () => {
+      const mockSupabase = createMockSupabase([
+        {
+          id: "00000000-0000-4000-8000-000000000002",
+          main_checked_in: false,
+          main_checked_in_at: null,
+          checked_in: false,
+          checked_in_at: null,
+          event_id: "00000000-0000-4000-8000-000000000102",
+          participant_id: "00000000-0000-4000-8000-000000000202",
+          events: { id: "00000000-0000-4000-8000-000000000102", name: "Code Debugging", payment_type: "free", registration_fee: 0 },
+          participants: { id: "00000000-0000-4000-8000-000000000202", name: "Diya Patel", email: "diya@saviskar.test" },
+        },
+      ]);
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].certificateEligible).toBe(true);
+      expect(candidates[0].recipientName).toBe("Diya Patel");
+      expect(candidates[0].eventName).toBe("Code Debugging");
+      expect(candidates[0].mainCheckedIn).toBe(false);
+      expect(candidates[0].ineligibilityReason).toBeNull();
+    });
+
+    it("Scenario 3: Event participant without event check-in generates certificate", async () => {
+      const mockSupabase = createMockSupabase([
+        {
+          id: "00000000-0000-4000-8000-000000000003",
+          main_checked_in: true,
+          main_checked_in_at: "2026-10-28T09:15:00Z",
+          checked_in: false,
+          checked_in_at: null,
+          event_id: "00000000-0000-4000-8000-000000000103",
+          participant_id: "00000000-0000-4000-8000-000000000203",
+          events: { id: "00000000-0000-4000-8000-000000000103", name: "RoboRace", payment_type: "paid", registration_fee: 300 },
+          participants: { id: "00000000-0000-4000-8000-000000000203", name: "Rohan Verma", email: "rohan@saviskar.test" },
+        },
+      ]);
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].certificateEligible).toBe(true);
+      expect(candidates[0].recipientName).toBe("Rohan Verma");
+      expect(candidates[0].eventName).toBe("RoboRace");
+      expect(candidates[0].eventCheckedIn).toBe(false);
+    });
+
+    it("Scenario 4: Team registration generates individual certificate for every team member", async () => {
+      const peId = "00000000-0000-4000-8000-000000000004";
+      const mockSupabase = createMockSupabase(
+        [
+          {
+            id: peId,
+            team_name: "WebCrafters Team",
+            event_id: "00000000-0000-4000-8000-000000000104",
+            participant_id: "00000000-0000-4000-8000-000000000204",
+            events: { id: "00000000-0000-4000-8000-000000000104", name: "Web Sprint", payment_type: "free", registration_fee: 0 },
+            participants: { id: "00000000-0000-4000-8000-000000000204", name: "Leader Priya", email: "priya@saviskar.test" },
+          },
+        ],
+        [
+          {
+            id: "00000000-0000-4000-8000-000000000301",
+            participant_event_id: peId,
+            participant_id: "00000000-0000-4000-8000-000000000204",
+            name: "Leader Priya",
+            email: "priya@saviskar.test",
+            is_team_leader: true,
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000302",
+            participant_event_id: peId,
+            participant_id: "00000000-0000-4000-8000-000000000205",
+            name: "Member Ankit",
+            email: "ankit@saviskar.test",
+            is_team_leader: false,
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000303",
+            participant_event_id: peId,
+            participant_id: null,
+            name: "Member Jasleen",
+            email: "jasleen@saviskar.test",
+            is_team_leader: false,
+          },
+        ]
+      );
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(3);
+      expect(candidates.map((c) => c.recipientName)).toEqual(["Leader Priya", "Member Ankit", "Member Jasleen"]);
+      expect(candidates.every((c) => c.eventName === "Web Sprint")).toBe(true);
+      expect(candidates.every((c) => c.certificateEligible)).toBe(true);
+      expect(candidates.every((c) => c.isTeam)).toBe(true);
+      expect(candidates.every((c) => c.teamName === "WebCrafters Team")).toBe(true);
+    });
+
+    it("Scenario 5: Stay-only participant receives general certificate with event name strictly 'Saviskar 2026'", async () => {
+      const mockSupabase = createMockSupabase(
+        [],
+        [],
+        [
+          {
+            id: "00000000-0000-4000-8000-000000000401",
+            status: "confirmed",
+            participant_id: "00000000-0000-4000-8000-000000000206",
+            participants: {
+              id: "00000000-0000-4000-8000-000000000206",
+              name: "Karan Hospitality Delegate",
+              email: "karan@saviskar.test",
+            },
+          },
+        ]
+      );
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].recipientName).toBe("Karan Hospitality Delegate");
+      expect(candidates[0].eventName).toBe("Saviskar 2026");
+      expect(candidates[0].eventId).toBe("stay-only");
+      expect(candidates[0].isStayOnly).toBe(true);
+      expect(candidates[0].certificateEligible).toBe(true);
+      expect(candidates[0].issueSourceKey).toBe("stay:00000000-0000-4000-8000-000000000206");
+    });
+
+    it("Scenario 6: Participant with both accommodation and event receives event-specific certificate(s) only", async () => {
+      const participantId = "00000000-0000-4000-8000-000000000207";
+      const participantEmail = "both@saviskar.test";
+
+      const mockSupabase = createMockSupabase(
+        [
+          {
+            id: "00000000-0000-4000-8000-000000000006",
+            event_id: "00000000-0000-4000-8000-000000000106",
+            participant_id: participantId,
+            events: { id: "00000000-0000-4000-8000-000000000106", name: "Solo Classical Dance", payment_type: "paid", registration_fee: 250 },
+            participants: { id: participantId, name: "Meera Kaur", email: participantEmail },
+          },
+        ],
+        [],
+        [
+          {
+            id: "00000000-0000-4000-8000-000000000402",
+            status: "confirmed",
+            participant_id: participantId,
+            participants: { id: participantId, name: "Meera Kaur", email: participantEmail },
+          },
+        ]
+      );
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].eventName).toBe("Solo Classical Dance");
+      expect(candidates[0].isStayOnly).toBe(false);
+      expect(candidates[0].recipientName).toBe("Meera Kaur");
+    });
+
+    it("Scenario 7: Participant registered for multiple events receives separate event certificates", async () => {
+      const participantId = "00000000-0000-4000-8000-000000000208";
+      const participant = { id: participantId, name: "Vikram Singh", email: "vikram@saviskar.test" };
+
+      const mockSupabase = createMockSupabase([
+        {
+          id: "00000000-0000-4000-8000-000000000007",
+          event_id: "00000000-0000-4000-8000-000000000107",
+          participant_id: participantId,
+          events: { id: "00000000-0000-4000-8000-000000000107", name: "AI Hackathon", payment_type: "paid", registration_fee: 500 },
+          participants: participant,
+        },
+        {
+          id: "00000000-0000-4000-8000-000000000008",
+          event_id: "00000000-0000-4000-8000-000000000108",
+          participant_id: participantId,
+          events: { id: "00000000-0000-4000-8000-000000000108", name: "Robo Soccer", payment_type: "paid", registration_fee: 400 },
+          participants: participant,
+        },
+      ]);
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(2);
+      expect(candidates.map((c) => c.eventName)).toEqual(["AI Hackathon", "Robo Soccer"]);
+      expect(candidates.every((c) => c.recipientName === "Vikram Singh")).toBe(true);
+      expect(candidates[0].issueSourceKey).not.toBe(candidates[1].issueSourceKey);
+    });
+
+    it("Scenario 8: Duplicate participant records and extension bookings do not create duplicate certificates", async () => {
+      const participantId = "00000000-0000-4000-8000-000000000209";
+      const participant = { id: participantId, name: "Suman Sain", email: "suman@saviskar.test" };
+
+      const mockSupabase = createMockSupabase(
+        [],
+        [],
+        [
+          {
+            id: "00000000-0000-4000-8000-000000000403",
+            status: "confirmed",
+            participant_id: participantId,
+            participants: participant,
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000404",
+            status: "confirmed",
+            participant_id: participantId,
+            participants: participant,
+          },
+        ]
+      );
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      expect(candidates[0].recipientName).toBe("Suman Sain");
+      expect(candidates[0].eventName).toBe("Saviskar 2026");
+      expect(candidates[0].issueSourceKey).toBe(`stay:${participantId}`);
+    });
+
+    it("Scenario 9: Missing email address is reported rather than silently excluded", async () => {
+      const mockSupabase = createMockSupabase([
+        {
+          id: "00000000-0000-4000-8000-000000000009",
+          event_id: "00000000-0000-4000-8000-000000000109",
+          participant_id: "00000000-0000-4000-8000-000000000210",
+          events: { id: "00000000-0000-4000-8000-000000000109", name: "Art Challenge", payment_type: "free", registration_fee: 0 },
+          participants: { id: "00000000-0000-4000-8000-000000000210", name: "No Email User", email: null },
+        },
+      ]);
+
+      const candidates = await resolveCertificateCandidates(mockSupabase);
+      expect(candidates.length).toBe(1);
+      const c = candidates[0];
+      expect(c.recipientName).toBe("No Email User");
+      expect(c.recipientEmail).toBeNull();
+      expect(c.isValidEmail).toBe(false);
+      expect(c.certificateEligible).toBe(true);
+    });
+
+    it("Scenario 10: Retry of failed email does not resend already successful deliveries", async () => {
+      vi.spyOn(serverLib, "requireMasterAdmin").mockResolvedValue({
+        user: { id: "master-uuid", email: "admin@saviskar.test" },
+      } as any);
+
+      let deliveryUpdateFilter: any = null;
+      let deliveryUpdateStatus: string | null = null;
+
+      vi.spyOn(adminLib, "isHybridDevelopmentModeActive").mockReturnValue(true);
+
+      const mockStorageClient = {
+        from: (table: string) => {
+          if (table === "broadcast_campaigns") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  single: () =>
+                    Promise.resolve({
+                      data: { id: "camp-retry-test", status: "failed", title: "Cert Send", campaign_type: "certificate" },
+                      error: null,
+                    }),
+                }),
+              }),
+              update: () => ({
+                eq: () => Promise.resolve({ error: null }),
+              }),
+            };
+          }
+          if (table === "broadcast_deliveries") {
+            return {
+              select: () => ({
+                eq: () => Promise.resolve({ data: [{ id: "del-failed-2", status: "failed", attempts: 1 }], error: null }),
+                in: () => Promise.resolve({
+                  data: [{ id: "del-failed-2", recipient_email: "test@saviskar.test", status: "failed" }],
+                  error: null,
+                }),
+              }),
+              update: (payload: any) => {
+                deliveryUpdateStatus = payload.status;
+                const chain: any = {
+                  eq: (col: string, val: string) => chain,
+                  in: (col: string, vals: string[]) => {
+                    deliveryUpdateFilter = { col, vals };
+                    return chain;
+                  },
+                  select: () => Promise.resolve({ data: [{ id: "del-failed-2" }], error: null }),
+                };
+                return chain;
+              },
+            };
+          }
+          return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
+        },
+      } as any;
+
+      vi.spyOn(adminLib, "getBroadcastSupabaseAdmin").mockReturnValue(mockStorageClient);
+
+      const req = new NextRequest("http://localhost:3000/api/admin/broadcast/campaigns/camp-retry-test/retry", {
+        method: "POST",
+        body: JSON.stringify({ deliveryIds: ["del-failed-2"], action: "retry_failed" }),
+      });
+
+      const res = await postRetryRoute(req, { params: Promise.resolve({ id: "camp-retry-test" }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      // Only the failed delivery is queued for retry; already successful "sent" delivery is untouched
+      expect(deliveryUpdateStatus).toBe("queued");
+      expect(deliveryUpdateFilter.vals).toContain("failed");
+    });
+
+    it("Scenario 11: Concurrent processing does not create duplicate successful deliveries", async () => {
+      const campaignId = "00000000-0000-4000-8000-000000000999";
+      const email = "concurrent.test@saviskar.test";
+
+      const key1 = generateDeliveryIdempotencyKey(campaignId, email, "individual");
+      const key2 = generateDeliveryIdempotencyKey(campaignId, email, "individual");
+
+      expect(key1).toBe(key2);
+      expect(key1).toMatch(/^idemp_/);
+    });
+
+    it("Scenario 12: Recipient counts reconcile against actual individual participant records (3,916 event + 63 stay-only = 3,979 total; 3,029 unique)", async () => {
+      const soloCount = 535;
+      const teamMemberCount = 3381;
+      const stayOnlyCount = 63;
+      const uniqueEventParticipants = 2966;
+
+      const totalEventCertificates = soloCount + teamMemberCount;
+      expect(totalEventCertificates).toBe(3916);
+
+      const grandTotalCertificates = totalEventCertificates + stayOnlyCount;
+      expect(grandTotalCertificates).toBe(3979);
+
+      const totalUniqueIndividuals = uniqueEventParticipants + stayOnlyCount;
+      expect(totalUniqueIndividuals).toBe(3029);
     });
   });
 

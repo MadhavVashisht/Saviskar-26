@@ -55,6 +55,15 @@ export async function GET(request: NextRequest) {
         const candidates = SYNTHETIC_CERTIFICATE_CANDIDATES;
         const eligibleCount = candidates.filter((c) => c.certificateEligible).length;
         const ineligibleCount = candidates.length - eligibleCount;
+        const stayOnlyCount = candidates.filter((c) => c.isStayOnly || c.eventId === "stay-only").length;
+        const eventCertificatesCount = candidates.length - stayOnlyCount;
+        const missingEmailCount = candidates.filter((c) => !c.recipientEmail || !c.isValidEmail).length;
+        const uniqueRecipientsSet = new Set<string>();
+        for (const c of candidates) {
+          const key = c.participantId || (c.recipientEmail ? c.recipientEmail.trim().toLowerCase() : c.issueSourceKey);
+          uniqueRecipientsSet.add(key);
+        }
+        const uniqueRecipientsCount = uniqueRecipientsSet.size;
 
         return NextResponse.json({
           type: "certificate",
@@ -66,6 +75,10 @@ export async function GET(request: NextRequest) {
           total: candidates.length,
           eligibleCount,
           ineligibleCount,
+          stayOnlyCount,
+          eventCertificatesCount,
+          missingEmailCount,
+          uniqueRecipientsCount,
           recipients: candidates,
           diagnostics,
         });
@@ -108,6 +121,15 @@ export async function GET(request: NextRequest) {
 
       const eligibleCount = candidates.filter((c) => c.certificateEligible).length;
       const ineligibleCount = candidates.length - eligibleCount;
+      const stayOnlyCount = candidates.filter((c) => c.isStayOnly || c.eventId === "stay-only").length;
+      const eventCertificatesCount = candidates.length - stayOnlyCount;
+      const missingEmailCount = candidates.filter((c) => !c.recipientEmail || !c.isValidEmail).length;
+      const uniqueRecipientsSet = new Set<string>();
+      for (const c of candidates) {
+        const key = c.participantId || (c.recipientEmail ? c.recipientEmail.trim().toLowerCase() : c.issueSourceKey);
+        uniqueRecipientsSet.add(key);
+      }
+      const uniqueRecipientsCount = uniqueRecipientsSet.size;
 
       return NextResponse.json({
         type: "certificate",
@@ -119,6 +141,10 @@ export async function GET(request: NextRequest) {
         total: candidates.length,
         eligibleCount,
         ineligibleCount,
+        stayOnlyCount,
+        eventCertificatesCount,
+        missingEmailCount,
+        uniqueRecipientsCount,
         recipients: candidates,
         diagnostics,
       });

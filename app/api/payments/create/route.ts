@@ -33,7 +33,11 @@ import {
 } from "@/lib/payments/resume-token";
 import { getCanonicalPaymentBaseUrl } from "@/lib/payments/canonical-url";
 import { CHECKOUT_EXPIRATION_THRESHOLD_MS } from "@/lib/accommodation-expiration";
-import { getSiteAccessState, getSiteAccess } from "@/lib/config/site-access";
+import {
+  getSiteAccessState,
+  getSiteAccess,
+  isAccommodationOptionAvailable,
+} from "@/lib/config/site-access";
 
 function errorResponse(
   message: string,
@@ -263,7 +267,7 @@ export async function POST(
   if (hasRegistrationItem) {
     const siteAccessState = await getSiteAccessState({ bypassCache: true });
     if (!siteAccessState.locks.REGISTRATIONS_ENABLED || !siteAccessState.locks.REGISTRATION_ENABLED) {
-      const orderCreatedAt = new Date(paymentOrder.created_at || 0).getTime();
+      const orderCreatedAt = paymentOrder.created_at ? new Date(paymentOrder.created_at).getTime() : Date.now();
       const lockTime = siteAccessState.registrationLockTimestamp
         ? new Date(siteAccessState.registrationLockTimestamp).getTime()
         : 0;
@@ -314,6 +318,58 @@ export async function POST(
           403,
           "ACCOMMODATION_LOCKED"
         );
+      }
+    }
+
+    // Granular Accommodation Availability Safeguard
+    const participantAccommodationIds = orderItems
+      .map((item) => item.participant_accommodation_id)
+      .filter(Boolean);
+
+    if (participantAccommodationIds.length > 0) {
+      const orderCreatedAt = new Date(paymentOrder.created_at || 0).getTime();
+      const orderAgeMs = Date.now() - orderCreatedAt;
+
+      let accRecords: Array<{ id: string; start_date?: string | null; plan_slug?: string | null; duration_days?: number | null }> | null = null;
+      try {
+        const query = (supabaseAdmin.from("participant_accommodations") as any);
+        if (query && typeof query.select === "function") {
+          const res = await query
+            .select("id, start_date, plan_slug, duration_days")
+            .in("id", participantAccommodationIds);
+          accRecords = res?.data || null;
+        }
+      } catch (err) {
+        console.warn("Failed to check participant_accommodations for hold:", err);
+      }
+
+      if (accRecords && accRecords.length > 0) {
+        for (const acc of accRecords) {
+          const isAvail = isAccommodationOptionAvailable(
+            acc.plan_slug || (acc.duration_days ? (acc.duration_days === 1 ? "1_day" : `${acc.duration_days}_days`) : ""),
+            acc.start_date,
+            siteAccessState.accommodationAvailability
+          );
+          if (!isAvail) {
+            if (orderAgeMs >= CHECKOUT_EXPIRATION_THRESHOLD_MS) {
+              return errorResponse(
+                "This accommodation booking hold has expired and the selected accommodation option is currently unavailable.",
+                403,
+                "ACCOMMODATION_DATES_UNAVAILABLE"
+              );
+            }
+            const lockTime = siteAccessState.accommodationLockTimestamp
+              ? new Date(siteAccessState.accommodationLockTimestamp).getTime()
+              : 0;
+            if (lockTime > 0 && orderCreatedAt >= lockTime) {
+              return errorResponse(
+                "The selected accommodation option is currently unavailable.",
+                403,
+                "ACCOMMODATION_DATES_UNAVAILABLE"
+              );
+            }
+          }
+        }
       }
     }
   }

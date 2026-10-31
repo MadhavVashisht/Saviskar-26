@@ -17,6 +17,7 @@ export interface GeneralRecipient {
 
 export interface CertificateEligibleItem {
   participantEventId: string;
+  accommodationId?: string | null;
   memberId?: string | null;
   participantId?: string | null;
   recipientName: string;
@@ -38,6 +39,7 @@ export interface CertificateEligibleItem {
   certificateEligible: boolean;
   ineligibilityReason?: string | null;
   issueSourceKey: string;
+  isStayOnly?: boolean;
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -204,54 +206,65 @@ export async function resolveCertificateCandidates(
   supabaseAdmin: SupabaseClient,
   options?: { eventId?: string; participantEventId?: string }
 ): Promise<CertificateEligibleItem[]> {
-  const { data: peRows, error: peErr } = await fetchAllRows(async (from, to) => {
-    let query = supabaseAdmin
-      .from("participant_events")
-      .select(`
-        id,
-        payment_status,
-        payment_amount,
-        registration_status,
-        main_checked_in,
-        main_checked_in_at,
-        checked_in,
-        checked_in_at,
-        team_name,
-        event_id,
-        participant_id,
-        is_archived,
-        events (
+  const isStayOnlyFilter =
+    options?.eventId === "stay-only" || options?.eventId === "saviskar-2026";
+  const isSpecificEventFilter =
+    Boolean(options?.eventId && !isStayOnlyFilter);
+
+  // 1. Fetch active event registrations (unless stay-only is specifically requested)
+  let peRows: any[] = [];
+  if (!isStayOnlyFilter) {
+    const { data, error: peErr } = await fetchAllRows(async (from, to) => {
+      let query = supabaseAdmin
+        .from("participant_events")
+        .select(`
           id,
-          name,
-          payment_type,
-          registration_fee
-        ),
-        participants (
-          id,
-          name,
-          email
-        )
-      `)
-      .eq("is_archived", false);
+          payment_status,
+          payment_amount,
+          registration_status,
+          main_checked_in,
+          main_checked_in_at,
+          checked_in,
+          checked_in_at,
+          team_name,
+          event_id,
+          participant_id,
+          is_archived,
+          events (
+            id,
+            name,
+            payment_type,
+            registration_fee
+          ),
+          participants (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq("is_archived", false);
 
-    if (options?.eventId) {
-      query = query.eq("event_id", options.eventId);
+      if (isSpecificEventFilter && options?.eventId) {
+        query = query.eq("event_id", options.eventId);
+      }
+      if (options?.participantEventId) {
+        query = query.eq("id", options.participantEventId);
+      }
+
+      return query.range(from, to);
+    });
+
+    if (peErr || !data) {
+      console.error("[CERTIFICATE RESOLVER] Error loading registrations:", peErr);
+      throw new Error(`Failed to load certificate registrations: ${peErr?.message || JSON.stringify(peErr)}`);
     }
-    if (options?.participantEventId) {
-      query = query.eq("id", options.participantEventId);
-    }
-
-    return query.range(from, to);
-  });
-
-  if (peErr || !peRows) {
-    console.error("[CERTIFICATE RESOLVER] Error loading registrations:", peErr);
-    throw new Error(`Failed to load certificate registrations: ${peErr?.message || JSON.stringify(peErr)}`);
+    peRows = data;
   }
 
-  // Fetch all team members for these registrations in URL-safe batches
+  // 2. Fetch all team members for these registrations in URL-safe batches
   const peIds = peRows.map((r) => r.id);
   const membersByPeId = new Map<string, any[]>();
+  let allMembers: any[] = [];
 
   if (peIds.length > 0) {
     const { data: members, error: memErr } = await fetchInBatches(
@@ -272,6 +285,7 @@ export async function resolveCertificateCandidates(
     }
 
     if (members) {
+      allMembers = members;
       for (const m of members) {
         const list = membersByPeId.get(m.participant_event_id) || [];
         list.push(m);
@@ -282,13 +296,26 @@ export async function resolveCertificateCandidates(
 
   const results: CertificateEligibleItem[] = [];
 
+  // Track event participants by participant ID and normalized email to strictly exclude them from stay-only certificates
+  const eventParticipantIds = new Set<string>();
+  const eventEmails = new Set<string>();
+
   for (const pe of peRows) {
     const event = pe.events as any;
     const participant = pe.participants as any;
     const members = membersByPeId.get(pe.id) || [];
     const isTeam = members.length > 0;
 
-    // Authoritative payment evaluation
+    if (pe.participant_id) eventParticipantIds.add(pe.participant_id);
+    if (participant?.id) eventParticipantIds.add(participant.id);
+    if (participant?.email) eventEmails.add(participant.email.trim().toLowerCase());
+
+    for (const m of members) {
+      if (m.participant_id) eventParticipantIds.add(m.participant_id);
+      if (m.email) eventEmails.add(m.email.trim().toLowerCase());
+    }
+
+    // Authoritative payment evaluation (for reporting/display records)
     const paymentDecision = evaluateEventPaymentStatus({
       registrationFee: event?.registration_fee,
       paymentType: event?.payment_type,
@@ -298,16 +325,6 @@ export async function resolveCertificateCandidates(
     });
 
     const isMainCheckedIn = pe.main_checked_in === true && !!pe.main_checked_in_at;
-    const isEligible = isMainCheckedIn && paymentDecision.isPaymentComplete;
-
-    let ineligibilityReason: string | null = null;
-    if (!isMainCheckedIn) {
-      ineligibilityReason = pe.checked_in
-        ? "Only arena-level check-in recorded. Main registration desk check-in is mandatory."
-        : "Main registration desk check-in required.";
-    } else if (!paymentDecision.isPaymentComplete) {
-      ineligibilityReason = paymentDecision.rejectionReason || "Payment not settled.";
-    }
 
     // Resolve team contact email (prefer team leader, else parent participant email)
     const teamLeader = members.find((m) => m.is_team_leader);
@@ -337,9 +354,10 @@ export async function resolveCertificateCandidates(
           paymentAmount: pe.payment_amount,
           isFree: paymentDecision.isFree,
           isPaymentComplete: paymentDecision.isPaymentComplete,
-          certificateEligible: isEligible,
-          ineligibilityReason,
+          certificateEligible: true,
+          ineligibilityReason: null,
           issueSourceKey: `member:${pe.id}:${m.id}`,
+          isStayOnly: false,
         });
       }
     } else {
@@ -365,10 +383,133 @@ export async function resolveCertificateCandidates(
         paymentAmount: pe.payment_amount,
         isFree: paymentDecision.isFree,
         isPaymentComplete: paymentDecision.isPaymentComplete,
-        certificateEligible: isEligible,
-        ineligibilityReason,
+        certificateEligible: true,
+        ineligibilityReason: null,
         issueSourceKey: `solo:${pe.id}`,
+        isStayOnly: false,
       });
+    }
+  }
+
+  // 3. Stay-only participants (Accommodation registration with NO event registration)
+  // Include if all events are being resolved, or if stay-only is specifically requested
+  if (!isSpecificEventFilter && !options?.participantEventId) {
+    // If stay-only was specifically requested without prior peRows, resolve event participant IDs and emails across system
+    if (isStayOnlyFilter) {
+      const { data: allPe, error: allPeErr } = await fetchAllRows(async (from, to) => {
+        return supabaseAdmin
+          .from("participant_events")
+          .select("id, participant_id, participants(id, email)")
+          .eq("is_archived", false)
+          .range(from, to);
+      });
+      if (allPeErr) {
+        console.error("[CERTIFICATE RESOLVER] Error loading event participant cross-check:", allPeErr);
+        throw new Error(`Failed to load event participants for stay cross-check: ${allPeErr.message || JSON.stringify(allPeErr)}`);
+      }
+      if (allPe) {
+        for (const pe of allPe) {
+          if (pe.participant_id) eventParticipantIds.add(pe.participant_id);
+          const p = pe.participants as any;
+          if (p?.id) eventParticipantIds.add(p.id);
+          if (p?.email) eventEmails.add(p.email.trim().toLowerCase());
+        }
+      }
+
+      const { data: allMem, error: allMemErr } = await fetchAllRows(async (from, to) => {
+        return supabaseAdmin
+          .from("participant_event_members")
+          .select("id, participant_id, email")
+          .range(from, to);
+      });
+      if (allMemErr) {
+        console.error("[CERTIFICATE RESOLVER] Error loading member cross-check:", allMemErr);
+        throw new Error(`Failed to load member cross-check: ${allMemErr.message || JSON.stringify(allMemErr)}`);
+      }
+      if (allMem) {
+        for (const m of allMem) {
+          if (m.participant_id) eventParticipantIds.add(m.participant_id);
+          if (m.email) eventEmails.add(m.email.trim().toLowerCase());
+        }
+      }
+    }
+
+    const { data: accommodations, error: accErr } = await fetchAllRows(async (from, to) => {
+      let query = supabaseAdmin
+        .from("participant_accommodations")
+        .select(`
+          id,
+          status,
+          participant_id,
+          participants (
+            id,
+            name,
+            email
+          )
+        `);
+
+      if (typeof (query as any).neq === "function") {
+        query = (query as any).neq("status", "cancelled");
+      }
+
+      return query.range(from, to);
+    });
+
+    if (accErr) {
+      console.error("[CERTIFICATE RESOLVER] Error loading accommodations:", accErr);
+      throw new Error(`Failed to resolve accommodation participants: ${accErr.message || JSON.stringify(accErr)}`);
+    }
+
+    if (accommodations) {
+      const seenStayParticipants = new Set<string>();
+
+      for (const acc of accommodations) {
+        if (acc.status === "cancelled") continue;
+        const participant = acc.participants as any;
+        const pId = acc.participant_id || participant?.id || null;
+        const pEmail = participant?.email ? participant.email.trim().toLowerCase() : null;
+
+        // Rule C: Participants with BOTH event & accommodation receive event-specific certificate(s) only;
+        // do NOT generate an extra generic Saviskar 2026 certificate.
+        if ((pId && eventParticipantIds.has(pId)) || (pEmail && eventEmails.has(pEmail))) {
+          continue;
+        }
+
+        // Rule B: Exactly ONE general certificate per person (even if multiple bookings/extensions)
+        const dedupeKey = pId || pEmail || acc.id;
+        if (seenStayParticipants.has(dedupeKey)) {
+          continue;
+        }
+        seenStayParticipants.add(dedupeKey);
+
+        const stayEmail = participant?.email || null;
+        results.push({
+          participantEventId: acc.id,
+          accommodationId: acc.id,
+          memberId: null,
+          participantId: pId,
+          recipientName: participant?.name || "Participant",
+          recipientEmail: stayEmail,
+          isValidEmail: isValidEmailAddress(stayEmail),
+          eventId: "stay-only",
+          eventName: "Saviskar 2026",
+          isTeam: false,
+          teamName: null,
+          teamContactEmail: null,
+          isTeamLeader: false,
+          mainCheckedIn: false,
+          mainCheckedInAt: null,
+          eventCheckedIn: false,
+          paymentStatus: acc.status || "confirmed",
+          paymentAmount: null,
+          isFree: false,
+          isPaymentComplete: true,
+          certificateEligible: true,
+          ineligibilityReason: null,
+          issueSourceKey: `stay:${pId || acc.id}`,
+          isStayOnly: true,
+        });
+      }
     }
   }
 

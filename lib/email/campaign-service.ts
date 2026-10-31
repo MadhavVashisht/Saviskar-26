@@ -247,56 +247,77 @@ export async function sendCampaignEmail(
 
   const resend = new Resend(apiKey);
 
-  try {
-    const formattedAttachments = options.attachments?.map((att) => ({
-      filename: att.filename,
-      content: att.content,
-    }));
+  const formattedAttachments = options.attachments?.map((att) => ({
+    filename: att.filename,
+    content: att.content,
+  }));
 
-    // Pass official idempotencyKey option to Resend SDK
-    const resendOptions: Parameters<typeof resend.emails.send>[0] = {
-      from: senderCheck.from,
-      to: [options.to],
-      subject: options.subject,
-      html: options.html,
-      text: options.text || options.html.replace(/<[^>]+>/g, " ").trim(),
-      attachments: formattedAttachments && formattedAttachments.length > 0 ? formattedAttachments : undefined,
-    };
+  // Pass official idempotencyKey option to Resend SDK
+  const resendOptions: Parameters<typeof resend.emails.send>[0] = {
+    from: senderCheck.from,
+    to: [options.to],
+    subject: options.subject,
+    html: options.html,
+    text: options.text || options.html.replace(/<[^>]+>/g, " ").trim(),
+    attachments: formattedAttachments && formattedAttachments.length > 0 ? formattedAttachments : undefined,
+  };
 
-    // If options allows custom headers or options:
-    const sendResult = await resend.emails.send(resendOptions, {
-      idempotencyKey: options.idempotencyKey,
-    } as any);
+  // Safe backoff for provider rate limits (429) while preserving exact idempotencyKey
+  const MAX_RATE_LIMIT_RETRIES = 2;
+  const INITIAL_BACKOFF_MS = 600;
 
-    if (sendResult.error) {
-      const errName = sendResult.error.name;
-      const errMsg = sendResult.error.message;
-      const isRetryable =
-        errName === "rate_limit_exceeded" ||
-        errName === "internal_server_error" ||
-        errMsg.toLowerCase().includes("timeout");
+  for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
+    try {
+      const sendResult = await resend.emails.send(resendOptions, {
+        idempotencyKey: options.idempotencyKey,
+      } as any);
+
+      if (sendResult.error) {
+        const errName = sendResult.error.name;
+        const errMsg = sendResult.error.message;
+
+        // In-flight backoff retry on HTTP 429 rate limit using identical idempotencyKey
+        if (errName === "rate_limit_exceeded" && attempt < MAX_RATE_LIMIT_RETRIES) {
+          const backoff = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+          await new Promise((resolve) => setTimeout(resolve, backoff));
+          continue;
+        }
+
+        const isRetryable =
+          errName === "rate_limit_exceeded" ||
+          errName === "internal_server_error" ||
+          errMsg.toLowerCase().includes("timeout");
+
+        return {
+          success: false,
+          error: `${errName}: ${errMsg}`,
+          errorCode: errName,
+          isRetryable,
+        };
+      }
 
       return {
+        success: true,
+        messageId: sendResult.data?.id,
+      };
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      // Network/abort errors: do not loop locally without guarantee of rejection; fail retryable
+      return {
         success: false,
-        error: `${errName}: ${errMsg}`,
-        errorCode: errName,
-        isRetryable,
+        error: msg,
+        errorCode: "DISPATCH_EXCEPTION",
+        isRetryable: true,
       };
     }
-
-    return {
-      success: true,
-      messageId: sendResult.data?.id,
-    };
-  } catch (err: any) {
-    const msg = err?.message || String(err);
-    return {
-      success: false,
-      error: msg,
-      errorCode: "DISPATCH_EXCEPTION",
-      isRetryable: true,
-    };
   }
+
+  return {
+    success: false,
+    error: "Rate limit exceeded after retries",
+    errorCode: "rate_limit_exceeded",
+    isRetryable: true,
+  };
 }
 
 /**

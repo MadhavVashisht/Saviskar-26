@@ -9,6 +9,22 @@ import {
 import * as serverLib from "@/lib/supabase/server";
 import { GET, PATCH } from "@/app/api/admin/site-access/route";
 
+vi.mock("@supabase/supabase-js", () => {
+  const queryChain: any = {
+    select: vi.fn(() => queryChain),
+    eq: vi.fn(() => queryChain),
+    order: vi.fn(() => Promise.resolve({ data: [] })),
+    limit: vi.fn(() => queryChain),
+    maybeSingle: vi.fn(() => Promise.resolve({ data: null })),
+  };
+  return {
+    createClient: vi.fn(() => ({
+      from: vi.fn(() => queryChain),
+      rpc: vi.fn(() => Promise.resolve({ data: { success: true }, error: null })),
+    })),
+  };
+});
+
 describe("Dynamic Site Access Engine", () => {
   beforeEach(() => {
     clearSiteAccessCache();

@@ -16,6 +16,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { calculateStayDates } from "@/lib/accommodation-dates";
+import {
+  isAccommodationOptionAvailable,
+  DEFAULT_ACCOMMODATION_AVAILABILITY,
+} from "@/lib/config/site-access";
 
 export interface TeamMemberForModal {
   id: string;
@@ -46,6 +50,7 @@ export interface TeamAccommodationModalProps {
   members: TeamMemberForModal[];
   onProceedToPayment: (paymentOrderId: string, participantId?: string) => Promise<void>;
   isAccommodationLocked?: boolean;
+  accommodationAvailability?: Record<string, boolean>;
 }
 
 interface MemberBookingSelection {
@@ -64,6 +69,7 @@ export default function TeamAccommodationModal({
   members,
   onProceedToPayment,
   isAccommodationLocked = false,
+  accommodationAvailability,
 }: TeamAccommodationModalProps) {
   const [mounted, setMounted] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -78,7 +84,9 @@ export default function TeamAccommodationModal({
     focusRef: closeButtonRef,
   });
 
-  // Map of member email -> selection state (defaulting to festival standard: 2_days, 28th-30th Oct)
+
+
+  // Map of member email -> selection state (defaulting to festival standard: 2_days, 30th-31st Oct)
   const [selections, setSelections] = useState<Record<string, MemberBookingSelection>>(() => {
     const initial: Record<string, MemberBookingSelection> = {};
     for (const m of members) {
@@ -179,6 +187,8 @@ export default function TeamAccommodationModal({
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+
 
   // Update selection helper
   const updateMemberSelection = (email: string, patch: Partial<MemberBookingSelection>) => {
@@ -314,6 +324,15 @@ export default function TeamAccommodationModal({
     if (calculatedItems.length === 0) {
       setErrorMessage("Please select at least one team member for accommodation.");
       return;
+    }
+
+    if (accommodationAvailability) {
+      for (const item of calculatedItems) {
+        if (!isAccommodationOptionAvailable(item.selection.planSlug, item.startDate, accommodationAvailability)) {
+          setErrorMessage(`Accommodation stay (${item.selection.planSlug}, ${item.startDate}) for ${item.member.name} is currently unavailable.`);
+          return;
+        }
+      }
     }
 
     if (hasAnyConflict) {
