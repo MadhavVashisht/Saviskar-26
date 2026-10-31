@@ -754,13 +754,95 @@ describe("Admin Session Expiration and Lifecycle Authority", () => {
         expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
       });
 
-      it("permits exception ONLY when NODE_ENV is development AND URL is http://127.0.0.1:54321 or http://localhost:54321", () => {
+      it("fails closed when local Supabase URL is passed without explicit opt-in", () => {
+        (process.env as any).NODE_ENV = "development";
+        delete process.env.LOCAL_DEV_TEST_BYPASS_MFA;
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:54321";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+      });
+
+      it("permits bypass when local Supabase + development + explicit opt-in is provided", () => {
         (process.env as any).NODE_ENV = "development";
         process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
         expect(isLocalDevelopmentMfaBypassAllowed()).toBe(true);
 
         process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:54321";
         expect(isLocalDevelopmentMfaBypassAllowed()).toBe(true);
+      });
+
+      it("fails closed with explicit opt-in when Supabase URL points to hosted domain", () => {
+        (process.env as any).NODE_ENV = "development";
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "https://ikavnyjfmdxjnlbovkzm.supabase.co";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://ikavnyjfmdxjnlbovkzm.supabase.co:54321";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+      });
+
+      it("fails closed with explicit opt-in when protocol is HTTPS on local host", () => {
+        (process.env as any).NODE_ENV = "development";
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "https://127.0.0.1:54321";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "https://localhost:54321";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+      });
+
+      it("fails closed with explicit opt-in when port is not 54321", () => {
+        (process.env as any).NODE_ENV = "development";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:3000";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:8000";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+      });
+
+      it("fails closed in production environment even with local URL and explicit opt-in", () => {
+        (process.env as any).NODE_ENV = "production";
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+      });
+
+      it("fails closed in test environment even with local URL and explicit opt-in", () => {
+        (process.env as any).NODE_ENV = "test";
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+      });
+
+      it("fails closed when cloud deployment indicators are present even with local URL and explicit opt-in", () => {
+        (process.env as any).NODE_ENV = "development";
+        process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
+        process.env.LOCAL_DEV_TEST_BYPASS_MFA = "true";
+
+        process.env.VERCEL = "1";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+        delete process.env.VERCEL;
+
+        process.env.VERCEL_ENV = "preview";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+        delete process.env.VERCEL_ENV;
+
+        process.env.NETLIFY = "true";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+        delete process.env.NETLIFY;
+
+        process.env.RENDER = "true";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+        delete process.env.RENDER;
+
+        process.env.FLY_APP_NAME = "my-app";
+        expect(isLocalDevelopmentMfaBypassAllowed()).toBe(false);
+        delete process.env.FLY_APP_NAME;
       });
     });
 });

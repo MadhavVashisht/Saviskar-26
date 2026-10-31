@@ -108,12 +108,7 @@ export function isLocalDevelopmentMfaBypassAllowed(): boolean {
     return false;
   }
 
-  // 3. Explicit opt-in for automated local loopback browser testing
-  if (process.env.LOCAL_DEV_TEST_BYPASS_MFA === "true") {
-    return true;
-  }
-
-  // 4. Inspect configured Supabase URL
+  // 3. Inspect configured Supabase URL
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   if (!supabaseUrl) {
     return false;
@@ -137,7 +132,8 @@ export function isLocalDevelopmentMfaBypassAllowed(): boolean {
       return false;
     }
 
-    return true;
+    // 4. Require explicit opt-in AFTER validating verified local disposable Supabase stack
+    return process.env.LOCAL_DEV_TEST_BYPASS_MFA === "true";
   } catch {
     return false;
   }
