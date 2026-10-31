@@ -1,5 +1,6 @@
 "use client";
 
+import { useModalScrollLock } from "../registration/useModalScrollLock";
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react";
 import {
   X,
@@ -153,6 +154,14 @@ export function SitePageLocksModal({
   siteAccess,
   onUpdate,
 }: SitePageLocksModalProps) {
+  const modalCardRef = useRef<HTMLDivElement>(null);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+
+  useModalScrollLock({
+    isOpen,
+    onClose,
+    focusRef: modalCardRef,
+  });
   const [locks, setLocks] = useState<SiteAccessConfig>(siteAccess || DEFAULT_SITE_ACCESS);
   const [accommodationAvailability, setAccommodationAvailability] = useState<Record<string, boolean>>(
     DEFAULT_ACCOMMODATION_AVAILABILITY
@@ -556,8 +565,33 @@ export function SitePageLocksModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
-      <div className="relative flex flex-col w-full max-w-5xl max-h-[92vh] my-auto shrink-0 rounded-3xl border border-black/10 bg-white shadow-2xl overflow-hidden text-black" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="site-page-locks-title"
+      className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden overscroll-none bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      style={{ overscrollBehavior: "contain" }}
+      data-lenis-prevent="true"
+      data-lenis-prevent-wheel="true"
+      data-lenis-prevent-touch="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+    >
+      <div
+        ref={modalCardRef}
+        tabIndex={-1}
+        className="relative flex flex-col w-full max-w-5xl h-[min(90vh,calc(100dvh-2rem))] max-h-[min(90vh,calc(100dvh-2rem))] rounded-3xl border border-black/10 bg-white shadow-2xl overflow-hidden text-black focus:outline-none"
+        style={{ overscrollBehavior: "contain" }}
+        data-lenis-prevent="true"
+        data-lenis-prevent-wheel="true"
+        data-lenis-prevent-touch="true"
+        onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-black/10 bg-neutral-900 px-6 py-4 sm:px-8 text-white shrink-0">
           <div className="flex items-center gap-3">
@@ -566,7 +600,7 @@ export function SitePageLocksModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold tracking-tight text-white sm:text-lg">
+                <h2 id="site-page-locks-title" className="text-base font-bold tracking-tight text-white sm:text-lg">
                   Site Page Access &amp; Lock Control
                 </h2>
                 {isPrimary ? (
@@ -668,7 +702,18 @@ export function SitePageLocksModal({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5 sm:px-8 space-y-6 focus:outline-none" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
+        <div
+          id="site-locks-modal-body"
+          ref={scrollBodyRef}
+          tabIndex={0}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5 sm:px-8 space-y-6 focus:outline-none"
+          style={{ overscrollBehavior: "contain" }}
+          data-lenis-prevent="true"
+          data-lenis-prevent-wheel="true"
+          data-lenis-prevent-touch="true"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           {/* Modules Grid */}
           <div className="grid gap-3.5 sm:grid-cols-2">
             {filteredCards.map((card) => {
@@ -962,7 +1007,16 @@ export function SitePageLocksModal({
               </div>
 
               {/* Competitions Table / List */}
-              <div className="max-h-96 overflow-y-auto overscroll-contain rounded-2xl border border-black/10 bg-white shadow-xs divide-y divide-black/5" data-lenis-prevent="true" data-lenis-prevent-wheel="true" data-lenis-prevent-touch="true">
+              <div
+                id="competitions-scroll-container"
+                className="max-h-96 overflow-y-auto overscroll-contain rounded-2xl border border-black/10 bg-white shadow-xs divide-y divide-black/5"
+                style={{ overscrollBehavior: "contain" }}
+                data-lenis-prevent="true"
+                data-lenis-prevent-wheel="true"
+                data-lenis-prevent-touch="true"
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+              >
                 {competitionsLoading ? (
                   <div className="p-8 text-center text-xs text-black/50">
                     <RefreshCw size={18} className="animate-spin mx-auto text-violet-600 mb-2" />

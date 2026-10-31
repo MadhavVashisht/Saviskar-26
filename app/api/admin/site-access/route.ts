@@ -34,6 +34,13 @@ function getSupabaseAdmin() {
       persistSession: false,
       autoRefreshToken: false,
     },
+    global: {
+      fetch: (url, init) =>
+        fetch(url, {
+          ...init,
+          cache: "no-store",
+        }),
+    },
   });
 }
 
@@ -65,7 +72,7 @@ export async function GET(request: Request) {
             .order("name", { ascending: true })
         );
 
-        const timeoutMs = process.env.NODE_ENV === "test" ? 300 : 3000;
+        const timeoutMs = process.env.NODE_ENV === "test" ? 300 : 8000;
         const timeoutPromise = new Promise<{ data: any[] | null }>((resolve) =>
           setTimeout(() => resolve({ data: null }), timeoutMs)
         );
